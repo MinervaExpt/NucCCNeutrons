@@ -1,0 +1,66 @@
+#SimplifiedTargets.yaml: The raw material to build a "cut tree" but without
+#                        repeating the information for the targets.
+#                        The material sections in each target never change
+#                        for example, so let their definitions live in c++
+#                        code rather than requiring the user to specify them
+#                        here.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+#There are two types of leaves on the cut tree: signal events and sideband events.
+Signal:
+  Migration: !Migration
+  EfficiencyNum: !TruthNNeutrons
+Sideband:
+  Background: !TruthNNeutrons
+
+#Each entry in OneTrackFiducial and TwoTrackFiducial
+#gets converted into two sets of ANDs on material sections:
+#reco and truth.
+OneTrack: &OneTrackFiducial !Targets
+  Target1:
+    reco:
+      zMin:
+      zMax:
+    truth:
+      zMin:
+      zMax:
+  Target2:
+    reco:
+      zMin:
+      zMax:
+    truth:
+      zMin:
+      zMax:
+#And more targets...
+
+MultiTrack: &MultiTrackFiducial !Targets
+  Target1:
+    reco:
+      zMin:
+      zMax:
+    truth:
+      zMin:
+      zMax:
+  Target2:
+    reco:
+      zMin:
+      zMax:
+    truth:
+      zMin:
+      zMax:
+#And more targets...
+
+DistanceToDivision: !DistanceToDivision
+  distance: 25 #mm from NukeCCInclusive
+
+#An example of what the final cut tree assembly would look like
+cuts: !AND
+  MECCuts: *MECCuts
+  Q3: *Q3Categories
+  NumberOfTracks: !OR
+    OneTrack: !AND
+      OnlyOneTrack: !NumberOfTracks
+      Material: *OneTrackFiducial
+    MultiTrack: !AND
+      Material: *MultiTrackFiducial
+  MaterialBoundary: *DistanceToDivision
