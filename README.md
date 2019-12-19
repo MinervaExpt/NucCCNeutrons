@@ -21,6 +21,4 @@ My goal is to build on the machinery used to produce [MINERvA's low energy neutr
 1. [PlotUtils](https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/show/AnalysisFramework/Ana/PlotUtils)
 2. [ROOT](https://root.cern.ch/building-root)
 3. [YAML-cpp](https://github.com/jbeder/yaml-cpp)
-
-## Embedded Projects
-1. [BaseUnits](https://github.com/aolivier23/BaseUnits)
+4. [BaseUnits](https://github.com/aolivier23/BaseUnits)

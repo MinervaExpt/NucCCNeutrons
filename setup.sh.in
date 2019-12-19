@@ -1,0 +1,11 @@
+#!/bin/bash
+#Make sure libraries can be found at runtime and executable names can
+#be autocompleted by bash.
+export LD_LIBRARY_PATH=@CMAKE_INSTALL_PREFIX@/lib:$LD_LIBRARY_PATH
+export PATH=@CMAKE_INSTALL_PREFIX@/bin:$PATH
+
+#Bash autocompletion support for cut files
+#Basically, allow auto-completion for every executable file produced:
+#1) Any non-executable in the bin directory
+#2) Any file name the way bash normally does autocompletion
+complete -o filenames -W '$(find @CMAKE_INSTALL_PREFIX@/bin -name "*.yaml" -type f \! -executable -printf %f\\n)' -o default -o bashdefault $(find @CMAKE_INSTALL_PREFIX@/bin -type f -executable -printf %f\\n)
