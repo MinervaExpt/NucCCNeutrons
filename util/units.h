@@ -62,7 +62,7 @@ DECLARE_UNIT_WITH_YAML(degrees)
 DECLARE_UNIT_WITH_YAML(events) //Base events on double so I can reweight
 
 using vertex_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<mm>>;
-using momentum_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<GeV>>;
-using syst_momentum_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<MeV>>; //The New Systematics Framework uses MeV for momentum
+using momentum_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<MeV>>;  //Dan's pretty sure truth lepton momentum is in MeV.  This matches the NS Framework.
+//using syst_momentum_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<MeV>>; //The New Systematics Framework uses MeV for momentum
 
 #endif //NEUTRON_UNITS_H
