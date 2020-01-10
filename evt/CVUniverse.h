@@ -52,6 +52,8 @@ namespace evt
       //      only force this file's unit to recompile.
 
       //Hypothesis branches ported mostly from MECAnaTool
+      //TODO: Fix branches that come from derived values.  I need to calculate them from the most
+      //      basic values I can find instead for the NS Framework.
       //Reco branches
       virtual GeV GetQ3() const { return GetDouble("CCNeutrons_q3"); }
       virtual vertex_t GetVtx() const { return vertex_t(GetArray<double>("vtx")); }
@@ -60,6 +62,7 @@ namespace evt
       virtual int GetHelicity() const { return GetInt("CCNeutrons_nuHelicity"); }
 
       //Truth branches
+      virtual GeV GetTruthQ3() cnost { return GetDouble("CCNeutrons_q3"); }
       virtual vertex_t GetTruthVtx() const { return vertex_t(GetArray<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
 

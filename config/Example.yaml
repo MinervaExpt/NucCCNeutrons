@@ -1,0 +1,79 @@
+#Example of how to define an analysis job for a single target.
+
+app:
+  #TODO: candidate algorithm and other such options
+
+#TODO: Figure out how to configure cuts that define neutron candidates.
+#      This is really more of a reconstruction step, but I have to do it
+#      now for flexibility of cut decisions and systematics.
+signal: !CrossSectionInNeutronMultiplicity
+  name: "NeutronMultiplicity"
+  cuts:
+    truth:
+    reco:
+
+cuts:
+  truth:
+    LowQ3: !Q3Range
+      min: 0 #GeV/c
+      max: 0.4 #GeV/c
+    MuonMomentum: !MuonMomentum
+      min: 2 #GeV/c
+    TrackAngle: !TrackAngle
+      max: 17 #degrees; stricter constraint for the targets
+    Antineutrino: !IsAntineutrino
+    Target3: !IsInTarget
+      *Target3
+    Iron: !Target3Iron
+  #TODO: Maybe look for RecoCuts only in this block?  This would save me from typing an extra "Reco" for each cut.
+  #      I envision TruthCuts and RecoCuts being in different namespaces.
+  reco:
+    OneTrack: !nTracksMax
+      max: 1
+    LowQ3: !Q3Range
+      min: 0 #GeV/c
+      max: 0.4 #GeV/c
+    MinosDeltaT: !MinosDeltaT
+      max: 20 #ns
+    TrackAngle: !TrackAngle
+      max: 17 #degrees; stricter constraint for the targets
+    MuonMomentum: !MuonMomentum
+      min: 2 #GeV/c
+    Antineutrino: !IsAntineutrino
+    Target3: !IsInTarget
+      *Target3
+    Iron: !Target3Iron
+
+#Names in sidebands' "fails" blocks refer to truth cuts by block name.
+sidebands:
+  UpstreamPlastic:
+    fails: [Target3]
+    passes:
+      Upstream: !Between &USPlastic
+        us: *Target2
+        ds: *Target3
+  DownstreamPlastic:
+    fails: [Target3]
+    passes:
+      Downstream: !Between &DSPlastic
+        us: *Target3
+        ds: *Target4
+  WrongMaterial:
+    fails: [Iron]
+    #And implicitly passes the Target3 truth cut
+
+#Backgrounds are defined by the truth::Cuts they pass in addition to
+#failing some regular truth cut.  So, these cuts had better be mutually
+#exclusive with regular truth::Cuts.
+backgrounds:
+  UpstreamPlastic:
+    Upstream: *USPlastic
+  DownstreamPlastic:
+    Downstream: *DSPlastic
+  Lead:
+    IsInLead: !Target3Lead
+  Carbon:
+    IsInCarbon: !Target3Carbon
+  Water:
+    IsInWater: !Water
+  #And I get "Other" for free
