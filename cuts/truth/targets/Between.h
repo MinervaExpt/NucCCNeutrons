@@ -1,9 +1,10 @@
-//File: IsInTarget.h
-//Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z cut in truth.
+//File: Between.h
+//Brief: Require that a CVUniverse has a vertex truthnstructed between 2 nuclear targets.
+//       Useful for defining the plastic sideband.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#ifndef TRUTH_ISINTARGET_H
-#define TRUTH_ISINTARGET_H
+#ifndef TRUTH_BETWEEN_H
+#define TRUTH_BETWEEN_H
 
 //units includes
 #include "units/NucCCNeutronsUnits.h"
@@ -13,11 +14,11 @@
 
 namespace truth
 {
-  class IsInTarget: public Cut
+  class Between: public Cut
   {
     public:
-      IsInTarget(const YAML::Node& config);
-      virtual ~IsInTarget() = default;
+      Between(const YAML::Node& config);
+      virtual ~Between() = default;
 
     protected:
       virtual bool passesCut(const CVUniverse& event) const override;
@@ -28,4 +29,4 @@ namespace truth
   };
 }
 
-#endif //TRUTH_ISINTARGET_H
+#endif //TRUTH_BETWEEN_H

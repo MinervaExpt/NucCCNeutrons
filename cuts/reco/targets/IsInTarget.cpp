@@ -1,6 +1,6 @@
 //File: IsInTarget.cpp
 //Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z reco in both
-//       reconstruction and truth.
+//       reconstruction.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //targets includes
@@ -8,8 +8,8 @@
 
 namespace reco
 {
-  IsInTarget::IsInTarget(const YAML::Node& config): fZMin(config["reco"]["min"].as<double>()),
-                                                    fZMax(config["reco"]["max"].as<double>())
+  IsInTarget::IsInTarget(const YAML::Node& config): fZMin(config["reco"]["min"].as<mm>()),
+                                                    fZMax(config["reco"]["max"].as<mm>())
   {
   }
 

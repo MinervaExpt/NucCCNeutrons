@@ -1,6 +1,5 @@
 //File: IsInTarget.cpp
-//Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z cut in both
-//       reconstruction and truth.
+//Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z cut in truth.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //targets includes

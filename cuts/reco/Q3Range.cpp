@@ -17,5 +17,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, truth::Q3Range> MainAnalysis_reg("Q3Range");
+  static plgn::Registrar<reco::Cut, reco::Q3Range> MainAnalysis_reg("Q3Range");
 }

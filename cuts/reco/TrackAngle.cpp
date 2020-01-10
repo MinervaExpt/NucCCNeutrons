@@ -20,5 +20,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, truth::TrackAngle> MainAnalysis_reg("TrackAngle");
+  static plgn::Registrar<reco::Cut, reco::TrackAngle> MainAnalysis_reg("TrackAngle");
 }

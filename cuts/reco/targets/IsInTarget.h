@@ -1,6 +1,6 @@
 //File: IsInTarget.h
 //Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z cut in both
-//       reconstruction and truth.
+//       reconstruction.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 #ifndef RECO_ISINTARGET_H

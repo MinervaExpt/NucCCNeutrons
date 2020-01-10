@@ -1,6 +1,6 @@
 //File: Cut.cpp
 //Brief: A Cut decides whether a CVUniverse should be considered
-//       reco and/or truth signal.  Cuts can be used to define
+//       truth signal.  Cuts can be used to define
 //       Signals, Sidebands, and backgrounds.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
