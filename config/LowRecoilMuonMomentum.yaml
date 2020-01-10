@@ -6,21 +6,8 @@ app:
 #TODO: Figure out how to configure cuts that define neutron candidates.
 #      This is really more of a reconstruction step, but I have to do it
 #      now for flexibility of cut decisions and systematics.
-signal: !NeutronMultiplicity &Variable
-  name: "NeutronMultiplicity"
-  cuts:
-    truth:
-      MinEnergy: !MinEnergy
-        min: 5 #MeV
-      Target3ZDistance: !ZDistance
-        min: 100 #mm
-        max: 1000 #mm
-    reco:
-      Target3ZDistance: !ZDistance
-        min: 100 #mm
-        max: 1000 #mm
-      MinEnergy: !MinEnergy
-        min: 5 #MeV
+signal: !MuonMomentum &Variable
+  name: "Muon Momentum"
 
 cuts:
   truth:

@@ -47,17 +47,17 @@ namespace side
 
       virtual void data(const CVUniverse& event) override
       {
-        fData.univHist(&event).Fill(fVar.reco(event));
+        fData.univHist(&event).Fill(fVar.reco(event), event.GetWeight());
       }
 
       virtual void truthSignal(const CVUniverse& event) override
       {
-        fSignal.univHist(&event).Fill(fVar.reco(event));
+        fSignal.univHist(&event).Fill(fVar.reco(event), event.GetWeight());
       }
 
       virtual void truthBackground(const CVUnvierse& event, const backgrounds_t::iterator background) override
       {
-        fBackgrounds[background].univHist(&event).Fill(fVar.reco(event));
+        fBackgrounds[background].univHist(&event).Fill(fVar.reco(event), event.GetWeight());
       }
 
     private:

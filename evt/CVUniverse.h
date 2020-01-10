@@ -10,11 +10,8 @@
 //PlotUtils includes
 #include "PlotUtils/DefaultCVUniverse.h"
 
-//Event model includes from my analysis
-#include "event/NeutronCandidate.h"
-
 //Get the unit definitions for my analysis
-#include "units/NucCCNeutronsUnits.h"
+#include "util/units.h"
 
 //Preprocessor macros so that I have only one point of maintenance for
 //replacing ChainWrapper.
@@ -62,13 +59,24 @@ namespace evt
       virtual int GetHelicity() const { return GetInt("CCNeutrons_nuHelicity"); }
 
       //Truth branches
-      virtual GeV GetTruthQ3() cnost { return GetDouble("CCNeutrons_q3"); }
+      virtual GeV GetTruthQ3() const { return GetDouble("CCNeutrons_q3"); }
       virtual vertex_t GetTruthVtx() const { return vertex_t(GetArray<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
+      virtual momentum_t GetTruthPmu() const { return momentum_t(GetArray<double>("mc_primFSLepton")); }
 
+      virtual events GetWeight() const
+      {
+        //Taken from Ben's code at https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/Personal/bmesserl/SystematicsFramework/CVUniverse.h
+        const MeV Enu = GetDouble("mc_incomingE");
+        const int nu_type = GetInt("mc_incoming");
+        const double fluxAndCV = GetFluxAndCVWeight(Enu, nu_type);
+        return fluxAndCV * GetGenieWeight(); //TODO: Other weights?
+      }
+
+      //TODO: Turn neutron candidates back on when I'm ready to try my multiplicity analysis
       //Functions to retrieve per-candidate values in vector<>s.  Put them back together with get<>() in each Analysis.
       //Example: const auto cands = get<NeutronCandidate>(event.Getblob_edep, event.Getblob_zPos, event.Getblob_earliest_time);
-      blobReco("blob_edep", MeV)
+      /*blobReco("blob_edep", MeV)
       blobReco("bob_transverse_dist_from_vertex", mm)
       blobReco("blob_first_muon_transverse", mm)
       blobReco("blob_zPos", mm)
@@ -142,7 +150,7 @@ namespace evt
         auto cache = std::make_tuple(FUNCTIONS()...);
 
         return get_impl(cache, std::make_index_sequence<sizeof...(FUNCTIONS)>{});
-      }
+      }*/
 
     protected:
       //Name of the blob algorithm to use

@@ -51,18 +51,18 @@ namespace sig
 
       virtual void mc(const CVUniverse& event) override
       {
-        fEfficiencyNum.univHist(&event)->Fill(fVar.truth(event));
-        fMigration.univHist(&event)->Fill(fVar.truth(event), fVar.reco(event));
+        fEfficiencyNum.univHist(&event)->Fill(fVar.truth(event), event.GetWeight());
+        fMigration.univHist(&event)->Fill(fVar.truth(event), fVar.reco(event), event.GetWeight());
       }
 
       virtual void truth(const CVUniverse& event) override
       {
-        fEfficiencyDenom.univHist(&event)->Fill(fVar.truth(event));
+        fEfficiencyDenom.univHist(&event)->Fill(fVar.truth(event), event.GetWeight());
       }
 
       virtual void data(const CVUniverse& event) override
       {
-        fSignalEvents.univHist(&event)->Fill(fVar.reco(event));
+        fSignalEvents.univHist(&event)->Fill(fVar.reco(event), event.GetWeight());
       }
 
     private:

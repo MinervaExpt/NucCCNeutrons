@@ -31,7 +31,7 @@ message("YAML_CPP_INCLUDE_DIR is ${YAML_CPP_INCLUDE_DIR}\n")
 include_directories(${YAML_CPP_INCLUDE_DIR})
 
 #Build main executables
-add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:analyses>)
+add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:analyses> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTarget> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTarget>)
 #This TARGET_OBJECTS song and dance solves the problem of the compiler
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library
@@ -41,15 +41,12 @@ add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:analyses>)
 
 #Build libraries that main executables depend on
 add_subdirectory(util)
-add_subdirectory(units)
 add_subdirectory(evt)
-add_subdirectory(analysis)
-add_subdirectory(geo)
+add_subdirectory(analyses)
 add_subdirectory(config)
 add_subdirectory(app)
-add_subdirectory(test)
 
-target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} support yaml-cpp targets dataFormat app_utilities)
+target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt signal sideband background support yaml-cpp app_utilities)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 
