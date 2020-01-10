@@ -6,11 +6,21 @@ app:
 #TODO: Figure out how to configure cuts that define neutron candidates.
 #      This is really more of a reconstruction step, but I have to do it
 #      now for flexibility of cut decisions and systematics.
-signal: !CrossSectionInNeutronMultiplicity
+signal: !NeutronMultiplicity &Variable
   name: "NeutronMultiplicity"
   cuts:
     truth:
+      MinEnergy: !MinEnergy
+        min: 5 #MeV
+      Target3ZDistance: !ZDistance
+        min: 100 #mm
+        max: 1000 #mm
     reco:
+      Target3ZDistance: !ZDistance
+        min: 100 #mm
+        max: 1000 #mm
+      MinEnergy: !MinEnergy
+        min: 5 #MeV
 
 cuts:
   truth:
@@ -47,18 +57,21 @@ cuts:
 #Names in sidebands' "fails" blocks refer to truth cuts by block name.
 sidebands:
   UpstreamPlastic:
+    variable: *Variable
     fails: [Target3]
     passes:
       Upstream: !Between &USPlastic
         us: *Target2
         ds: *Target3
   DownstreamPlastic:
+    variable: *Variable
     fails: [Target3]
     passes:
       Downstream: !Between &DSPlastic
         us: *Target3
         ds: *Target4
   WrongMaterial:
+    variable: *Variable
     fails: [Iron]
     #And implicitly passes the Target3 truth cut
 
@@ -67,13 +80,23 @@ sidebands:
 #exclusive with regular truth::Cuts.
 backgrounds:
   UpstreamPlastic:
-    Upstream: *USPlastic
+    variable: *Variable
+    passes:
+      Upstream: *USPlastic
   DownstreamPlastic:
-    Downstream: *DSPlastic
+    variable: *Variable
+    passes:
+      Downstream: *DSPlastic
   Lead:
-    IsInLead: !Target3Lead
+    variable: *Variable
+    passes:
+      IsInLead: !Target3Lead
   Carbon:
-    IsInCarbon: !Target3Carbon
+    variable: *Variable
+    passes:
+      IsInCarbon: !Target3Carbon
   Water:
-    IsInWater: !Water
+    variable: *Variable
+    passes:
+      IsInWater: !Water
   #And I get "Other" for free

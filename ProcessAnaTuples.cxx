@@ -18,9 +18,9 @@
 #include "util/Factory.cpp"
 
 //analysis includes
-#include "signal/Signal.h"
-#include "sideband/Sideband.h"
-#include "background/Background.h"
+#include "analyses/signals/Signal.h"
+#include "analyses/sidebands/Sideband.h"
+#include "analyses/backgrounds/Background.h"
 
 //Cuts includes
 #include "cuts/truth/Cut.h"
@@ -129,20 +129,21 @@ int main(const int argc, const char** argv)
     decltype(recoCuts) sidebandCuts;
 
     //TODO: Put these extended setup steps into functions?
+    std::vector<std::unique_ptr<Background>> backgrounds;
+    for(auto background: config["backgrounds"])
+    {
+      const auto& passes = ::loadPlugins<truth::Cut>(background.second["passes"]);
+      backgrounds.emplace_back(new Background(histDir.mkdir(background.first.as<std::string>()), std::move(passes), background.second));
+    }
+
     std::unordered_map<int, std::vector<std::unique_ptr<Sideband>>> cutsToSidebands; //Mapping from truth cuts to sidebands
     for(auto sideband: config["sidebands"])
     {
       const auto& fails = sideband.second["fails"].as<std::vector<std::string>>();
       const auto passes = ::loadPlugins<reco::Cut>(sideband.second["passes"]);
       const auto hashPattern = ::hashCuts(fails, recoCuts, sidebandCuts); //Also transfers relevant cuts from recoCuts to sidebandCuts
-      cutsToSidebands[hashPattern].emplace_back(new Sideband(histDir.mkdir(sideband.first.as<std::string>()), std::move(passes)));
-    }
-
-    std::vector<std::unique_ptr<Background>> backgrounds;
-    for(auto background: config["backgrounds"])
-    {
-      const auto& passes = ::loadPlugins<truth::Cut>(background.second);
-      backgrounds.emplace_back(new Background(histDir.mkdir(background.first.as<std::string>()), std::move(passes)));
+      cutsToSidebands[hashPattern].emplace_back(new Sideband(histDir.mkdir(sideband.first.as<std::string>()), std::move(passes),
+                                                             backgrounds, sideband.second));
     }
 
     //Accumulate POT from each good file
@@ -258,8 +259,8 @@ int main(const int argc, const char** argv)
 
                   if(firstSideband != foundSidebands->end())
                   {
-                    if(!(passedTruth ^ passedAll)) firstSideband->FillSignal(event); //TODO: What's the deal with this line?  Do I just not require any truth cuts at all for sideband background?
-                    else (*foundSideband)->FillBackground(event, foundBackground); //TODO: Make sure backgrounds.end() is the "Other" category
+                    if(!(passedTruth ^ passedAll)) firstSideband->truthSignal(event); //TODO: What's the deal with this line?  Do I just not require any truth cuts at all for sideband background?
+                    else (*foundSideband)->truthBackground(event, foundBackground); //TODO: Make sure backgrounds.end() is the "Other" category
                   }
                   //TODO: foundSideband on the previous line needs to know how to look up a background from foundBackground somehow.
                   //      I guess I can just create the list of backgrounds first?
@@ -312,10 +313,10 @@ int main(const int argc, const char** argv)
 
             for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
             {
-              passedCuts |= sidebandCuts[whichCut](event) << whichCut;
+              passedCuts |= (*sidebandCuts[whichCut])(event) << whichCut;
             }
 
-            if(!(passedCuts ^ passedAll)) signal->FillData(event);
+            if(!(passedCuts ^ passedAll)) signal->data(event);
             else
             {
               const auto foundSidebands = sidebands.find(passedCuts);
@@ -324,7 +325,7 @@ int main(const int argc, const char** argv)
                 const auto firstSideband = std::find_if(foundSidebands->begin(), foundSidebands->end(),
                                                         [&event](const auto sideband)
                                                         { return ::requireAll(sideband->passes, event); });
-                if(firstSideband != foundSidebands->end()) firstSideband->FillData(event);
+                if(firstSideband != foundSidebands->end()) firstSideband->data(event);
               } //If found a sideband and passed all of its reco constraints
             } //If not passed all sideband-related cuts
           } //If passed all cuts not related to sidebands
