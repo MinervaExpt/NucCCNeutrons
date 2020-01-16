@@ -11,7 +11,8 @@
 
 namespace bkg
 {
-  Background::Background(Directory& /*dir*/, cuts_t&& mustPass, const YAML::Node& /*config*/): passes(mustPass)
+  Background::Background(const YAML::Node& /*config*/, util::Directory& /*dir*/, const std::string& name,
+                         cuts_t&& mustPass, std::vector<evt::CVUniverse*>& /*universes*/): passes(std::move(mustPass)), fName(name)
   {
   }
 }

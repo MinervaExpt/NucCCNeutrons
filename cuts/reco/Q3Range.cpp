@@ -7,9 +7,11 @@
 
 namespace reco
 {
-  Q3Range::Q3Range(const YAML::Node& config): fMin(config["min"].as<GeV>(0_GeV)), fMax(config["min"].as<GeV>())
+  Q3Range::Q3Range(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["min"].as<GeV>())
+  {
+  }
 
-  bool passesCut(const CVUniverse& event) const
+  bool Q3Range::passesCut(const evt::CVUniverse& event) const
   {
     return event.GetQ3() > fMin && event.GetQ3() < fMax;
   }

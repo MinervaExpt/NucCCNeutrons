@@ -8,6 +8,9 @@
 //cuts includes
 #include "cuts/truth/targets/TwoSectionTarget.h"
 
+//utility includes
+#include "util/Factory.cpp"
+
 //Register Target5Iron for user selection
 namespace
 {

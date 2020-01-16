@@ -8,6 +8,9 @@
 //cut includes
 #include "cuts/truth/Cut.h"
 
+//util includes
+#include "util/Factory.cpp"
+
 //TODO: Do I need any includes for YAML::Node?
 namespace evt
 {
@@ -16,8 +19,7 @@ namespace evt
 
 namespace truth
 {
-  template <int neutrinoType>  //Actually compares to a typedef from MINERvA's Gaudi
-                               //framework.
+  template <int neutrinoPDG>
   class Helicity: public Cut
   {
     public:
@@ -26,9 +28,9 @@ namespace truth
 
     protected:
       //Your concrete Cut class must override these methods.
-      virtual bool passesCut(const CVUniverse& event) const override
+      virtual bool passesCut(const evt::CVUniverse& event) const override
       {
-        return event.GetTruthHelicity() == neutrinoType;
+        return event.GetTruthNuPDG() == neutrinoPDG;
       }
   };
 }

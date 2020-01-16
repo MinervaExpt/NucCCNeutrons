@@ -8,12 +8,6 @@
 //cut includes
 #include "cuts/truth/Cut.h"
 
-//TODO: Do I need any includes for YAML::Node?
-namespace evt
-{
-  class CVUniverse;
-}
-
 namespace truth
 {
   class MuonMomentum: public Cut
@@ -24,7 +18,7 @@ namespace truth
 
     protected:
       //Your concrete Cut class must override these methods.
-      virtual bool passesCut(const CVUniverse& event) const override;
+      virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
       GeV fMin;

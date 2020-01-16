@@ -5,11 +5,11 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //Event model includes
-#include "event/CVUniverse.h"
+#include "evt/CVUniverse.h"
 
 namespace evt
 {
-  CVUniverse::CVUniverse(const std::string& blobAlg, PlotUtils::ChainWrapper* chw, const double nsigma = 0): DefaultCVUniverse(chw, nsigma), m_blobAlg(blobAlg)
+  CVUniverse::CVUniverse(const std::string& blobAlg, PlotUtils::ChainWrapper* chw, const double nsigma): DefaultCVUniverse(chw, nsigma), m_blobAlg(blobAlg)
   {
   }
 }

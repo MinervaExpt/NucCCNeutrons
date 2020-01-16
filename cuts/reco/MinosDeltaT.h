@@ -25,7 +25,7 @@ namespace reco
 
     protected:
       //Your concrete Cut class must override these methods.
-      virtual bool passesCut(const CVUniverse& event) const override;
+      virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
       ns fMax;

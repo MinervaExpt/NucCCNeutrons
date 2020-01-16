@@ -6,15 +6,18 @@
 //cut includes
 #include "cuts/truth/TrackAngle.h"
 
+//util includes
+#include "util/Factory.cpp"
+
 namespace truth
 {
-  TrackAngle::TrackAngle(const YAML::Node& config): fMax(config["max"].as<GeV>())
+  TrackAngle::TrackAngle(const YAML::Node& config): Cut(config), fMax(config["max"].as<double>())
   {
   }
 
-  bool passesCut(const CVUniverse& event) const
+  bool TrackAngle::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetTruthMuonMomentum4V().theta() > fMax;
+    return event.GetTruthPmu().p().theta() < fMax;
   }
 }
 

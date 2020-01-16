@@ -5,17 +5,20 @@
 //targets includes
 #include "cuts/truth/targets/IsInTarget.h"
 
+//util includes
+#include "util/Factory.cpp"
+
 namespace truth
 {
-  IsInTarget::IsInTarget(const YAML::Node& config): fZMin(config["truth"]["min"].as<double>()),
-                                                    fZMax(config["truth"]["max"].as<double>()),
+  IsInTarget::IsInTarget(const YAML::Node& config): Cut(config),
+                                                    fZMin(config["truth"]["min"].as<double>()),
+                                                    fZMax(config["truth"]["max"].as<double>())
   {
   }
 
   bool IsInTarget::passesCut(const evt::CVUniverse& event) const
   {
     return event.GetTruthVtx().z() > fZMin && event.GetTruthVtx().z() < fZMax;
-  }
   }
 }
 

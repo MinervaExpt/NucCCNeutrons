@@ -15,20 +15,15 @@
 //ROOT includes
 #include "Math/AxisAngle.h"
 
-namespace evt
-{
-  class CVUniverse;
-}
-
 namespace truth
 {
   template <int MaterialZ>
   class TwoSectionTarget: public Cut
   {
     public:
-      TwoSectionTarget(const YAML::Node& /*config*/) = default;
+      TwoSectionTarget(const YAML::Node& config): Cut(config) {}
 
-      virtual TwoSectionTarget() = default;
+      virtual ~TwoSectionTarget() = default;
 
     protected:
       virtual bool passesCut(const evt::CVUniverse& event) const override

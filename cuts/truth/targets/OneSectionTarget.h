@@ -22,42 +22,44 @@ namespace evt
 
 namespace truth
 {
+  namespace detail
+  {
+    //Implementation details to compare to multiple Zs
+    template <int firstZ, int... MaterialZs>
+    struct OR
+    {
+      inline static bool check(const int truthZ)
+      {
+        return (truthZ == firstZ) || OR<MaterialZs...>::check(truthZ);
+      }
+    };
+                                                                       
+    template <int lastZ>
+    struct OR<lastZ>
+    {
+      inline static bool check(const int truthZ)
+      {
+        return truthZ == lastZ;
+      }
+    };
+  }
+
   template <int ...MaterialZs>
   class OneSectionTarget: public Cut
   {
     public:
-      OneSectionTarget(const YAML::Node& /*config*/)
+      OneSectionTarget(const YAML::Node& config): Cut(config)
       {
       }
 
-      virtual OneSectionTarget() = default;
+      virtual ~OneSectionTarget() = default;
 
     protected:
       virtual bool passesCut(const evt::CVUniverse& event) const override
       {
         //TODO: Do I need to handle carbon differently?  I think the
         //      distance cut protects me from scintillator in target 4.
-        return OR<MaterialZs...>::check(event.GetTruthTargetZ());
-      }
-
-    private:
-      //Implementation details to compare to multiple Zs
-      template <int firstZ, int ...MaterialZs>
-      struct OR
-      {
-        inline static bool check(const int truthZ)
-        {
-          return (truthZ == firstZ) || OR<MaterialZs...>::check(truthZ);
-        }
-      };
-
-      template <int lastZ>
-      struct OR
-      {
-        inline static bool check(const int truthZ)
-        {
-          return truthZ == lastZ;
-        }
+        return detail::OR<MaterialZs...>::check(event.GetTruthTargetZ());
       }
   };
 }

@@ -7,12 +7,13 @@
 
 namespace reco
 {
-  nTracks::nTracks(const YAML::Node& config): fMin(config["min"].as<long int>(-1l)),
-                                              fMax(config["max"].as<long int>(std::numeric_limits<decltype(fMax)>::max())
+  nTracks::nTracks(const YAML::Node& config): Cut(config),
+                                              fMin(config["min"].as<long int>(-1l)),
+                                              fMax(config["max"].as<long int>(std::numeric_limits<decltype(fMax)>::max()))
   {
   }
 
-  bool passesCut(const CVUniverse& event) const
+  bool nTracks::passesCut(const evt::CVUniverse& event) const
   {
     return event.GetNTracks() > fMin && event.GetNTracks() < fMax;
   }

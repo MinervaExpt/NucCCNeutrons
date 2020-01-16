@@ -5,11 +5,16 @@
 //cut includes
 #include "cuts/truth/Q3Range.h"
 
+//util includes
+#include "util/Factory.cpp"
+
 namespace truth
 {
-  Q3Range::Q3Range(const YAML::Node& config): fMin(config["min"].as<GeV>(0_GeV)), fMax(config["min"].as<GeV>())
+  Q3Range::Q3Range(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["min"].as<GeV>())
+  {
+  }
 
-  bool passesCut(const CVUniverse& event) const
+  bool Q3Range::passesCut(const evt::CVUniverse& event) const
   {
     return event.GetTruthQ3() > fMin && event.GetTruthQ3() < fMax;
   }

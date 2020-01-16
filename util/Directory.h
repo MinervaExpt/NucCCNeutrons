@@ -12,7 +12,11 @@
 #ifndef UTIL_DIRECTORY_H
 #define UTIL_DIRECTORY_H
 
-class TFile;
+//c++ includes
+#include <string>
+
+//ROOT includes
+#include "TFile.h"
 
 namespace util  
 {
@@ -31,22 +35,26 @@ namespace util
       
       //Implementation of TFileDirectory-like contract.  
       template <class TOBJECT, class ...ARGS>
-      TOBJECT* make(ARGS... args)
+      TOBJECT* make(const std::string& name, const std::string& title, ARGS... args)
       {
         //TODO: Figure out which parameter(s) will set obj's name 
         //      without actually creating an object with that name.  
         //      This would avoid some temporary name conflicts that 
         //      would occur with a "real" TDirectory.  
-        auto obj = fBaseDir->template make<TOBJECT>(args...);
-        const std::string oldName = obj->GetName();  
-        obj->SetName((fName+oldName).c_str());
+        sentry dirSentry;
+        fBaseDir->cd();
+        auto obj = new TOBJECT((fName + name).c_str(), title.c_str(), args...);
         return obj;
       }
 
       template <class TOBJECT, class ...ARGS>
       TOBJECT* makeAndRegister(const std::string& name, const std::string& title, ARGS... args)
       {
-        return fBaseDir->template makeAndRegister<TOBJECT>(fName+name, title, args...);
+        sentry dirSentry;
+        fBaseDir->cd();
+        auto obj = new TOBJECT(fName+name, title.c_str(), args...);
+        obj->SetDirectory(fBaseDir);
+        return obj;
       }
 
       Directory mkdir(const std::string& name);
@@ -72,6 +80,15 @@ namespace util
                                              //
                                              //Worrying so much about the storage "policy" for 
                                              //what is probably just a C-string is serious overkill.  
+
+      struct sentry
+      {
+        sentry(): fOldPwd(gDirectory) {}
+        ~sentry() { fOldPwd->cd(); }
+
+        private:
+          TDirectory* fOldPwd;
+      };
   };
 }
 

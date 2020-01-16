@@ -14,6 +14,7 @@
 
 //ROOT includes
 #include "Math/AxisAngle.h"
+#include "Math/Vector3D.h"
 
 namespace evt
 {
@@ -22,60 +23,63 @@ namespace evt
 
 namespace reco
 {
+  namespace detail
+  {
+    //Implementation details to reuse code
+    //Case: Iron
+    template <int Z>
+    struct impl
+    {
+      inline static bool check(const vertex_t& vertex, const ROOT::Math::AxisAngle& /*rot*/, const mm /*mmToDivide*/)
+      {
+        return vertex.x() < 0_mm;
+      }
+    };
+
+    //Special handling for Carbon
+    template <>
+    struct impl<6>
+    {
+      inline static bool check(const vertex_t& vertex, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
+      {
+        const mm local = (rot * (vertex.p().in<mm>())).y();
+        return (local - mmToDivide) > 0_mm;
+      }
+    };
+
+    //Special handling for Lead
+    template <>
+    struct impl<82>
+    {
+      inline static bool check(const vertex_t& vertex, const ROOT::Math::AxisAngle& /*rot*/, const mm /*mmToDivide*/)
+      {
+        return vertex.x() > 0_mm;
+      }
+    };
+  }
+
   template <int MaterialZ>
   class ThreeSectionTarget: public Cut
   {
     private:
-      constexpr auto rotationAngle = M_PI/6.;
-      constexpr auto mmToDivide = 0_mm;
+      static constexpr auto rotationAngle = M_PI/6.;
+      static constexpr auto mmToDivide = 0_mm;
 
     public:
-      ThreeSectionTarget(const YAML::Node& /*config*/): fRotation(ROOT::Math::XYZVector(0., 0., 1.), rotationAngle)
+      ThreeSectionTarget(const YAML::Node& config): Cut(config), fRotation(ROOT::Math::XYZVector(0., 0., 1.), rotationAngle)
       {
       }
 
-      virtual ThreeSectionTarget() = default;
+      virtual ~ThreeSectionTarget() = default;
 
     protected:
       virtual bool passesCut(const evt::CVUniverse& event) const override
       {
-        impl<MaterialZ>::check(event, fRotation, mmToDivision);
+        return detail::impl<MaterialZ>::check(event.GetVtx(), fRotation, mmToDivide);
       }
 
     private:
       const ROOT::Math::AxisAngle fRotation;
-
-      //Implementation details to reuse code
-      //Case: Iron
-      template <int Z>
-      struct impl
-      {
-        inline static bool check(const evt::CVUniverse::vertex_t& vertex, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
-        {
-          return vtx.x() < 0;
-        }
-      };
-
-      //Special handling for Carbon
-      template <>
-      struct impl<6>
-      {
-        inline static bool check(const evt::CVUniverse::vertex_t& vertex, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
-        {
-          const auto local = fRotation * event.GetVtx();
-          return (local.y() - mmToDivide) > 0;
-        }
-      };
-
-      //Special handling for Lead
-      template <int Z>
-      struct impl<82>
-      {
-        inline static bool check(const evt::CVUniverse::vertex_t& vertex, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
-        {
-          return vtx.x() > 0;
-        }
-      };
   };
 }
 

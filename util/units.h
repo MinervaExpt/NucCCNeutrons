@@ -2,8 +2,11 @@
 //Brief: Define base working units for this analysis.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+//util includes
+#include "util/vector.h"
+
 //BaseUnits includes
-#include "core/units.h"
+#include "units/units.h"
 
 //yaml-cpp includes
 #include "yaml-cpp/yaml.h"
@@ -16,20 +19,20 @@
 #define ADD_YAML_TO_UNIT(UNIT)\
   namespace YAML\
   {\
+    template <>\
     struct convert<UNIT>\
     {\
       static Node encode(const UNIT& rhs)\
       {\
-        result = UNIT.in<UNIT>();\
+        Node result;\
+        result = rhs.in<UNIT>();\
         result.SetTag(#UNIT);\
+        return result;\
       }\
-    };\
 \
-    struct decode<UNIT>\
-    {\
-      static UNIT decode(const Node& rhs, UNIT& value)\
+      static bool decode(const Node& node, UNIT& value)\
       {\
-        if(!node.isScalar()) return false;\
+        if(!node.IsScalar()) return false;\
 \
         /*Require that tag matches UNIT's name*/\
         if(node.Tag() != std::string(#UNIT)) return false;\
@@ -40,12 +43,19 @@
     };\
   }\
 
+#define REGISTER_UNIT_NAME(UNIT)\
+  template <>\
+  struct unit_attributes<UNIT>\
+  {\
+    constexpr auto name = #UNIT;\
+  };
+
 #define DECLARE_UNIT_WITH_YAML(UNIT)\
   DECLARE_UNIT(UNIT)\
   ADD_YAML_TO_UNIT(UNIT)\
 
-#define DELCARE_RELATED_UNIT_WITH_YAML(NEW_UNIT BASE_UNIT NUM DENOM)\
-  DECLARE_RELATED_UNIT(NEW_UNIT BASE_UNIT NUM DENOM)\
+#define DELCARE_RELATED_UNIT_WITH_YAML(NEW_UNIT, BASE_UNIT, NUM, DENOM)\
+  DECLARE_RELATED_UNIT(NEW_UNIT, BASE_UNIT, NUM, DENOM)\
   ADD_YAML_TO_UNIT(NEW_UNIT)
 
 //Define base units using my new macros
@@ -61,8 +71,12 @@ DECLARE_UNIT_WITH_YAML(degrees)
 
 DECLARE_UNIT_WITH_YAML(events) //Base events on double so I can reweight
 
-using vertex_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<mm>>;
-using momentum_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<MeV>>;  //Dan's pretty sure truth lepton momentum is in MeV.  This matches the NS Framework.
-//using syst_momentum_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<MeV>>; //The New Systematics Framework uses MeV for momentum
+//TODO: ROOT::Math::LorentzVector::mass2() returns just SCALAR which does not work with my unit library.
+//      Write some wrapper over LorentzVector?  For now, I'm providing my own bare-bones Lorentz vector class.
+//using vertex_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<mm>>;
+//using momentum_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<MeV>>;  //Dan's pretty sure truth lepton momentum is in MeV.  This matches the NS Framework.
+
+using vertex_t = units::LorentzVector<mm>;
+using momentum_t = units::LorentzVector<MeV>;
 
 #endif //NEUTRON_UNITS_H

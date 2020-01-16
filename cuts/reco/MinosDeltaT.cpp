@@ -7,13 +7,13 @@
 
 namespace reco
 {
-  MinosDeltaT::MinosDeltaT(const YAML::Node& config): fMax(config["max"].as<GeV>())
+  MinosDeltaT::MinosDeltaT(const YAML::Node& config): Cut(config), fMax(config["max"].as<ns>())
   {
   }
 
-  bool passesCut(const CVUniverse& event) const
+  bool MinosDeltaT::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetMinosDeltaT() > fMax;
+    return event.GetMINOSTrackDeltaT() < fMax;
   }
 }
 

@@ -5,6 +5,9 @@
 #ifndef TRUTH_TARGET2IRON_H
 #define TRUTH_TARGET2IRON_H
 
+//utility includes
+#include "util/Factory.cpp"
+
 //cuts includes
 #include "cuts/truth/targets/TwoSectionTarget.h"
 

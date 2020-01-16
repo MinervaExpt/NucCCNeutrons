@@ -25,12 +25,12 @@ namespace reco
   class OneSectionTarget: public Cut
   {
     public:
-      OneSectionTarget(const YAML::Node& /*config*/) = default;
+      OneSectionTarget(const YAML::Node& config);
 
-      virtual OneSectionTarget() = default;
+      virtual ~OneSectionTarget() = default;
 
     protected:
-      virtual bool isReco(const evt::CVUniverse& event) const override;
+      virtual bool passesCut(const evt::CVUniverse& event) const override;
   };
 }
 

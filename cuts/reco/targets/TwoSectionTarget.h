@@ -14,6 +14,7 @@
 
 //ROOT includes
 #include "Math/AxisAngle.h"
+#include "Math/Vector3D.h"
 
 namespace evt
 {
@@ -22,44 +23,47 @@ namespace evt
 
 namespace reco
 {
+  namespace detail
+  {
+    //Implementation details to make material decision at compile-time
+    //Base case for top material
+    template <bool isTop>
+    struct impl
+    {
+      inline static bool check(const mm distToDivide) { return distToDivide > 0_mm; }
+    };
+                                                                                   
+    //Special case for bottom material
+    template <>
+    struct impl<false>
+    {
+      inline static bool check(const mm distToDivide) { return distToDivide < 0_mm; }
+    };
+  }
+
   template <bool isTop, int rotationSign>
   class TwoSectionTarget: public Cut
   {
     private:
-      constexpr auto rotationAngle = M_PI/3.;
-      constexpr auto mmToDivide = 205_mm;
+      static constexpr auto rotationAngle = M_PI/3.;
+      static constexpr auto mmToDivide = 205_mm;
 
     public:
-      TwoSectionTarget(const YAML::Node& /*config*/): fRotation(ROOT::Math::XYZVector(0., 0., rotationSign), rotationAngle)
+      TwoSectionTarget(const YAML::Node& config): Cut(config), fRotation(ROOT::Math::XYZVector(0., 0., rotationSign), rotationAngle)
       {
       }
 
-      virtual TwoSectionTarget() = default;
+      virtual ~TwoSectionTarget() = default;
 
     protected:
       virtual bool passesCut(const evt::CVUniverse& event) const override
       {
-        const auto distToDivide = fRotation * event.GetVtx() - mmToDivide;
-        return impl<isTop>::check(distToDivide);
+        const mm distToCenter = (fRotation * event.GetVtx().p().in<mm>()).y();
+        return detail::impl<isTop>::check(distToCenter - mmToDivide);
       }
 
     private:
       const ROOT::Math::AxisAngle fRotation;
-
-      //Implementation details to make material decision at compile-time
-      //Base case for top material
-      template <bool isTop>
-      struct impl
-      {
-        inline static bool check(const mm distToDivide) { return distToDivide > 0; }
-      };
-
-      //Special case for bottom material
-      template <>
-      struct impl<false>
-      {
-        inline static bool check(const mm distToDivide) { return distToDivide < 0; }
-      };
   };
 }
 

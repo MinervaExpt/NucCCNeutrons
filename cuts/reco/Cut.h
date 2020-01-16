@@ -7,11 +7,17 @@
 #ifndef RECO_CUT_H
 #define RECO_CUT_H
 
-//TODO: Do I need any includes for YAML::Node?
-namespace evt
-{
-  class CVUniverse;
-}
+//N.B.: Normally, I'd use forward declarations as aggressively as possible here.
+//      But putting the includes here saves me A LOT of typing.
+
+//yaml-cpp include for configuration
+#include "yaml-cpp/yaml.h"
+
+//evt includes
+#include "evt/CVUniverse.h"
+
+//util includes
+#include "util/Factory.cpp"
 
 namespace reco
 {
@@ -20,7 +26,7 @@ namespace reco
   class Cut
   {
     public:
-      Cut(const YAML::Node& /*config*/) = default;
+      Cut(const YAML::Node& /*config*/) {}
       virtual ~Cut() = default;
       
       //Public interface.  If you're writing a new Cut, look
@@ -28,11 +34,11 @@ namespace reco
       //
       //I designed Cut this way so I have a hook to keep
       //statistics for a cut table later.
-      bool operator ()(const CVUniverse& event);
+      bool operator ()(const evt::CVUniverse& event);
 
     protected:
       //Your concrete Cut class must override these methods.
-      virtual bool passesCut(const CVUniverse& event) const = 0;
+      virtual bool passesCut(const evt::CVUniverse& event) const = 0;
   };
 }
 

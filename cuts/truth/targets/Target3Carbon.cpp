@@ -5,6 +5,9 @@
 #ifndef TRUTH_TARGET3CARBON_H
 #define TRUTH_TARGET3CARBON_H
 
+//utility includes
+#include "util/Factory.cpp"
+
 //cuts includes
 #include "cuts/truth/targets/ThreeSectionTarget.h"
 

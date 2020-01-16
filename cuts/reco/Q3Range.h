@@ -8,12 +8,6 @@
 //cut includes
 #include "cuts/reco/Cut.h"
 
-//TODO: Do I need any includes for YAML::Node?
-namespace evt
-{
-  class CVUniverse;
-}
-
 namespace reco
 {
   //TODO: This could easily be a class template on CVUniverse
@@ -26,7 +20,7 @@ namespace reco
 
     protected:
       //Your concrete Cut class must override these methods.
-      virtual bool passesCut(const CVUniverse& event) const override;
+      virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
       GeV fMin;

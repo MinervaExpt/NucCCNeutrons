@@ -43,7 +43,11 @@ namespace evt
   {
     public:
       CVUniverse(const std::string& blobAlg, PlotUtils::ChainWrapper* chw, const double nsigma = 0); //TODO: Get away from ChainWrapper?
-      virtual ~CVUnvierse() = default;
+      virtual ~CVUniverse() = default;
+
+      //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
+      //The user is responsible for deleting m_chw as in its normal usage.
+      void SetTree(PlotUtils::ChainWrapper* chw) { m_chw = chw; }
 
       //TODO: Some of these branches could be moved to a .cpp file.  Then, changing branch names would
       //      only force this file's unit to recompile.
@@ -53,23 +57,25 @@ namespace evt
       //      basic values I can find instead for the NS Framework.
       //Reco branches
       virtual GeV GetQ3() const { return GetDouble("CCNeutrons_q3"); }
-      virtual vertex_t GetVtx() const { return vertex_t(GetArray<double>("vtx")); }
+      virtual vertex_t GetVtx() const { return vertex_t(GetVec<double>("vtx")); }
       virtual ns GetMINOSTrackDeltaT() const { return GetDouble("minos_minerva_track_deltaT"); }
-      virtual size_t GetNTracks() const { return GetInt("n_tracks"); }
+      virtual int GetNTracks() const { return GetInt("n_tracks"); }
       virtual int GetHelicity() const { return GetInt("CCNeutrons_nuHelicity"); }
+      virtual momentum_t GetMuonP() const { return GetMuon4V(); }
 
       //Truth branches
       virtual GeV GetTruthQ3() const { return GetDouble("CCNeutrons_q3"); }
-      virtual vertex_t GetTruthVtx() const { return vertex_t(GetArray<double>("mc_vtx")); }
+      virtual vertex_t GetTruthVtx() const { return vertex_t(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
-      virtual momentum_t GetTruthPmu() const { return momentum_t(GetArray<double>("mc_primFSLepton")); }
+      virtual momentum_t GetTruthPmu() const { return momentum_t(GetVec<double>("mc_primFSLepton")); }
+      virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
 
       virtual events GetWeight() const
       {
         //Taken from Ben's code at https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/Personal/bmesserl/SystematicsFramework/CVUniverse.h
         const MeV Enu = GetDouble("mc_incomingE");
         const int nu_type = GetInt("mc_incoming");
-        const double fluxAndCV = GetFluxAndCVWeight(Enu, nu_type);
+        const double fluxAndCV = GetFluxAndCVWeight(Enu.in<MeV>(), nu_type);
         return fluxAndCV * GetGenieWeight(); //TODO: Other weights?
       }
 
@@ -102,7 +108,7 @@ namespace evt
       fs("binding_energy", GeV)
       fs("capture_energy", GeV)
       fs("edep_before_birks", GeV)
-      fs("passive_loss", GeV)
+      fs("passive_loss", GeV)*/
 
       //      What I would do without std::make_index_sequence<>: (thanks to https://stackoverflow.com/questions/49669958/details-of-stdmake-index-sequence-and-stdindex-sequence)
       //      template <size_t... which>
@@ -150,7 +156,7 @@ namespace evt
         auto cache = std::make_tuple(FUNCTIONS()...);
 
         return get_impl(cache, std::make_index_sequence<sizeof...(FUNCTIONS)>{});
-      }*/
+      }
 
     protected:
       //Name of the blob algorithm to use
@@ -159,10 +165,11 @@ namespace evt
     //Implementation details that not even my custom universes should ever see.
     private:
       //"Abandon all hope ye who enter here."
-      template <class CAND, class TUPLE, class ...INDICES>
+      template <class CAND, class TUPLE, size_t ...INDICES>
       std::vector<CAND> Get_impl(const TUPLE tuple, std::index_sequence<INDICES...> /*indices*/)
       {
-        std::vector<CAND> result(std::get<0>(tuple).size());
+        const size_t nCands = std::get<0>(tuple).size();
+        std::vector<CAND> result(nCands);
 
         for(size_t whichCand = 0; whichCand < nCands; ++whichCand) result[whichCand] = {std::get<INDICES>(tuple)...};
 

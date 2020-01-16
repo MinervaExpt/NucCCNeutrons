@@ -8,7 +8,8 @@
 
 namespace reco
 {
-  IsInTarget::IsInTarget(const YAML::Node& config): fZMin(config["reco"]["min"].as<mm>()),
+  IsInTarget::IsInTarget(const YAML::Node& config): Cut(config),
+                                                    fZMin(config["reco"]["min"].as<mm>()),
                                                     fZMax(config["reco"]["max"].as<mm>())
   {
   }

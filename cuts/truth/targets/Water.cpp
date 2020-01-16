@@ -5,6 +5,9 @@
 #ifndef TRUTH_WATER_H
 #define TRUTH_WATER_H
 
+//utility includes
+#include "util/Factory.cpp"
+
 //cuts includes
 #include "cuts/truth/targets/OneSectionTarget.h"
 

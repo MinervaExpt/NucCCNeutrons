@@ -10,14 +10,46 @@
 #define TRUTH_THREESECTIONTARGET_H
 
 //cut includes
-#include "cut/Cut.h"
+#include "cuts/truth/Cut.h"
 
 //ROOT includes
 #include "Math/AxisAngle.h"
 
+//utilities includes
+#include "util/units.h"
+
+//ROOT includes for rotations
+#include "Math/Vector3D.h"
+
 namespace evt
 {
   class CVUniverse;
+}
+
+//metaprogramming details that have to go at namespace scope :(
+namespace
+{
+  //Implementation details to reuse code
+  //Case: Iron and lead
+  template <int Z>
+  struct Impl
+  {
+    inline static bool check(const evt::CVUniverse& event, const ROOT::Math::AxisAngle& /*rot*/, const mm /*mmToDivide*/)
+    {
+      return event.GetTruthTargetZ() == Z;
+    }
+  };
+
+  //Special handling for Carbon
+  template <>
+  struct Impl<6l>
+  {
+    inline static bool check(const evt::CVUniverse& event, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
+    {
+      const auto local = rot * (event.GetTruthVtx().p().in<mm>());
+      return (event.GetTruthTargetZ() == 6) && (mm(local.y()) - mmToDivide) > 0_mm;
+    }
+  };
 }
 
 namespace truth
@@ -26,44 +58,23 @@ namespace truth
   class ThreeSectionTarget: public Cut
   {
     private:
-      constexpr auto rotationAngle = M_PI/6.;
-      constexpr auto mmToDivide = 0_mm;
+      static constexpr auto rotationAngle = M_PI/6.;
+      static constexpr auto mmToDivide = 0_mm;
 
     public:
-      ThreeSectionTarget(const YAML::Node& /*config*/): fRotation(ROOT::Math::XYZVector(0., 0., 1.), rotationAngle)
+      ThreeSectionTarget(const YAML::Node& config): Cut(config), fRotation(ROOT::Math::XYZVector(0., 0., 1.), rotationAngle)
       {
       }
 
-      virtual ThreeSectionTarget() = default;
+      virtual ~ThreeSectionTarget() = default;
 
     protected:
+      ROOT::Math::AxisAngle fRotation;
+
       virtual bool passesCut(const evt::CVUniverse& event) const override
       {
-        Impl<MaterialZ>::check(event, fRotation, mmToDivision);
+        return ::Impl<MaterialZ>::check(event, fRotation, mmToDivide);
       }
-
-    private:
-      //Implementation details to reuse code
-      //Case: Iron and lead
-      template <int Z>
-      struct Impl
-      {
-        inline static bool check(const evt::CVUniverse& event, const ROOT::Math::AxisAngle& /*rot*/, const mm /*mmToDivide*/)
-        {
-          return return event.GetTruthTargetZ() == MaterialZ;
-        }
-      };
-
-      //Special handling for Carbon
-      template <>
-      struct Impl<6>
-      {
-        inline static bool check(const evt::CVUniverse& event, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
-        {
-          const auto local = rot * event.GetTruthVtx();
-          return (event.GetTruthTargetZ() == 6) && (local.y() - mmToDivide) > 0;
-        }
-      };
   };
 }
 

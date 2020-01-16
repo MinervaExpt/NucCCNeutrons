@@ -10,6 +10,16 @@
 #include <vector>
 #include <memory>
 
+namespace YAML
+{
+  class Node;
+}
+
+namespace util
+{
+  class Directory;
+}
+
 namespace evt
 {
   class CVUniverse;
@@ -29,12 +39,12 @@ namespace side
 {
   class Sideband
   {
-    protected:
-      using cuts_t = std::vector<std::unique_ptr<reco::Cut>>;
-      using backgrounds_t = std::vector<std::unique_ptr<Background>>;
-
     public:
-      Sideband(util::Directory& /*dir*/, cuts_t&& mustPass, const backgrounds_t& /*backgrounds*/, const YAML::Node& /*config*/);
+      using cuts_t = std::vector<std::unique_ptr<reco::Cut>>;
+      using background_t = std::unique_ptr<bkg::Background>;
+
+      Sideband(const YAML::Node& /*config*/, util::Directory& /*dir*/, cuts_t&& mustPass,
+               const std::vector<background_t>& /*backgrounds*/, std::vector<evt::CVUniverse*>& universes);
       virtual ~Sideband() = default;
 
       //In addition to the cuts that an event fails to get into
@@ -44,9 +54,9 @@ namespace side
 
       //The event loop will call these interfaces with events
       //that pass appropriate cuts.
-      virtual void data(const CVUniverse& event) = 0;
-      virtual void truthSignal(const CVUniverse& event) = 0;
-      virtual void truthBackground(const CVUnvierse& event, const backgrounds_t::iterator background) = 0;
+      virtual void data(const evt::CVUniverse& event) = 0;
+      virtual void truthSignal(const evt::CVUniverse& event) = 0;
+      virtual void truthBackground(const evt::CVUniverse& event, const background_t& background) = 0;
   };
 }
 

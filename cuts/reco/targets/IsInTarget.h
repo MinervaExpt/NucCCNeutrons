@@ -7,7 +7,7 @@
 #define RECO_ISINTARGET_H
 
 //units includes
-#include "units/NucCCNeutronsUnits.h"
+#include "util/units.h"
 
 //cut includes
 #include "cuts/reco/Cut.h"
@@ -21,7 +21,7 @@ namespace reco
       virtual ~IsInTarget() = default;
 
     protected:
-      virtual bool passesCut(const CVUniverse& event) const override;
+      virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
       const mm fZMin;

@@ -48,17 +48,6 @@ namespace
   //How often I print out entry number when in debug mode
   constexpr auto printFreq = 1000ul;
 
-  template <class CUT>
-  std::vector<std::unique_ptr<CUT>> loadPlugins(const YAML::Node& config)
-  {
-    std::vector<std::unique_ptr<CUT>> cuts;
-    auto& factory = plgn::Factory<CUT>::instance();
-
-    for(auto block: config) cuts.emplace_back(block.first, factory.Get(block.second)); //TODO: block.first needs to be passed to factory or else I need to associate names to CUTS some other way.
-
-    return cuts;
-  }
-
   int hashCuts(const std::vector<std::string> cutNames, std::vector<reco::Cut>& allCuts, std::vector<reco::Cut>& sidebandCuts)
   {
     uint64_t result = 0x1 << cuts.size() - 1;
@@ -94,6 +83,12 @@ namespace
                          return (*cut)(event);
                        });
   }
+
+  std::vector<evt::CVUniverse> getSystematics(ChainWrapper* chw, const bool /*isMC*/)
+  {
+    //TODO: Get centralized systematics if !isMC
+    return evt::CVUniverse(chw);
+  }
 }
 
 int main(const int argc, const char** argv)
@@ -120,30 +115,36 @@ int main(const int argc, const char** argv)
     TFile histFile((std::string(argv[0]) + "_" + (isThisJobMC?"MC":"Data")).c_str(), "CREATE");
     util::Directory histDir(histFile);
 
+    //Decide which systematic universes to process, but delay setting the tree to
+    //process until later.
+    //TODO: Can't we just agree to use std::unique_ptr<>s instead?  Now, I've got
+    //      to remember to delete these.
+    std::vector<evt::CVUniverse*> universes = ::getSystematics(nullptr, isThisJobMC);
+
     //Set up Signal
-    std::unique_ptr<Signal> signal(histDir.mkdir(options["signal"]["name"].as<std::string>()), options["signal"]);
+    std::unique_ptr<Signal> signal(options["signal"], histDir.mkdir(options["signal"]["name"].as<std::string>()), universes);
 
     //Set up cuts, sidebands, and backgrounds
-    auto truthCuts = ::loadPlugins<TruthCut>(options["cuts"]["truth"]);
-    auto recoCuts = ::loadPlugins<RecoCut>(options["cuts"]["reco"]);
+    auto truthCuts = plgn::loadPlugins<TruthCut>(options["cuts"]["truth"]);
+    auto recoCuts = plgn::loadPlugins<RecoCut>(options["cuts"]["reco"]);
     decltype(recoCuts) sidebandCuts;
 
     //TODO: Put these extended setup steps into functions?
     std::vector<std::unique_ptr<Background>> backgrounds;
     for(auto background: config["backgrounds"])
     {
-      const auto& passes = ::loadPlugins<truth::Cut>(background.second["passes"]);
-      backgrounds.emplace_back(new Background(histDir.mkdir(background.first.as<std::string>()), std::move(passes), background.second));
+      const auto& passes = plgn::loadPlugins<truth::Cut>(background.second["passes"]);
+      backgrounds.emplace_back(new Background(background.second, histDir.mkdir(background.first.as<std::string>()), background.first.as<std::string>(), std::move(passes), universes));
     }
 
     std::unordered_map<int, std::vector<std::unique_ptr<Sideband>>> cutsToSidebands; //Mapping from truth cuts to sidebands
     for(auto sideband: config["sidebands"])
     {
       const auto& fails = sideband.second["fails"].as<std::vector<std::string>>();
-      const auto passes = ::loadPlugins<reco::Cut>(sideband.second["passes"]);
+      const auto passes = plgn::loadPlugins<reco::Cut>(sideband.second["passes"]);
       const auto hashPattern = ::hashCuts(fails, recoCuts, sidebandCuts); //Also transfers relevant cuts from recoCuts to sidebandCuts
-      cutsToSidebands[hashPattern].emplace_back(new Sideband(histDir.mkdir(sideband.first.as<std::string>()), std::move(passes),
-                                                             backgrounds, sideband.second));
+      cutsToSidebands[hashPattern].emplace_back(new Sideband(sideband.second, histDir.mkdir(sideband.first.as<std::string>()), std::move(passes),
+                                                             backgrounds, universes));
     }
 
     //Accumulate POT from each good file
@@ -217,7 +218,7 @@ int main(const int argc, const char** argv)
 
         //MC loop
         const size_t nMCEntries = anaTuple.GetEntries();
-        std::vector<evt::CVUniverse> mcUniverses = {evt::CVUniverse(blobAlg, &anaTuple)}; //TODO: Set up full list of systematic universes
+        for(auto univ: universes) unit->setTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)
         {
@@ -274,7 +275,7 @@ int main(const int argc, const char** argv)
 
         //Truth loop
         const size_t nTruthEntires = truthTree.GetEntries();
-        std::vector<evt::CVUniverse> truthUniverses = {evt::CVUniverse(blobAlg, &truthTree)}; //TODO: Set up fill list of systematic universes
+        for(auto univ: universes) unit->setTree(&truthTree)
 
         for(size_t entry = 0; entry < nEntries; ++entry)
         {
@@ -297,7 +298,7 @@ int main(const int argc, const char** argv)
       {
         //Data loop
         const size_t nEntries = anaTuple->GetEntries();
-        evt::CVUniverse event(blobAlg, anaTuple);
+        for(auto univ: universes) unit->setTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)
         {

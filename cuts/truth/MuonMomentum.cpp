@@ -5,15 +5,18 @@
 //cut includes
 #include "cuts/truth/MuonMomentum.h"
 
+//util includes
+#include "util/Factory.cpp"
+
 namespace truth
 {
-  MuonMomentum::MuonMomentum(const YAML::Node& config): fMin(config["min"].as<GeV>())
+  MuonMomentum::MuonMomentum(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>())
   {
   }
 
-  bool passesCut(const CVUniverse& event) const
+  bool MuonMomentum::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetTruthMuonMomentum4V() > fMin;
+    return event.GetTruthPmu().p().mag() > fMin;
   }
 }
 

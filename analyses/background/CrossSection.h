@@ -6,6 +6,14 @@
 #ifndef BKG_CROSSECTION_H
 #define BKG_CROSSECTION_H
 
+//evt includes
+#include "evt/CVUniverse.h"
+
+//util includes
+#include "util/units.h"
+#include "util/WithUnits.h"
+#include "util/Directory.h"
+
 namespace bkg
 {
   //A VARIABLE shall have:
@@ -16,25 +24,27 @@ namespace bkg
   template <class VARIABLE>
   class CrossSection: public Background
   {
-    //Sanity checks on VARIABLE
-    using UNIT = decltype(fVar.reco(std::declval<evt::CVUniverse>()));
-    static_assert(std::is_same<UNIT, decltype(fVar.truth(std::declval<evt::CVUniverse>()))>::value,
-                  "Reco and truth variable calculations must be in the same units!");
+    private:
+      //Sanity checks on VARIABLE
+      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::CVUniverse>()));
+      static_assert(std::is_same<UNIT, decltype(std::declval<VARIABLE>().truth(std::declval<evt::CVUniverse>()))>::value,
+                    "Reco and truth variable calculations must be in the same units!");
 
-    using HIST = HistWrapper<WithUnits<MnvH1D, UNIT, events>>;
+      using HIST = units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, UNIT, events>;
 
     public:
-      CrossSection(Directory& dir, cuts_t&& mustPass, const YAML::Node& config): Background(dir, mustPass, config),
-                                                                                 fVar(config["variable"])
+      CrossSection(const YAML::Node& config, util::Directory& dir, const std::string& name, cuts_t&& mustPass,
+                   std::vector<evt::CVUniverse*>& universes): Background(config, dir, name, std::move(mustPass), universes),
+                                                              fVar(config["variable"])
       {
         const auto binning = config["binning"].as<std::vector<double>>(); //TODO: Upgrade WithUnits<> to check UNIT on bins?
-        fBackground = dir.make<HIST>("Background", ("Background;Reco " + fVar.name() + ";entries").c_str(),
-                                     binning.size() - 1, binning.data());
+        fBackground.reset(dir.make<HIST>("Background", ("Background;Reco " + fVar.name() + ";entries").c_str(),
+                                         binning, universes));
       }
 
       virtual void Fill(const evt::CVUniverse& event) override
       {
-        fBackground.univHist(&event).Fill(fVar.reco(event));
+        fBackground->Fill(&event, fVar.reco(event));
       }
 
     private:
@@ -42,7 +52,7 @@ namespace bkg
 
       //This histogram will be used with the result of a sideband fit(s),
       //so it has to be in reco variables like the sideband fits.
-      HIST fBackground;
+      std::unique_ptr<HIST> fBackground;
   };
 }
 

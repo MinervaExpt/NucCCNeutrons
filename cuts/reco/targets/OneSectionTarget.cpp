@@ -14,7 +14,11 @@
 
 namespace reco
 {
-  bool OneSectionTarget::passesCut(const evt::CVUniverse& event) const
+  OneSectionTarget::OneSectionTarget(const YAML::Node& config): Cut(config)
+  {
+  }
+
+  bool OneSectionTarget::passesCut(const evt::CVUniverse& /*event*/) const
   {
     return true;
   }
@@ -22,7 +26,7 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::OneSectionTarget> MainAnalysis_reg("Target4Carbon");
+  static plgn::Registrar<reco::Cut, reco::OneSectionTarget> Target4Reco_reg("Target4Carbon");
 
-  static plgn::Registrar<reco::Cut, reco::OneSectionTarget> MainAnalysis_reg("Water");
+  static plgn::Registrar<reco::Cut, reco::OneSectionTarget> WaterReco_reg("Water");
 }

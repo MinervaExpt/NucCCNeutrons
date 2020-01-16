@@ -11,7 +11,7 @@
 //Register Target2Lead for user selection
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::TwoSectionTarget<true, 82, 1>> MainAnalysis_reg("Target2Lead");
+  static plgn::Registrar<reco::Cut, reco::TwoSectionTarget<true, 1>> MainAnalysis_reg("Target2Lead");
 }
 
 #endif //RECO_TARGET2LEAD_H

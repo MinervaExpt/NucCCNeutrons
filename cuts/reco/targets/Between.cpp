@@ -8,7 +8,8 @@
 
 namespace reco
 {
-  Between::Between(const YAML::Node& config): fZMin(config["us"]["reco"]["max"].as<mm>()),
+  Between::Between(const YAML::Node& config): Cut(config),
+                                              fZMin(config["us"]["reco"]["max"].as<mm>()),
                                               fZMax(config["ds"]["reco"]["min"].as<mm>())
   {
   }

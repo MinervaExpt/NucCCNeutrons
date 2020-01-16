@@ -6,9 +6,17 @@
 #ifndef BKG_BACKGROUND_H
 #define BKG_BACKGROUND_H
 
+//yaml-cpp include for configuration
+#include "yaml-cpp/yaml.h"
+
 //c++ includes
 #include <vector>
 #include <memory>
+
+namespace util
+{
+  class Directory;
+}
 
 namespace evt
 {
@@ -24,11 +32,10 @@ namespace bkg
 {
   class Background
   {
-    private:
+    public:
       using cuts_t = std::vector<std::unique_ptr<truth::Cut>>;
 
-    public:
-      Background(Directory& /*dir*/, cuts_t&& mustPass, const YAML::Node& /*config*/);
+      Background(const YAML::Node& /*config*/, util::Directory& /*dir*/, const std::string& name, cuts_t&& mustPass, std::vector<evt::CVUniverse*>& universes);
       virtual ~Background() = default;
 
       //Cuts an event must pass to be classified as this background
@@ -37,6 +44,12 @@ namespace bkg
       //The event loop will call this interface for MC events that qualify for this Background.
       //Implement it to Fill() your background histograms.
       virtual void Fill(const evt::CVUniverse& event) = 0;
+
+      //Get the name of this Background
+      const std::string& name() { return fName; }
+
+    private:
+      const std::string fName;
   };
 }
 

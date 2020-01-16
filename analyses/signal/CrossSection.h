@@ -8,10 +8,22 @@
 //signal includes
 #include "analyses/signal/Signal.h"
 
-namespace evt
-{
-  class CVUniverse;
-}
+//evt includes
+#include "evt/CVUniverse.h"
+
+//util includes
+#include "util/WithUnits.h"
+#include "util/units.h"
+#include "util/Directory.h"
+
+//PlotUtils includes
+//TODO: Someone who maintains this code should deal with these warnings
+#pragma GCC diagnostic push //Learned to use these GCC-specific preprocessor macros from 
+                            //https://stackoverflow.com/questions/6321839/how-to-disable-warnings-for-particular-include-files 
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+#include "HistWrapper.h"
+#include "Hist2DWrapper.h"
+#pragma GCC diagnostic pop
 
 namespace sig
 {
@@ -25,53 +37,54 @@ namespace sig
   {
     //First, check that VARIABLE makes sense
     private:
-      using UNIT = decltype(fVar.reco(std::declval<evt::CVUniverse>()));
-      static_assert(std::is_same<UNIT, decltype(fVar.truth(std::declval<evt::CVUniverse>()))>::value,
+      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::CVUniverse>()));
+      static_assert(std::is_same<UNIT, decltype(std::declval<VARIABLE>().truth(std::declval<evt::CVUniverse>()))>::value,
                     "Reco and truth variable calculations must be in the same units!");
 
-      using HIST = HistWrapper<WithUnits<MnvH1D, UNIT, events>>;
-      using MIGRATION = HistWrapper2D<WithUnits<MnvH2D, UNIT, UNIT, events>>;
+      using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;
+      using MIGRATION = units::WithUnits<Hist2DWrapper<evt::CVUniverse>, UNIT, UNIT, events>;
 
     public:
-      CrossSection(util::Directry& dir, const YAML::Node& config): Signal(dir, config), fVar("variable")
+      CrossSection(const YAML::Node& config, util::Directory& dir, std::vector<evt::CVUniverse*>& universes): Signal(config, dir, universes),
+                                                                                                              fVar(config["variable"])
       {
         const auto binning = config["binning"].as<std::vector<double>>(); //TODO: Upgrade WithUnits<> to check UNIT on bins?
 
-        fMigration = dir.make<MIGRATION>("Migration", ("Migration;Reco " + fVar.name() + ";Truth " + fVar.name() + ";entries").c_str(),
-                                         binning.size() - 1, binning.data(), binning.size() - 1, binning.data());
-        fSignalEvents = dir.make<HIST>("Signal", ("Signal;" + fVar.name() + ";entries").c_str(),
-                                       binning.size() - 1, binning.data());
-        fEfficiencyNum = dir.make<HIST>("EfficiencyNumerator", ("Efficiency Numerator;" + fVar.name() + ";entries").c_str(),
-                                        binning.size() - 1, binning.data());
-        fEfficiencyDenom = dir.make<HIST>("EfficiencyDenominator", ("Efficiency Denominator;" + fVar.name() + ";entries").c_str(),
-                                          binning.size() - 1, binning.data());
+        fMigration.reset(dir.make<MIGRATION>("Migration", ("Migration;Reco " + fVar.name() + ";Truth " + fVar.name() + ";entries").c_str(),
+                                             binning, binning, universes));
+        fSignalEvents.reset(dir.make<HIST>("Signal", ("Signal;" + fVar.name() + ";entries").c_str(),
+                                           binning, universes));
+        fEfficiencyNum.reset(dir.make<HIST>("EfficiencyNumerator", ("Efficiency Numerator;" + fVar.name() + ";entries").c_str(),
+                                            binning, universes));
+        fEfficiencyDenom.reset(dir.make<HIST>("EfficiencyDenominator", ("Efficiency Denominator;" + fVar.name() + ";entries").c_str(),
+                                              binning, universes));
       }
 
       virtual ~CrossSection() = default;
 
-      virtual void mc(const CVUniverse& event) override
+      virtual void mc(const evt::CVUniverse& event) override
       {
-        fEfficiencyNum.univHist(&event)->Fill(fVar.truth(event), event.GetWeight());
-        fMigration.univHist(&event)->Fill(fVar.truth(event), fVar.reco(event), event.GetWeight());
+        fEfficiencyNum->Fill(&event, fVar.truth(event), event.GetWeight());
+        fMigration->Fill(&event, fVar.truth(event), fVar.reco(event), event.GetWeight());
       }
 
-      virtual void truth(const CVUniverse& event) override
+      virtual void truth(const evt::CVUniverse& event) override
       {
-        fEfficiencyDenom.univHist(&event)->Fill(fVar.truth(event), event.GetWeight());
+        fEfficiencyDenom->Fill(&event, fVar.truth(event), event.GetWeight());
       }
 
-      virtual void data(const CVUniverse& event) override
+      virtual void data(const evt::CVUniverse& event) override
       {
-        fSignalEvents.univHist(&event)->Fill(fVar.reco(event), event.GetWeight());
+        fSignalEvents->Fill(&event, fVar.reco(event), event.GetWeight());
       }
 
     private:
       VARIABLE fVar;  //VARIABLE in which a differential cross section will be extracted
 
       //Signal histograms needed to extract a cross section
-      MIGRATION fMigration;
-      HIST fSignalEvents;
-      HIST fEfficiencyNum;
-      HIST fEfficiencyDenom;
+      std::unique_ptr<MIGRATION> fMigration;
+      std::unique_ptr<HIST> fSignalEvents; //TODO: This just needs to be a TH1D!  It only comes from data.
+      std::unique_ptr<HIST> fEfficiencyNum;
+      std::unique_ptr<HIST> fEfficiencyDenom;
   };
 }

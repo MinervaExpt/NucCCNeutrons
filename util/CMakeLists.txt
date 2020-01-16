@@ -1,4 +1,4 @@
-add_library(support SafeROOTName.cpp Categorized.cpp Directory.cpp)
+add_library(support SafeROOTName.cpp Directory.cpp)
 target_link_libraries(support ${ROOT_LIBRARIES})
 install(TARGETS support DESTINATION lib)
-install(FILES SafeROOTName.h Categorized.cpp Directory.h DESTINATION include)
+install(FILES SafeROOTName.h Categorized.h Directory.h WithUnits.h units.h DESTINATION include)

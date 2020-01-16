@@ -10,15 +10,16 @@
 #include "evt/CVUniverse.h"
 
 //bkg includes
-#include "analyses/backgrounds/Background.h"
+#include "analyses/background/Background.h"
 
 //cuts includes
 #include "cuts/reco/Cut.h"
 
 namespace side
 {
-  Sideband::Sideband(util::Directory& /*dir*/, cuts_t&& mustPass,
-                     const backgrounds_t& /*backgrounds*/, const YAML::Node& /*config*/): passes(mustPass)
+  Sideband::Sideband(const YAML::Node& /*config*/, util::Directory& /*dir*/,
+                     cuts_t&& mustPass, const std::vector<background_t>& /*backgrounds*/,
+                     std::vector<evt::CVUniverse*>& /*universes*/): passes(std::move(mustPass))
   {
   }
 }

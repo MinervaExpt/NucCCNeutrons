@@ -26,6 +26,7 @@
 #ifndef NDEBUG
   #include <iostream>
 #endif
+#include <utility> //For std::forward<>()
 
 #ifndef PLGN_FACTORY_CPP
 #define PLGN_FACTORY_CPP
@@ -71,11 +72,11 @@ namespace plgn
           const std::string typeName;
       };
 
-      std::unique_ptr<BASE> Get(const YAML::Node& config, ARGS... args)
+      std::unique_ptr<BASE> Get(const YAML::Node& config, ARGS&&... args)
       {
         const auto type = config.Tag().substr(1); //yaml-cpp doesn't strip the ! off of tags
         const auto found = fNameToReg.find(type);
-        if(found != fNameToReg.end()) return found->second->NewPlugin(config, args...); 
+        if(found != fNameToReg.end()) return found->second->NewPlugin(config, std::forward<ARGS>(args)...); 
         throw NoSuchPlugin(type);
       }
 
@@ -105,11 +106,24 @@ namespace plgn
 
       virtual ~Registrar() = default;
 
-      virtual std::unique_ptr<BASE> NewPlugin(const YAML::Node& config, ARGS... args)
+      virtual std::unique_ptr<BASE> NewPlugin(const YAML::Node& config, ARGS&&... args)
       {
-        return std::unique_ptr<BASE>(new DERIVED(config, args...));
+        return std::unique_ptr<BASE>(new DERIVED(config, std::forward<ARGS>(args)...));
       }
   };
+
+
+  //Load a whole YAML map of plugins at once.
+  template <class CUT>
+  std::vector<std::unique_ptr<CUT>> loadPlugins(const YAML::Node& config)
+  {
+    std::vector<std::unique_ptr<CUT>> cuts;
+    auto& factory = plgn::Factory<CUT>::instance();
+
+    for(auto block: config) cuts.emplace_back(block.first, factory.Get(block.second));
+
+    return cuts;
+  }
 }
 
 //Removed because of the complexities of passing in constructor ARGS.  Just instantiate a global static Registrar<> directly.

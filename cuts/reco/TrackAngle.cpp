@@ -8,13 +8,13 @@
 
 namespace reco
 {
-  TrackAngle::TrackAngle(const YAML::Node& config): fMax(config["max"].as<GeV>())
+  TrackAngle::TrackAngle(const YAML::Node& config): Cut(config), fMax(config["max"].as<double>())
   {
   }
 
-  bool passesCut(const CVUniverse& event) const
+  bool TrackAngle::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetMuonMomentum4V().theta() > fMax;
+    return event.GetMuonP().p().theta() < fMax;
   }
 }
 

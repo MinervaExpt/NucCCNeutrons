@@ -7,7 +7,6 @@ project( Utilities )
 
 #Add extra "modules" to CMake
 include(CTest)
-include(test/TestingTargets.cmake)
 
 #Compiler flags
 set( GCC_Flags_For_CXX "-std=c++1y -Wall" )
@@ -24,14 +23,17 @@ find_package(ROOT REQUIRED COMPONENTS RIO Net Tree Core Geom EG GenVector)
 include(${ROOT_USE_FILE})
 
 find_package(yaml-cpp 0.6.0 REQUIRED)
-find_package(BaseUnits REQUIRED)
-find_package(PlotUtils REQUIRED)
-
-message("YAML_CPP_INCLUDE_DIR is ${YAML_CPP_INCLUDE_DIR}\n")
 include_directories(${YAML_CPP_INCLUDE_DIR})
+#find_package(BaseUnits REQUIRED) #TODO: Reformat the CMake system in BaseUnits.  I'm embedding it for now to get started.
+find_package(PlotUtils REQUIRED)
+include_directories(${PlotUtils_INCLUDE_DIR})
+message("Included PlotUtils from ${PlotUtils_INCLUDE_DIR}")
+
+add_subdirectory(analyses)
+add_subdirectory(cuts)
 
 #Build main executables
-add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:analyses> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTarget> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTarget>)
+add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:analyses> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets>)
 #This TARGET_OBJECTS song and dance solves the problem of the compiler
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library
@@ -40,9 +42,9 @@ add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:analyses> 
 #Taken from https://stackoverflow.com/questions/8774593/cmake-link-to-external-library
 
 #Build libraries that main executables depend on
+add_subdirectory(units)
 add_subdirectory(util)
 add_subdirectory(evt)
-add_subdirectory(analyses)
 add_subdirectory(config)
 add_subdirectory(app)
 
