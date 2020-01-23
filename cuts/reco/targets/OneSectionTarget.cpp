@@ -14,7 +14,7 @@
 
 namespace reco
 {
-  OneSectionTarget::OneSectionTarget(const YAML::Node& config): Cut(config)
+  OneSectionTarget::OneSectionTarget(const YAML::Node& config, const std::string& name): Cut(config, name)
   {
   }
 
@@ -26,7 +26,7 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::OneSectionTarget> Target4Reco_reg("Target4Carbon");
+  static plgn::Registrar<reco::Cut, reco::OneSectionTarget, std::string&> Target4Reco_reg("Target4Carbon");
 
-  static plgn::Registrar<reco::Cut, reco::OneSectionTarget> WaterReco_reg("Water");
+  static plgn::Registrar<reco::Cut, reco::OneSectionTarget, std::string&> WaterReco_reg("Water");
 }

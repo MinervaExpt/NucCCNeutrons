@@ -21,7 +21,7 @@ namespace reco
   class Helicity: public Cut
   {
     public:
-      Helicity(const YAML::Node& config);
+      Helicity(const YAML::Node& config, const std::string& name): Cut(config, name) {}
       virtual ~Helicity() = default;
 
     protected:

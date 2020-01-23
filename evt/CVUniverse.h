@@ -42,7 +42,7 @@ namespace evt
   class CVUniverse: public PlotUtils::DefaultCVUniverse
   {
     public:
-      CVUniverse(const std::string& blobAlg, PlotUtils::ChainWrapper* chw, const double nsigma = 0); //TODO: Get away from ChainWrapper?
+      CVUniverse(/*const std::string& blobAlg,*/ PlotUtils::ChainWrapper* chw, const double nsigma = 0); //TODO: Get away from ChainWrapper?
       virtual ~CVUniverse() = default;
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.

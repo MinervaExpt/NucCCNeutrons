@@ -11,6 +11,8 @@
 //       ProcessAnaTuples <yourCuts.yaml> [moreConfigsInOrder.yaml]... <yourTuple.root> [moreTuples.root]..."
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+#define PLOTUTILS_THROW_EXCEPTIONS
+
 //evt includes
 #include "evt/CVUniverse.h"
 
@@ -18,9 +20,9 @@
 #include "util/Factory.cpp"
 
 //analysis includes
-#include "analyses/signals/Signal.h"
-#include "analyses/sidebands/Sideband.h"
-#include "analyses/backgrounds/Background.h"
+#include "analyses/signal/Signal.h"
+#include "analyses/sideband/Sideband.h"
+#include "analyses/Background.h"
 
 //Cuts includes
 #include "cuts/truth/Cut.h"
@@ -31,16 +33,19 @@
 #include "app/IsMC.h"
 
 //PlotUtils includes
-#include "PlotUtils/CrashOnROOTErrorMessage.h"
+#include "PlotUtils/CrashOnROOTMessage.h"
 
 //YAML-cpp includes
 #include "yaml-cpp/yaml.h"
 
 //ROOT includes
 #include "TFile.h"
+#include "TTree.h"
 
 //c++ includes
 #include <iostream>
+#include <algorithm>
+#include <unordered_map>
 
 //Helper functions to make main() simpler
 namespace
@@ -48,13 +53,22 @@ namespace
   //How often I print out entry number when in debug mode
   constexpr auto printFreq = 1000ul;
 
-  int hashCuts(const std::vector<std::string> cutNames, std::vector<reco::Cut>& allCuts, std::vector<reco::Cut>& sidebandCuts)
+  std::unique_ptr<bkg::Background> null(nullptr); //TODO: This is a horrible hack so I can hold a reference to a nullptr
+
+  template <class ITERATOR>
+  auto derefOrNull(const ITERATOR it, const ITERATOR end) -> decltype(*it)
   {
-    uint64_t result = 0x1 << cuts.size() - 1;
+    if(it == end) return ::null;
+    return *it;
+  }
+
+  int hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<reco::Cut>>& allCuts, std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts)
+  {
+    uint64_t result = 0; //0x1 << sidebandCuts.size() - 1;
 
     for(const auto& name: cutNames)
     {
-      const auto found = std::find_if(allCuts.begin(), allCuts.end(), [&name](const auto& cut) { return cut.name() == name; });
+      const auto found = std::find_if(allCuts.begin(), allCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
       if(found != allCuts.end())
       {
         result |= 0x1 << sidebandCuts.size(); //BEFORE the update because of 0-based indexing
@@ -62,7 +76,7 @@ namespace
       }
       else
       {
-        const auto inSideband = std::find_if(sidebandCuts.begin(), sidebandCuts.end(), [&name](const auto& cut) { return cut.name() == name; });
+        const auto inSideband = std::find_if(sidebandCuts.begin(), sidebandCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
         if(inSideband != sidebandCuts.end())
         {
           result |= 0x1 << std::distance(sidebandCuts.begin(), inSideband);
@@ -78,16 +92,16 @@ namespace
   bool requireAll(const std::vector<std::unique_ptr<CUT>>& cuts, const evt::CVUniverse& event)
   {
     return std::all_of(cuts.begin(), cuts.end(),
-                       [&event](const auto cut)
+                       [&event](const auto& cut)
                        {
                          return (*cut)(event);
                        });
   }
 
-  std::vector<evt::CVUniverse> getSystematics(ChainWrapper* chw, const bool /*isMC*/)
+  std::vector<evt::CVUniverse*> getSystematics(PlotUtils::ChainWrapper* chw, const bool /*isMC*/)
   {
     //TODO: Get centralized systematics if !isMC
-    return evt::CVUniverse(chw);
+    return {new evt::CVUniverse(chw)};
   }
 }
 
@@ -98,7 +112,7 @@ int main(const int argc, const char** argv)
 
   try
   {
-    const apo::CmdLine options(argc, argv); //Parses the command line for input and configuration file, assembles a
+    const app::CmdLine options(argc, argv); //Parses the command line for input and configuration file, assembles a
                                             //list of files to process, prepares a file for histograms, and puts the configuration
                                             //file together.  See CmdLine.h for more details.
 
@@ -122,39 +136,46 @@ int main(const int argc, const char** argv)
     std::vector<evt::CVUniverse*> universes = ::getSystematics(nullptr, isThisJobMC);
 
     //Set up Signal
-    std::unique_ptr<Signal> signal(options["signal"], histDir.mkdir(options["signal"]["name"].as<std::string>()), universes);
+    auto signalDir =  histDir.mkdir(options.ConfigFile()["signal"]["name"].as<std::string>());
+    auto signal = plgn::Factory<sig::Signal, util::Directory&, std::vector<evt::CVUniverse*>&>::instance().Get(options.ConfigFile()["signal"], signalDir, universes);
 
     //Set up cuts, sidebands, and backgrounds
-    auto truthCuts = plgn::loadPlugins<TruthCut>(options["cuts"]["truth"]);
-    auto recoCuts = plgn::loadPlugins<RecoCut>(options["cuts"]["reco"]);
+    auto truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options.ConfigFile()["cuts"]["truth"]["phaseSpace"]);
+    auto truthSignal = plgn::loadPlugins<truth::Cut>(options.ConfigFile()["cuts"]["truth"]["signal"]);
+    std::vector<std::unique_ptr<reco::Cut>> recoCuts;
+    
+    auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
+    for(auto config: options.ConfigFile()["cuts"]["reco"])
+    {
+      auto name = config.first.as<std::string>();
+      recoCuts.emplace_back(cutFactory.Get(config.second, name));
+    }
+
     decltype(recoCuts) sidebandCuts;
 
     //TODO: Put these extended setup steps into functions?
-    std::vector<std::unique_ptr<Background>> backgrounds;
-    for(auto background: config["backgrounds"])
-    {
-      const auto& passes = plgn::loadPlugins<truth::Cut>(background.second["passes"]);
-      backgrounds.emplace_back(new Background(background.second, histDir.mkdir(background.first.as<std::string>()), background.first.as<std::string>(), std::move(passes), universes));
-    }
+    std::vector<std::unique_ptr<bkg::Background>> backgrounds;
+    for(const auto config: options.ConfigFile()["backgrounds"]) backgrounds.emplace_back(new bkg::Background(config.first.as<std::string>(), config.second));
 
-    std::unordered_map<int, std::vector<std::unique_ptr<Sideband>>> cutsToSidebands; //Mapping from truth cuts to sidebands
-    for(auto sideband: config["sidebands"])
+    std::unordered_map<int, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
+    auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance();
+    for(auto sideband: options.ConfigFile()["sidebands"])
     {
+      auto dir = histDir.mkdir(sideband.first.as<std::string>());
       const auto& fails = sideband.second["fails"].as<std::vector<std::string>>();
-      const auto passes = plgn::loadPlugins<reco::Cut>(sideband.second["passes"]);
+      auto passes = plgn::loadPlugins<reco::Cut>(sideband.second["passes"]);
       const auto hashPattern = ::hashCuts(fails, recoCuts, sidebandCuts); //Also transfers relevant cuts from recoCuts to sidebandCuts
-      cutsToSidebands[hashPattern].emplace_back(new Sideband(sideband.second, histDir.mkdir(sideband.first.as<std::string>()), std::move(passes),
-                                                             backgrounds, universes));
+      sidebands[hashPattern].emplace_back(sideFactory.Get(sideband.second, dir, std::move(passes), backgrounds, universes));
     }
 
     //Accumulate POT from each good file
     double pot_used = 0;
 
     //TODO: Loop over files
-    for(const auto& fName: options.TuplefileNames())
+    for(const auto& fName: options.TupleFileNames())
     {
       //Sanity checks on AnaTuple files
-      std::unique_ptr<TFile> tupleFile = TFile::Open(fName.c_str());
+      std::unique_ptr<TFile> tupleFile(TFile::Open(fName.c_str())); //TODO: Make sure this TFile is written?  Seems like I have to Write() all MnvH1Ds.
       if(tupleFile == nullptr)
       {
         std::cerr << fName << ": No such file or directory.  Skipping this "
@@ -172,8 +193,8 @@ int main(const int argc, const char** argv)
         continue; //TODO: Don't use break if I can help it
       }
 
-      auto meta = static_cast<TTree&>(*tupleFile->Get("Meta"));
-      if(meta == nullptr)
+      auto metaTree = dynamic_cast<TTree*>(tupleFile->Get("Meta"));
+      if(!metaTree)
       {
         std::cerr << fName << " does not contain POT information!  This might be a merging failure.  Skipping this file.\n";
         continue; //TODO: Don't use break if I can help it
@@ -181,15 +202,15 @@ int main(const int argc, const char** argv)
 
       //Get POT for this file, but don't accumulate it until I've found the
       //other trees I need.
-      PlotUtils::TreeWrapper meta(tupleFile, "Meta");
-      const double thisFilesPOT = meta.GetDouble("POT_Used");
+      PlotUtils::TreeWrapper meta(metaTree);
+      const double thisFilesPOT = meta.GetValue("POT_Used", 0);
 
       //TODO: Make this a TreeWrapper to avoid opening fName twice
       PlotUtils::ChainWrapper anaTuple(anaTupleName);
 
       try
       {
-        anaTuple.AddFile(fName);
+        anaTuple.Add(fName);
       }
       catch(const PlotUtils::ChainWrapper::BadFile& err)
       {
@@ -207,7 +228,7 @@ int main(const int argc, const char** argv)
 
         try
         {
-          truthTree.AddFile(fName);
+          truthTree.Add(fName);
         }
         catch(const PlotUtils::ChainWrapper::BadFile& err)
         {
@@ -218,25 +239,26 @@ int main(const int argc, const char** argv)
 
         //MC loop
         const size_t nMCEntries = anaTuple.GetEntries();
-        for(auto univ: universes) unit->setTree(&anaTuple);
+        for(auto& univ: universes) univ->SetTree(&anaTuple);
 
-        for(size_t entry = 0; entry < nEntries; ++entry)
+        for(size_t entry = 0; entry < nMCEntries; ++entry)
         {
           #ifndef NDEBUG
             if((entry % printFreq) == 0) std::cout << "Done with MC entry " << entry << "\n";
           #endif
 
-          for(const auto& event: mcUniverses)
+          for(const auto univ: universes)
           {
-            event->SetEntry(entry);
+            auto& event = *univ;
+            event.SetEntry(entry);
 
             //MC loop
-            if(::requireAll(recoCuts, event) && ::requireAll(truthCuts, event))
+            if(::requireAll(recoCuts, event))
             {
-              //Bitfields encoding which truth and reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
+              //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
               //for sidebands defined by multiple cuts.
               uint64_t passedReco = 0; //TODO: What does the default value for each bit need to be to work with XOR when I have fewer than 64 cuts?
-              constexpr decltype(passedTruth) passedAll = 1 << sidebandCuts.size() - 1; //TODO: Change this to somehting like 0b1 << nCuts - 1
+              const decltype(passedReco) passedAll = (1 << sidebandCuts.size()) - 1;
 
               for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
               {
@@ -244,50 +266,58 @@ int main(const int argc, const char** argv)
                 passedReco |= (*cut)(event) << whichCut;
               }
 
-              if(!(passedReco ^ passedAll)) signal->mc(event);
-              else
+              //Look up the sideband, if any, by which reco cuts failed.
+              //I might not find any sideband if this event is reconstructed signal
+              //or just isn't in a sideband I'm interested in.
+              //Putting the code here just makes it easier to maintain.
+              const auto relevantSidebands = sidebands.find(passedReco);
+              side::Sideband* sideband = nullptr; //TODO: Come up with some clever return value semantics to avoid the raw pointer here
+              if(relevantSidebands != sidebands.end())
               {
-                const auto foundSidebands = sidebands.find(passedReco); //Look up the sideband, if any, by which reco cuts failed
+                const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
+                                                [&event](const auto& whichSideband)
+                                                { return ::requireAll(whichSideband->passes, event); });
+                if(found != relevantSidebands->second.end()) sideband = found->get();
+              }
+
+              //Categorize by whether this is signal or some background
+              if(::requireAll(truthSignal, event))
+              {
+                if(!(passedReco ^ passedAll)) signal->mcSignal(event);
+                else if(sideband) //If this is a sideband I'm interested in
+                {
+                  sideband->truthSignal(event);
+                }
+              }
+              else //If not truthSignal
+              {
                 const auto foundBackground = std::find_if(backgrounds.begin(), backgrounds.end(),
                                                           [&event](const auto& background)
                                                           { return ::requireAll(background->passes, event); });
 
-                if(foundSidebands != sidebands.end())
-                {
-                  const auto firstSideband = std::find_if(foundSidebands->begin(), foundSidebands->end(),
-                                                          [&event](const auto sideband)
-                                                          { return ::requireAll(sideband->passes, event); });
-
-                  if(firstSideband != foundSidebands->end())
-                  {
-                    if(!(passedTruth ^ passedAll)) firstSideband->truthSignal(event); //TODO: What's the deal with this line?  Do I just not require any truth cuts at all for sideband background?
-                    else (*foundSideband)->truthBackground(event, foundBackground); //TODO: Make sure backgrounds.end() is the "Other" category
-                  }
-                  //TODO: foundSideband on the previous line needs to know how to look up a background from foundBackground somehow.
-                  //      I guess I can just create the list of backgrounds first?
-                  //      Also, it seems like I've just re-invented my ideas about categorization.
-                }
-                if(foundBackground != backgrounds.end()) foundBackground->Fill(event);
-              } //If MC is not reco and truth signal
+                if(!(passedReco ^ passedAll)) signal->mcBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
+                else sideband->truthBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
+              }
             } //If passed all non-sideband-related cuts
           } //For each MC systematic universe
         } //For each entry in the MC tree
 
         //Truth loop
-        const size_t nTruthEntires = truthTree.GetEntries();
-        for(auto univ: universes) unit->setTree(&truthTree)
+        const size_t nTruthEntries = truthTree.GetEntries();
+        for(auto& univ: universes) univ->SetTree(&truthTree);
 
-        for(size_t entry = 0; entry < nEntries; ++entry)
+        for(size_t entry = 0; entry < nTruthEntries; ++entry)
         {
           #ifndef NDEBUG
             if((entry % printFreq) == 0) std::cout << "Done with truth entry " << entry << "\n";
           #endif
 
-          for(const auto& event: truthUniverses)
+          for(const auto univ: universes)
           {
-            event->SetEntry(entry);
+            auto& event = *univ;
+            event.SetEntry(entry);
 
-            if(::requireAll(truthCuts, event))
+            if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
             {
               signal->truth(event);
             } //If event passes all truth cuts
@@ -297,8 +327,9 @@ int main(const int argc, const char** argv)
       else
       {
         //Data loop
-        const size_t nEntries = anaTuple->GetEntries();
-        for(auto univ: universes) unit->setTree(&anaTuple);
+        const size_t nEntries = anaTuple.GetEntries();
+        auto& cv = universes.front(); //TODO: assert() that this is true?  Put data in a different program?
+        cv->SetTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)
         {
@@ -306,11 +337,12 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with data entry " << entry << "\n";
           #endif
 
-          event->setEntry(entry);
+          auto& event = *cv;
+          event.SetEntry(entry);
           if(::requireAll(recoCuts, event))
           {
             uint64_t passedCuts = 0;
-            constexpr decltype(passedCuts) passedAll = 1 << sidebandCuts.size() - 1; //TODO: Is 0 an appropriate default with XOR?
+            const decltype(passedCuts) passedAll = (1 << sidebandCuts.size()) - 1; //TODO: Is 0 an appropriate default with XOR?
 
             for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
             {
@@ -321,12 +353,12 @@ int main(const int argc, const char** argv)
             else
             {
               const auto foundSidebands = sidebands.find(passedCuts);
-              if(foundSidebands != sidebands.end()
+              if(foundSidebands != sidebands.end())
               {
-                const auto firstSideband = std::find_if(foundSidebands->begin(), foundSidebands->end(),
-                                                        [&event](const auto sideband)
+                const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
+                                                        [&event](const auto& sideband)
                                                         { return ::requireAll(sideband->passes, event); });
-                if(firstSideband != foundSidebands->end()) firstSideband->data(event);
+                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(event);
               } //If found a sideband and passed all of its reco constraints
             } //If not passed all sideband-related cuts
           } //If passed all cuts not related to sidebands
@@ -337,29 +369,29 @@ int main(const int argc, const char** argv)
       pot_used += thisFilesPOT;
     } //For each AnaTuple file
   } //try-catch on whole event loop
-  catch(const apo::CmdLine::exception& e)
+  catch(const app::CmdLine::exception& e)
   {
     std::cerr << e.what() << "\nReturning " << e.reason << " without doing anything!\n";
     return e.reason;
   }
   //If I ever want to handle ROOT warnings differently, this is
   //the place to implement that behavior.
-  catch(const ROOT::Warning& e)
+  catch(const ROOT::warning& e)
   {
     std::cerr << e.what() << "\nExiting immediately, so you probably got incomplete results!";
-    return apo::CmdLine::ExitCode::IOError;
+    return app::CmdLine::ExitCode::IOError;
   }
-  catch(const ROOT::Error& e)
+  catch(const ROOT::error& e)
   {
     std::cerr << e.what() << "\nExiting immediately, so you probably got incomplete results!";
-    return apo::CmdLine::ExitCode::IOError;
+    return app::CmdLine::ExitCode::IOError;
   }
   catch(const std::runtime_error& e)
   {
     std::cerr << "Got a fatal std::runtime_error while running the analysis:\n"
               << e.what() << "\nExiting immediately, so you probably got incomplete results!\n";
-    return apo::CmdLine::ExitCode::AnalysisError;
+    return app::CmdLine::ExitCode::AnalysisError;
   }
 
-  return apo::CmdLine::ExitCode::Success;
+  return app::CmdLine::ExitCode::Success;
 }

@@ -8,9 +8,9 @@
 
 namespace reco
 {
-  IsInTarget::IsInTarget(const YAML::Node& config): Cut(config),
-                                                    fZMin(config["reco"]["min"].as<mm>()),
-                                                    fZMax(config["reco"]["max"].as<mm>())
+  IsInTarget::IsInTarget(const YAML::Node& config, const std::string& name): Cut(config, name),
+                                                                             fZMin(config["reco"]["min"].as<mm>()),
+                                                                             fZMax(config["reco"]["max"].as<mm>())
   {
   }
 
@@ -23,5 +23,5 @@ namespace reco
 //Register IsInTarget as a kind of Cut
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::IsInTarget> MainAnalysis_reg("IsInTarget");
+  static plgn::Registrar<reco::Cut, reco::IsInTarget, std::string&> MainAnalysis_reg("IsInTarget");
 }

@@ -17,7 +17,7 @@ namespace reco
   class Between: public Cut
   {
     public:
-      Between(const YAML::Node& config);
+      Between(const YAML::Node& config, const std::string& name);
       virtual ~Between() = default;
 
     protected:

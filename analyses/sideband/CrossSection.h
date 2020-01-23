@@ -7,7 +7,7 @@
 
 //sideband includes
 #include "analyses/sideband/Sideband.h"
-#include "analyses/background/Background.h"
+#include "analyses/Background.h"
 
 //evt includes
 #include "evt/CVUniverse.h"

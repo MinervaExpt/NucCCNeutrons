@@ -11,7 +11,7 @@
 //Register Target3Lead for user selection
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::ThreeSectionTarget<82>> MainAnalysis_reg("Target3Carbon");
+  static plgn::Registrar<reco::Cut, reco::ThreeSectionTarget<82>, std::string&> MainAnalysis_reg("Target3Carbon");
 }
 
 #endif //RECO_TARGET3LEAD_H

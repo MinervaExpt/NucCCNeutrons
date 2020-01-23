@@ -11,7 +11,6 @@
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include "analyses/signal/CrossSection.h"
 #include "analyses/sideband/CrossSection.h"
-#include "analyses/background/CrossSection.h"
 #pragma GCC diagnostic pop
 
 //evt includes
@@ -48,11 +47,10 @@ namespace ana
   namespace
   {
     static plgn::Registrar<sig::Signal, sig::CrossSection<ana::MuonMomentum>, util::Directory&,
+                           std::vector<typename side::Sideband::background_t>&,
                            std::vector<evt::CVUniverse*>&> MuonMomentumSignal_reg("MuonMomentum");
     static plgn::Registrar<side::Sideband, side::CrossSection<ana::MuonMomentum>, util::Directory&,
                            typename side::Sideband::cuts_t&&, std::vector<typename side::Sideband::background_t>&,
                            std::vector<evt::CVUniverse*>&> MuonMomentumSideband_reg("MuonMomentum");
-    static plgn::Registrar<bkg::Background, bkg::CrossSection<ana::MuonMomentum>, util::Directory&,
-                           std::string&, typename bkg::Background::cuts_t&&, std::vector<evt::CVUniverse*>&> MuonMomentumBackground_reg("MuonMomentum");
   }
 }

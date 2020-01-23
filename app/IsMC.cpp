@@ -13,7 +13,7 @@
 //c++ includes
 #include <stdexcept>
 
-namespace apo
+namespace app
 {
   bool IsMC(const std::string& fileName)
   {

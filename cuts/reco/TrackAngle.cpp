@@ -8,7 +8,7 @@
 
 namespace reco
 {
-  TrackAngle::TrackAngle(const YAML::Node& config): Cut(config), fMax(config["max"].as<double>())
+  TrackAngle::TrackAngle(const YAML::Node& config, const std::string& name): Cut(config, name), fMax(config["max"].as<double>())
   {
   }
 
@@ -20,5 +20,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::TrackAngle> MainAnalysis_reg("TrackAngle");
+  static plgn::Registrar<reco::Cut, reco::TrackAngle, std::string&> MainAnalysis_reg("TrackAngle");
 }

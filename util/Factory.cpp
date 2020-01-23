@@ -120,7 +120,7 @@ namespace plgn
     std::vector<std::unique_ptr<CUT>> cuts;
     auto& factory = plgn::Factory<CUT>::instance();
 
-    for(auto block: config) cuts.emplace_back(block.first, factory.Get(block.second));
+    for(auto block: config) cuts.emplace_back(factory.Get(block.second));
 
     return cuts;
   }

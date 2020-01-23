@@ -7,9 +7,9 @@
 
 namespace reco
 {
-  nTracks::nTracks(const YAML::Node& config): Cut(config),
-                                              fMin(config["min"].as<long int>(-1l)),
-                                              fMax(config["max"].as<long int>(std::numeric_limits<decltype(fMax)>::max()))
+  nTracks::nTracks(const YAML::Node& config, const std::string& name): Cut(config, name),
+                                                                       fMin(config["min"].as<long int>(-1l)),
+                                                                       fMax(config["max"].as<long int>(std::numeric_limits<decltype(fMax)>::max()))
   {
   }
 
@@ -21,5 +21,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::nTracks> MainAnalysis_reg("nTracks");
+  static plgn::Registrar<reco::Cut, reco::nTracks, std::string&> MainAnalysis_reg("nTracks");
 }

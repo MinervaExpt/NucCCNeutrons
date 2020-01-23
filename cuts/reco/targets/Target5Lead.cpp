@@ -11,7 +11,7 @@
 //Register Target5Lead for user selection
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::TwoSectionTarget<true, -1>> MainAnalysis_reg("Target5Lead");
+  static plgn::Registrar<reco::Cut, reco::TwoSectionTarget<true, -1>, std::string&> MainAnalysis_reg("Target5Lead");
 }
 
 #endif //RECO_TARGET5LEAD_H

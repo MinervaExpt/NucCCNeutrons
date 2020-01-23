@@ -20,7 +20,7 @@ namespace reco
   class TrackAngle: public Cut
   {
     public:
-      TrackAngle(const YAML::Node& config);
+      TrackAngle(const YAML::Node& config, const std::string& name);
       virtual ~TrackAngle() = default;
 
     protected:

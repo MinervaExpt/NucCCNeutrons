@@ -18,7 +18,7 @@
 namespace util  
 {
   //Define member functions out of class body for cleanliness
-  Directory::Directory(TFile* dir): fBaseDir(dir), fName("")
+  Directory::Directory(TFile& dir): fBaseDir(dir), fName("")
   {
   }
                                                                                                                               

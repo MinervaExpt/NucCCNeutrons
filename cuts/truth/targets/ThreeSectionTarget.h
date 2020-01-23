@@ -58,8 +58,8 @@ namespace truth
   class ThreeSectionTarget: public Cut
   {
     private:
-      static constexpr auto rotationAngle = M_PI/6.;
-      static constexpr auto mmToDivide = 0_mm;
+      const double rotationAngle = M_PI/6.;
+      const mm mmToDivide = 0_mm;
 
     public:
       ThreeSectionTarget(const YAML::Node& config): Cut(config), fRotation(ROOT::Math::XYZVector(0., 0., 1.), rotationAngle)

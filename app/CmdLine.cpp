@@ -20,17 +20,17 @@
 "\tYAML configuration files are first searched for in the\n"\
 "\tcurrent directory and/or as absolute paths, and then they\n"\
 "\tare looked for in:\n" \
-PLOTTING_INSTALL_DIR "bin.\n"
+INSTALL_DIR "bin.\n"
 //TODO: Maybe point to documentation in installation directory?  I'd have to
 //      get CMake to tell me what the installation directory is.
 
 //NucCCNeutrons includes
 #include "app/CmdLine.h"
 #include "app/IsMC.h"
-#include "app/ErrorHandler.h"
 
 //PlotUtils includes
 #include "ROOTglob.h"
+#include "ErrorHandler.h"
 
 //YAML-cpp includes
 #include "yaml-cpp/yaml.h"
@@ -47,7 +47,7 @@ PLOTTING_INSTALL_DIR "bin.\n"
 #include <unistd.h>
 #include <stdio.h>
 
-namespace apo
+namespace app
 {
   void CmdLine::HandleArg(const std::string& binName, const std::string arg, std::string& outFileName, std::string& configFile)
   {
@@ -69,7 +69,7 @@ namespace apo
       readFile.open(arg);
       if(!readFile.is_open())
       {
-        readFile.open(std::string(PLOTTING_INSTALL_DIR "bin/") + arg);
+        readFile.open(std::string(INSTALL_DIR "bin/") + arg);
         if(!readFile.is_open()) throw exception(binName, std::string("No such file or directory: ") + arg + ".\n", ExitCode::BadCommandLine);
       }
      
@@ -120,7 +120,7 @@ namespace apo
       throw exception(binName, "No *.root NucCCNeutron NTuple files found on the command line.\n", ExitCode::BadCommandLine);
     }
 
-    fIsMC = apo::IsMC(fTupleFileNames.front());
+    fIsMC = app::IsMC(fTupleFileNames.front());
     #ifndef NDEBUG
       //std::cout << "Am I processing MC?  " << std::boolalpha << fIsMC << "\n";
     #endif
@@ -140,7 +140,7 @@ namespace apo
     {
       HistFile.reset(TFile::Open(outFileName.c_str(), "CREATE"));
     }
-    catch(const ROOT::Exception& e)
+    catch(const ROOT::exception& e)
     {
       //Print some extra information if I failed to create the output file.
       throw exception(binName, "Couldn't create a TFile named " + outFileName + " in the current directory.  If it already exists, I refuse to overwrite it!\n", ExitCode::BadOutputFile);

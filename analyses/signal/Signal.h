@@ -17,17 +17,26 @@ namespace evt
   class CVUniverse;
 }
 
+namespace bkg
+{
+  class Background;
+}
+
 namespace sig
 {
   class Signal
   {
+    protected:
+      using background_t = std::unique_ptr<bkg::Background>;
+
     public:
-      Signal(const YAML::Node& /*config*/, util::Directory& /*dir*/, std::vector<evt::CVUniverse*>& /*universes*/);
+      Signal(const YAML::Node& /*config*/, util::Directory& /*dir*/, std::vector<background_t>& /*backgrounds*/, std::vector<evt::CVUniverse*>& /*universes*/);
       virtual ~Signal() = default;
 
       //The event loop will call these interfaces with events
       //that pass appropriate cuts.
-      virtual void mc(const evt::CVUniverse& event) = 0;
+      virtual void mcSignal(const evt::CVUniverse& event) = 0;
+      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) = 0;
       virtual void truth(const evt::CVUniverse& event) = 0;
       virtual void data(const evt::CVUniverse& event) = 0;
   };

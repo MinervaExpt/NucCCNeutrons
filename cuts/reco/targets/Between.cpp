@@ -8,9 +8,9 @@
 
 namespace reco
 {
-  Between::Between(const YAML::Node& config): Cut(config),
-                                              fZMin(config["us"]["reco"]["max"].as<mm>()),
-                                              fZMax(config["ds"]["reco"]["min"].as<mm>())
+  Between::Between(const YAML::Node& config, const std::string& name): Cut(config, name),
+                                                                       fZMin(config["us"]["reco"]["max"].as<mm>()),
+                                                                       fZMax(config["ds"]["reco"]["min"].as<mm>())
   {
   }
 
@@ -23,5 +23,5 @@ namespace reco
 //Register Between as a kind of Cut
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::Between> MainAnalysis_reg("Between");
+  static plgn::Registrar<reco::Cut, reco::Between, std::string&> MainAnalysis_reg("Between");
 }

@@ -26,7 +26,7 @@ namespace reco
   class Cut
   {
     public:
-      Cut(const YAML::Node& /*config*/) {}
+      Cut(const YAML::Node& /*config*/, const std::string& name): fName(name) {}
       virtual ~Cut() = default;
       
       //Public interface.  If you're writing a new Cut, look
@@ -36,9 +36,14 @@ namespace reco
       //statistics for a cut table later.
       bool operator ()(const evt::CVUniverse& event);
 
+      inline const std::string& name() { return fName; }
+
     protected:
       //Your concrete Cut class must override these methods.
       virtual bool passesCut(const evt::CVUniverse& event) const = 0;
+
+    private:
+      std::string fName; //Name of this cut for reporting
   };
 }
 

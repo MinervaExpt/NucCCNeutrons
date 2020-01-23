@@ -30,9 +30,12 @@ namespace util
       //object.  A Directory created this way will not append 
       //anything to the names of its children, but its sub-directories 
       //will.  
-      Directory(TFile* dir);
+      Directory(TFile& dir);
       virtual ~Directory() = default;
-      
+
+      //TODO: I could make this behavior virtual, thus letting me choose at runtime
+      //      whether to use nested TDirectories, by abstracting it into a virtual
+      //      cd() function and a virtual prefix() function.
       //Implementation of TFileDirectory-like contract.  
       template <class TOBJECT, class ...ARGS>
       TOBJECT* make(const std::string& name, const std::string& title, ARGS... args)
@@ -42,7 +45,7 @@ namespace util
         //      This would avoid some temporary name conflicts that 
         //      would occur with a "real" TDirectory.  
         sentry dirSentry;
-        fBaseDir->cd();
+        fBaseDir.cd();
         auto obj = new TOBJECT((fName + name).c_str(), title.c_str(), args...);
         return obj;
       }
@@ -51,16 +54,16 @@ namespace util
       TOBJECT* makeAndRegister(const std::string& name, const std::string& title, ARGS... args)
       {
         sentry dirSentry;
-        fBaseDir->cd();
+        fBaseDir.cd();
         auto obj = new TOBJECT(fName+name, title.c_str(), args...);
-        obj->SetDirectory(fBaseDir);
+        obj->SetDirectory(&fBaseDir);
         return obj;
       }
 
       Directory mkdir(const std::string& name);
        
     private:
-      TFile* fBaseDir; //Base directory in which this 
+      TFile& fBaseDir; //Base directory in which this 
                        //Directory and all of its 
                        //children will put objects they 
                        //make<>().  

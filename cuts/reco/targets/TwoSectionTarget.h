@@ -45,11 +45,11 @@ namespace reco
   class TwoSectionTarget: public Cut
   {
     private:
-      static constexpr auto rotationAngle = M_PI/3.;
-      static constexpr auto mmToDivide = 205_mm;
+      const double rotationAngle = M_PI/3.;
+      const mm mmToDivide = 205_mm;
 
     public:
-      TwoSectionTarget(const YAML::Node& config): Cut(config), fRotation(ROOT::Math::XYZVector(0., 0., rotationSign), rotationAngle)
+      TwoSectionTarget(const YAML::Node& config, const std::string& name): Cut(config, name), fRotation(ROOT::Math::XYZVector(0., 0., rotationSign), rotationAngle)
       {
       }
 

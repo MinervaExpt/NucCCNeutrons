@@ -10,7 +10,7 @@
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::Helicity<2>> MainAnalysis_reg("IsAntineutrino");
+  static plgn::Registrar<reco::Cut, reco::Helicity<2>, std::string&> MainAnalysis_reg("IsAntineutrino");
 }
 
 

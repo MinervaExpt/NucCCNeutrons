@@ -7,7 +7,7 @@
 
 namespace reco
 {
-  MuonMomentum::MuonMomentum(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>())
+  MuonMomentum::MuonMomentum(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>())
   {
   }
 
@@ -19,5 +19,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::MuonMomentum> MainAnalysis_reg("MuonMomentum");
+  static plgn::Registrar<reco::Cut, reco::MuonMomentum, std::string&> MainAnalysis_reg("MuonMomentum");
 }

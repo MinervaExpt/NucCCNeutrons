@@ -25,7 +25,7 @@ namespace reco
   class OneSectionTarget: public Cut
   {
     public:
-      OneSectionTarget(const YAML::Node& config);
+      OneSectionTarget(const YAML::Node& config, const std::string& name);
 
       virtual ~OneSectionTarget() = default;
 

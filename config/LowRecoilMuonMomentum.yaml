@@ -11,19 +11,19 @@ signal: !MuonMomentum &Variable
 
 cuts:
   truth:
-    LowQ3: !Q3Range
-      min: 0 #GeV/c
-      max: 0.4 #GeV/c
-    MuonMomentum: !MuonMomentum
-      min: 2 #GeV/c
-    TrackAngle: !TrackAngle
-      max: 17 #degrees; stricter constraint for the targets
-    Antineutrino: !IsAntineutrino
-    Target3: !IsInTarget
-      *Target3
-    Iron: !Target3Iron
-  #TODO: Maybe look for RecoCuts only in this block?  This would save me from typing an extra "Reco" for each cut.
-  #      I envision TruthCuts and RecoCuts being in different namespaces.
+    phaseSpace:
+      MuonMomentum: !MuonMomentum
+        min: 2 #GeV/c
+      TrackAngle: !TrackAngle
+        max: 17 #degrees; stricter constraint for the targets
+    signal:
+      Antineutrino: !IsAntineutrino
+      LowQ3: !Q3Range
+        min: 0 #GeV/c
+        max: 0.4 #GeV/c
+      Target3: !IsInTarget
+        *Target3
+      Iron: !Target3Iron
   reco:
     OneTrack: !nTracksMax
       max: 1
@@ -67,25 +67,12 @@ sidebands:
 #exclusive with regular truth::Cuts.
 backgrounds:
   UpstreamPlastic:
-    variable: *Variable
-    passes:
-      Upstream: *USPlastic
+    Upstream: *USPlastic
   DownstreamPlastic:
-    variable: *Variable
-    passes:
-      Downstream: *DSPlastic
+    Downstream: *DSPlastic
   Lead:
-    variable: *Variable
-    passes:
-      IsInLead: !Target3Lead
+    IsInLead: !Target3Lead
   Carbon:
-    variable: *Variable
-    passes:
-      IsInCarbon: !Target3Carbon
+    IsInCarbon: !Target3Carbon
   Water:
-    variable: *Variable
-    passes:
-      IsInWater: !Water
-  Other: #TODO: It would be nice to get Other for free
-    variable: *Variable
-    passes:
+    IsInWater: !Water

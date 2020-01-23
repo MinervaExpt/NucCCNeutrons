@@ -7,7 +7,7 @@
 
 namespace reco
 {
-  Q3Range::Q3Range(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["min"].as<GeV>())
+  Q3Range::Q3Range(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["min"].as<GeV>())
   {
   }
 
@@ -19,5 +19,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::Q3Range> MainAnalysis_reg("Q3Range");
+  static plgn::Registrar<reco::Cut, reco::Q3Range, std::string&> MainAnalysis_reg("Q3Range");
 }

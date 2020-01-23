@@ -4,15 +4,18 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //backgrounds includes
-#include "analyses/background/Background.h"
+#include "analyses/Background.h"
 
 //cuts includes
 #include "cuts/truth/Cut.h"
 
+//util includes
+#include "util/Factory.cpp"
+
 namespace bkg
 {
-  Background::Background(const YAML::Node& /*config*/, util::Directory& /*dir*/, const std::string& name,
-                         cuts_t&& mustPass, std::vector<evt::CVUniverse*>& /*universes*/): passes(std::move(mustPass)), fName(name)
+  Background::Background(const std::string& nodeName, const YAML::Node& config): passes(plgn::loadPlugins<truth::Cut>(config)),
+                                                                                 fName(nodeName)
   {
   }
 }

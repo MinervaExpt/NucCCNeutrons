@@ -19,7 +19,7 @@ namespace reco
   class nTracks: public Cut
   {
     public:
-      nTracks(const YAML::Node& config);
+      nTracks(const YAML::Node& config, const std::string& name);
       virtual ~nTracks() = default;
 
     protected:

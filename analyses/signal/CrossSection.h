@@ -15,6 +15,7 @@
 #include "util/WithUnits.h"
 #include "util/units.h"
 #include "util/Directory.h"
+#include "util/Categorized.h"
 
 //PlotUtils includes
 //TODO: Someone who maintains this code should deal with these warnings
@@ -45,8 +46,11 @@ namespace sig
       using MIGRATION = units::WithUnits<Hist2DWrapper<evt::CVUniverse>, UNIT, UNIT, events>;
 
     public:
-      CrossSection(const YAML::Node& config, util::Directory& dir, std::vector<evt::CVUniverse*>& universes): Signal(config, dir, universes),
-                                                                                                              fVar(config["variable"])
+      CrossSection(const YAML::Node& config, util::Directory& dir, std::vector<background_t>& backgrounds,
+                   std::vector<evt::CVUniverse*>& universes): Signal(config, dir, backgrounds, universes),
+                                                              fVar(config["variable"]),
+                                                              fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
+                                                                           config["binning"].as<std::vector<double>>(), universes)
       {
         const auto binning = config["binning"].as<std::vector<double>>(); //TODO: Upgrade WithUnits<> to check UNIT on bins?
 
@@ -62,7 +66,7 @@ namespace sig
 
       virtual ~CrossSection() = default;
 
-      virtual void mc(const evt::CVUniverse& event) override
+      virtual void mcSignal(const evt::CVUniverse& event) override
       {
         fEfficiencyNum->Fill(&event, fVar.truth(event), event.GetWeight());
         fMigration->Fill(&event, fVar.truth(event), fVar.reco(event), event.GetWeight());
@@ -78,6 +82,11 @@ namespace sig
         fSignalEvents->Fill(&event, fVar.reco(event), event.GetWeight());
       }
 
+      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) override
+      {
+        fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
+      }
+
     private:
       VARIABLE fVar;  //VARIABLE in which a differential cross section will be extracted
 
@@ -86,5 +95,7 @@ namespace sig
       std::unique_ptr<HIST> fSignalEvents; //TODO: This just needs to be a TH1D!  It only comes from data.
       std::unique_ptr<HIST> fEfficiencyNum;
       std::unique_ptr<HIST> fEfficiencyDenom;
+
+      util::Categorized<HIST, background_t> fBackgrounds; //Background event distributions in the reco signal region
   };
 }

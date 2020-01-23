@@ -20,7 +20,7 @@ namespace reco
   class MinosDeltaT: public Cut
   {
     public:
-      MinosDeltaT(const YAML::Node& config);
+      MinosDeltaT(const YAML::Node& config, const std::string& name);
       virtual ~MinosDeltaT() = default;
 
     protected:

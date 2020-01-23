@@ -7,7 +7,7 @@
 
 namespace reco
 {
-  MinosDeltaT::MinosDeltaT(const YAML::Node& config): Cut(config), fMax(config["max"].as<ns>())
+  MinosDeltaT::MinosDeltaT(const YAML::Node& config, const std::string& name): Cut(config, name), fMax(config["max"].as<ns>())
   {
   }
 
@@ -19,5 +19,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::MinosDeltaT> MainAnalysis_reg("MinosDeltaT");
+  static plgn::Registrar<reco::Cut, reco::MinosDeltaT, std::string&> MainAnalysis_reg("MinosDeltaT");
 }

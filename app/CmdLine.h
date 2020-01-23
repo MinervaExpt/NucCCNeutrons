@@ -18,8 +18,8 @@
 //       physics analysis code.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#ifndef APO_CMDLINE_H
-#define APO_CMDLINE_H
+#ifndef APP_CMDLINE_H
+#define APP_CMDLINE_H
 
 //c++ includes
 #include <string>
@@ -33,7 +33,7 @@ namespace YAML
   class Node;
 }
 
-namespace apo
+namespace app
 {
   class CmdLine
   {
@@ -91,4 +91,4 @@ namespace apo
   };
 }
 
-#endif //APO_CMDLINE_H
+#endif //APP_CMDLINE_H

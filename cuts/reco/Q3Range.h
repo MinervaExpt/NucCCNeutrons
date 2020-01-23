@@ -15,7 +15,7 @@ namespace reco
   class Q3Range: public Cut
   {
     public:
-      Q3Range(const YAML::Node& config);
+      Q3Range(const YAML::Node& config, const std::string& name);
       virtual ~Q3Range() = default;
 
     protected:

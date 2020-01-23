@@ -17,7 +17,7 @@ namespace reco
   class IsInTarget: public Cut
   {
     public:
-      IsInTarget(const YAML::Node& config);
+      IsInTarget(const YAML::Node& config, const std::string& name);
       virtual ~IsInTarget() = default;
 
     protected:

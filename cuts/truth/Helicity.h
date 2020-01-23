@@ -23,7 +23,7 @@ namespace truth
   class Helicity: public Cut
   {
     public:
-      Helicity(const YAML::Node& config);
+      Helicity(const YAML::Node& config): Cut(config) {}
       virtual ~Helicity() = default;
 
     protected:
