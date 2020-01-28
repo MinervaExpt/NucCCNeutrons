@@ -56,7 +56,7 @@ namespace evt
       //TODO: Fix branches that come from derived values.  I need to calculate them from the most
       //      basic values I can find instead for the NS Framework.
       //Reco branches
-      virtual GeV GetQ3() const { return GetDouble("CCNeutrons_q3"); }
+      virtual MeV GetQ3() const { return GetDouble("CCNeutrons_q3"); }
       virtual vertex_t GetVtx() const { return vertex_t(GetVec<double>("vtx")); }
       virtual ns GetMINOSTrackDeltaT() const { return GetDouble("minos_minerva_track_deltaT"); }
       virtual int GetNTracks() const { return GetInt("n_tracks"); }

@@ -15,7 +15,7 @@ namespace reco
 
   bool nTracks::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetNTracks() > fMin && event.GetNTracks() < fMax;
+    return event.GetNTracks() >= fMin && event.GetNTracks() <= fMax;
   }
 }
 
