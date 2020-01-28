@@ -41,11 +41,20 @@
 //ROOT includes
 #include "TFile.h"
 #include "TTree.h"
+#include "Cintex/Cintex.h"
 
 //c++ includes
 #include <iostream>
 #include <algorithm>
 #include <unordered_map>
+
+//Macro to centralize how I print out debugging messages
+//TODO: Decide how I want this macro to work and centralize it.
+#ifndef NDEBUG
+  #define LOG_DEBUG(msg) std::cerr << msg << "\n";
+#else
+  #define LOG_DEBUG(msg)
+#endif
 
 //Helper functions to make main() simpler
 namespace
@@ -107,75 +116,151 @@ namespace
 
 int main(const int argc, const char** argv)
 {
+  ROOT::Cintex::Cintex::Enable(); //Needed to look up dictionaries for PlotUtils classes like MnvH1D
+  TH1::AddDirectory(kFALSE); //Needed so that MnvH1D gets to clean up its own MnvLatErrorBands (which are TH1Ds).
+
   //TODO: Move these parameters somehwere that can be shared between applications?
   constexpr auto anaTupleName = "NucCCNeutron";
 
+  const app::CmdLine options(argc, argv); //Parses the command line for input and configuration file, assembles a
+                                          //list of files to process, prepares a file for histograms, and puts the configuration
+                                          //file together.  See CmdLine.h for more details.
+
+  //Set up other application options
+  const auto& appOptions = options.ConfigFile()["app"];
+  const auto blobAlg = appOptions["BlobAlg"].as<std::string>("proximity");
+
+  //The file where I will put histrograms I produce.
+  //TODO: I learned when helping Christian that I can't use TFile::Write() to write
+  //      MnvH1Ds' plots because MnvH1D insists on deleteing its own TH1Ds.  I've got
+  //      to either Write() each TH1D or convince TFile not to delete the objects it
+  //      owns.  I think there's a flag for the latter in TObject.
+  const bool isThisJobMC = app::IsMC(options.TupleFileNames().front());
+  util::Directory histDir(*options.HistFile);
+
+  //Decide which systematic universes to process, but delay setting the tree to
+  //process until later.
+  //TODO: Can't we just agree to use std::unique_ptr<>s instead?  Now, I've got
+  //      to remember to delete these.
+  std::vector<evt::CVUniverse*> universes = ::getSystematics(nullptr, isThisJobMC);
+
+  //Set up backgrounds
+  LOG_DEBUG("Setting up Backgrounds...")
+  std::vector<std::unique_ptr<bkg::Background>> backgrounds;
   try
   {
-    const app::CmdLine options(argc, argv); //Parses the command line for input and configuration file, assembles a
-                                            //list of files to process, prepares a file for histograms, and puts the configuration
-                                            //file together.  See CmdLine.h for more details.
+    for(const auto config: options.ConfigFile()["backgrounds"]) backgrounds.emplace_back(new bkg::Background(config.first.as<std::string>(), config.second));
+  }
+  catch(const std::runtime_error& e)
+  {
+    std::cerr << "Failed to setup up a Background:\n" << e.what() << "\n";
+    return app::CmdLine::ExitCode::YAMLError;
+  }
 
-    //Set up other application options
-    const auto& appOptions = options.ConfigFile()["app"];
-    const auto blobAlg = appOptions["BlobAlg"].as<std::string>("proximity");
+  //Set up Signal
+  LOG_DEBUG("Setting up Signal...")
+  auto signalDir = histDir.mkdir(options.ConfigFile()["signal"]["name"].as<std::string>());
+  std::unique_ptr<sig::Signal> signal;
+  try
+  {
+    signal = plgn::Factory<sig::Signal, util::Directory&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance().Get(options.ConfigFile()["signal"], signalDir, backgrounds, universes);
+  }
+  catch(const std::runtime_error& e)
+  {
+    std::cerr << "Failed to set up the Signal:\n" << e.what() << "\n";
+    return app::CmdLine::ExitCode::YAMLError;
+  }
 
-    //The file where I will put histrograms I produce.
-    //TODO: I learned when helping Christian that I can't use TFile::Write() to write
-    //      MnvH1Ds' plots because MnvH1D insists on deleteing its own TH1Ds.  I've got
-    //      to either Write() each TH1D or convince TFile not to delete the objects it
-    //      owns.  I think there's a flag for the latter in TObject.
-    const bool isThisJobMC = app::IsMC(options.TupleFileNames().front());
-    TFile histFile((std::string(argv[0]) + "_" + (isThisJobMC?"MC":"Data")).c_str(), "CREATE");
-    util::Directory histDir(histFile);
+  //Set up cuts, sidebands, and backgrounds
+  LOG_DEBUG("Setting up truth cuts...")
+  std::vector<std::unique_ptr<truth::Cut>> truthPhaseSpace;
+  try
+  {
+    truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options.ConfigFile()["cuts"]["truth"]["phaseSpace"]);
+  }
+  catch(const std::runtime_error& e)
+  {
+    std::cerr << "Failed to set up a phase space truth::Cut:\n" << e.what() << "\n";
+    return app::CmdLine::ExitCode::YAMLError;
+  }
 
-    //Decide which systematic universes to process, but delay setting the tree to
-    //process until later.
-    //TODO: Can't we just agree to use std::unique_ptr<>s instead?  Now, I've got
-    //      to remember to delete these.
-    std::vector<evt::CVUniverse*> universes = ::getSystematics(nullptr, isThisJobMC);
-
-    //Set up Signal
-    auto signalDir =  histDir.mkdir(options.ConfigFile()["signal"]["name"].as<std::string>());
-    auto signal = plgn::Factory<sig::Signal, util::Directory&, std::vector<evt::CVUniverse*>&>::instance().Get(options.ConfigFile()["signal"], signalDir, universes);
-
-    //Set up cuts, sidebands, and backgrounds
-    auto truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options.ConfigFile()["cuts"]["truth"]["phaseSpace"]);
-    auto truthSignal = plgn::loadPlugins<truth::Cut>(options.ConfigFile()["cuts"]["truth"]["signal"]);
-    std::vector<std::unique_ptr<reco::Cut>> recoCuts;
-    
-    auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
+  std::vector<std::unique_ptr<truth::Cut>> truthSignal;
+  try
+  {
+    truthSignal = plgn::loadPlugins<truth::Cut>(options.ConfigFile()["cuts"]["truth"]["signal"]);
+  }
+  catch(const std::runtime_error& e)
+  {
+    std::cerr << "Failed to set up a signal definition truth::Cut:\n" << e.what() << "\n";
+    return app::CmdLine::ExitCode::YAMLError;
+  }
+  
+  LOG_DEBUG("Setting up reco cuts...")
+  std::vector<std::unique_ptr<reco::Cut>> recoCuts;
+  auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
+  try
+  {
     for(auto config: options.ConfigFile()["cuts"]["reco"])
     {
       auto name = config.first.as<std::string>();
       recoCuts.emplace_back(cutFactory.Get(config.second, name));
     }
+  }
+  catch(const std::runtime_error& e)
+  {
+    std::cerr << "Failed to set up a reco::Cut:\n" << e.what() << "\n";
+    return app::CmdLine::ExitCode::YAMLError;
+  }
 
-    decltype(recoCuts) sidebandCuts;
+  LOG_DEBUG("Setting up sidebands...")
+  decltype(recoCuts) sidebandCuts;
 
-    //TODO: Put these extended setup steps into functions?
-    std::vector<std::unique_ptr<bkg::Background>> backgrounds;
-    for(const auto config: options.ConfigFile()["backgrounds"]) backgrounds.emplace_back(new bkg::Background(config.first.as<std::string>(), config.second));
-
-    std::unordered_map<int, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
-    auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance();
-    for(auto sideband: options.ConfigFile()["sidebands"])
+  std::unordered_map<int, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
+  auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance();
+  for(auto sideband: options.ConfigFile()["sidebands"])
+  {
+    try
     {
       auto dir = histDir.mkdir(sideband.first.as<std::string>());
       const auto& fails = sideband.second["fails"].as<std::vector<std::string>>();
-      auto passes = plgn::loadPlugins<reco::Cut>(sideband.second["passes"]);
+
+      std::vector<std::unique_ptr<reco::Cut>> passes;
+      for(const auto config: sideband.second["passes"])
+      {
+        auto name = config.first.as<std::string>();
+        try
+        {
+          passes.emplace_back(cutFactory.Get(config.second, name));
+        }
+        catch(const std::runtime_error& e)
+        {
+          std::cerr << "Failed to set up a reco::Cut named " << name << " for Sideband " << sideband.first.as<std::string>() << ":\n" << e.what() << "\n";
+          return app::CmdLine::ExitCode::YAMLError;
+        }
+      }
+
       const auto hashPattern = ::hashCuts(fails, recoCuts, sidebandCuts); //Also transfers relevant cuts from recoCuts to sidebandCuts
       sidebands[hashPattern].emplace_back(sideFactory.Get(sideband.second, dir, std::move(passes), backgrounds, universes));
     }
+    catch(const std::runtime_error& e)
+    {
+      std::cerr << "Failed to set up a Sideband named " << sideband.first.as<std::string>() << ":\n" << e.what() << "\n";
+      return app::CmdLine::ExitCode::YAMLError;
+    }
+  }
 
-    //Accumulate POT from each good file
-    double pot_used = 0;
+  //Accumulate POT from each good file
+  double pot_used = 0;
 
-    //TODO: Loop over files
+  //Loop over files
+  LOG_DEBUG("Beginning loop over files!")
+  try
+  {
     for(const auto& fName: options.TupleFileNames())
     {
+      LOG_DEBUG("Loading " << fName)
       //Sanity checks on AnaTuple files
-      std::unique_ptr<TFile> tupleFile(TFile::Open(fName.c_str())); //TODO: Make sure this TFile is written?  Seems like I have to Write() all MnvH1Ds.
+      std::unique_ptr<TFile> tupleFile(TFile::Open(fName.c_str()));
       if(tupleFile == nullptr)
       {
         std::cerr << fName << ": No such file or directory.  Skipping this "
@@ -369,21 +454,17 @@ int main(const int argc, const char** argv)
       pot_used += thisFilesPOT;
     } //For each AnaTuple file
   } //try-catch on whole event loop
-  catch(const app::CmdLine::exception& e)
-  {
-    std::cerr << e.what() << "\nReturning " << e.reason << " without doing anything!\n";
-    return e.reason;
-  }
+    //histFile gets destroyed and writes its histograms here
   //If I ever want to handle ROOT warnings differently, this is
   //the place to implement that behavior.
   catch(const ROOT::warning& e)
   {
-    std::cerr << e.what() << "\nExiting immediately, so you probably got incomplete results!";
+    std::cerr << e.what() << "\nExiting immediately, so you probably got incomplete results!\n";
     return app::CmdLine::ExitCode::IOError;
   }
   catch(const ROOT::error& e)
   {
-    std::cerr << e.what() << "\nExiting immediately, so you probably got incomplete results!";
+    std::cerr << e.what() << "\nExiting immediately, so you probably got incomplete results!\n";
     return app::CmdLine::ExitCode::IOError;
   }
   catch(const std::runtime_error& e)

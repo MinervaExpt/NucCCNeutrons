@@ -48,10 +48,10 @@ namespace side
       {
         const auto binning = config["binning"].as<std::vector<double>>(); //TODO: Upgrade WithUnits<> to check UNIT on bins?
 
-        fData.reset(dir.make<HIST>("Data", ("Data;Reco " + fVar.name() + ";entries").c_str(),
-                                   binning, universes));
-        fSignal.reset(dir.make<HIST>("TruthSignal", ("Truth Signal;Reco " + fVar.name() + ";entries").c_str(),
-                                     binning, universes));
+        fData = dir.make<HIST>("Data", ("Data;Reco " + fVar.name() + ";entries").c_str(),
+                               binning, universes);
+        fSignal = dir.make<HIST>("TruthSignal", ("Truth Signal;Reco " + fVar.name() + ";entries").c_str(),
+                                 binning, universes);
       }
 
       //TODO: Hack to adapt to PlotUtils' MnvH1D ownership semantics?
@@ -85,8 +85,8 @@ namespace side
       //Histograms for cross section extraction
       //These plots are all used together, and one of them is filled with data.
       //So, they're all in reco variables.
-      std::unique_ptr<HIST> fData; //TODO: This can be a TH1D
-      std::unique_ptr<HIST> fSignal;
+      HIST* fData; //TODO: This can be a TH1D
+      HIST* fSignal;
       util::Categorized<HIST, background_t> fBackgrounds;
   };
 }

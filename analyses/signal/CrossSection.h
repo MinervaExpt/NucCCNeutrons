@@ -54,14 +54,14 @@ namespace sig
       {
         const auto binning = config["binning"].as<std::vector<double>>(); //TODO: Upgrade WithUnits<> to check UNIT on bins?
 
-        fMigration.reset(dir.make<MIGRATION>("Migration", ("Migration;Reco " + fVar.name() + ";Truth " + fVar.name() + ";entries").c_str(),
-                                             binning, binning, universes));
-        fSignalEvents.reset(dir.make<HIST>("Signal", ("Signal;" + fVar.name() + ";entries").c_str(),
-                                           binning, universes));
-        fEfficiencyNum.reset(dir.make<HIST>("EfficiencyNumerator", ("Efficiency Numerator;" + fVar.name() + ";entries").c_str(),
-                                            binning, universes));
-        fEfficiencyDenom.reset(dir.make<HIST>("EfficiencyDenominator", ("Efficiency Denominator;" + fVar.name() + ";entries").c_str(),
-                                              binning, universes));
+        fMigration = dir.make<MIGRATION>("Migration", ("Migration;Reco " + fVar.name() + ";Truth " + fVar.name() + ";entries").c_str(),
+                                         binning, binning, universes);
+        fSignalEvents = dir.make<HIST>("Signal", ("Signal;" + fVar.name() + ";entries").c_str(),
+                                       binning, universes);
+        fEfficiencyNum = dir.make<HIST>("EfficiencyNumerator", ("Efficiency Numerator;" + fVar.name() + ";entries").c_str(),
+                                        binning, universes);
+        fEfficiencyDenom = dir.make<HIST>("EfficiencyDenominator", ("Efficiency Denominator;" + fVar.name() + ";entries").c_str(),
+                                          binning, universes);
       }
 
       virtual ~CrossSection() = default;
@@ -91,10 +91,10 @@ namespace sig
       VARIABLE fVar;  //VARIABLE in which a differential cross section will be extracted
 
       //Signal histograms needed to extract a cross section
-      std::unique_ptr<MIGRATION> fMigration;
-      std::unique_ptr<HIST> fSignalEvents; //TODO: This just needs to be a TH1D!  It only comes from data.
-      std::unique_ptr<HIST> fEfficiencyNum;
-      std::unique_ptr<HIST> fEfficiencyDenom;
+      MIGRATION* fMigration;
+      HIST* fSignalEvents; //TODO: This just needs to be a TH1D!  It only comes from data.
+      HIST* fEfficiencyNum;
+      HIST* fEfficiencyDenom;
 
       util::Categorized<HIST, background_t> fBackgrounds; //Background event distributions in the reco signal region
   };

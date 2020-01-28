@@ -18,12 +18,60 @@
 //ROOT includes
 #include "TFile.h"
 
+//PlotUtils includes
+//No junk from PlotUtils please!  I already
+//know that MnvH1D does horrible horrible things.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+#include "HistWrapper.h"
+#include "Hist2DWrapper.h"
+#pragma GCC diagnostic pop
+
+//Units includes
+#include "util/WithUnits.h"
+
 namespace util  
 {
-  //Looks like art::ServiceHandle<art::TFileService>.  
-  class Directory //A Directory IS NOT A DIRECTORY because that would 
-                      //require that DIRECTORY is copiable and introduce 
-                      //coupling to DIRECTORY's source code in other ways.  
+  //Machinery to specialize just one bit of code
+  //that sets the directory of a created object.
+  //If that object happens to be a HistWrapper or
+  //a Hist2DWrapper, I want to look up its underlying
+  //histogram.
+  namespace detail
+  {
+    template <class HIST>
+    struct set
+    {
+      static void dir(HIST& hist, TDirectory& dir) { hist.SetDirectory(&dir); }
+    };
+
+    //Specialization for HistWrapper<>
+    template <class UNIV>
+    struct set<PlotUtils::HistWrapper<UNIV>>
+    {
+      static void dir(PlotUtils::HistWrapper<UNIV>& wrapper, TDirectory& dir) { wrapper.hist->SetDirectory(&dir); }
+    };
+
+    //Specialization for Hist2DWrapper<>
+    template <class UNIV>
+    struct set<PlotUtils::Hist2DWrapper<UNIV>>
+    { 
+      static void dir(PlotUtils::Hist2DWrapper<UNIV>& wrapper, TDirectory& dir) { wrapper.hist->SetDirectory(&dir); }
+    };
+
+    //Specialize for using HistWrapper<> with WithUnits<>.
+    //I could probably do SFINAE and look for a "hist" member,
+    //but it's after 6PM.  Actually, this might turn out to be
+    //SFINAE after all...
+    template <class HASHIST, class ...UNITS>
+    struct set<units::WithUnits<HASHIST, UNITS...>>
+    {
+      static void dir(units::WithUnits<HASHIST, UNITS...>& wrapper, TDirectory& dir) { wrapper.hist->SetDirectory(&dir); }
+    };
+  }
+
+  //Looks like art::TFileService.
+  class Directory 
   {
     public:
       //Create a top-level Directory to wrap over some DIRECTORY 
@@ -47,16 +95,9 @@ namespace util
         sentry dirSentry;
         fBaseDir.cd();
         auto obj = new TOBJECT((fName + name).c_str(), title.c_str(), args...);
-        return obj;
-      }
-
-      template <class TOBJECT, class ...ARGS>
-      TOBJECT* makeAndRegister(const std::string& name, const std::string& title, ARGS... args)
-      {
-        sentry dirSentry;
-        fBaseDir.cd();
-        auto obj = new TOBJECT(fName+name, title.c_str(), args...);
-        obj->SetDirectory(&fBaseDir);
+        detail::set<TOBJECT>::dir(*obj, fBaseDir); //This is redundant for normal TH1Ds, but it's necessary for
+                                                   //PlotUtils::HistWrapper<> because HistWrapper<> calls SetDirectory(0)
+                                                   //in its constructor.
         return obj;
       }
 

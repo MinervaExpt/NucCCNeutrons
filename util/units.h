@@ -35,7 +35,7 @@
         if(!node.IsScalar()) return false;\
 \
         /*Require that tag matches UNIT's name*/\
-        if(node.Tag() != std::string(#UNIT)) return false;\
+        if(node.Tag() != std::string("!" #UNIT)) return false;\
 \
         value = UNIT(node.as<double>());\
         return true;\

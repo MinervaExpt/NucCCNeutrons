@@ -31,6 +31,12 @@
 #ifndef PLGN_FACTORY_CPP
 #define PLGN_FACTORY_CPP
 
+#ifndef NDEBUG
+  #define LOG_DEBUG(msg) std::cerr << msg << "\n";
+#else
+  #define LOG_DEBUG(msg)
+#endif
+
 namespace plgn
 {
   template <class BASE, class ...ARGS>
@@ -76,7 +82,16 @@ namespace plgn
       {
         const auto type = config.Tag().substr(1); //yaml-cpp doesn't strip the ! off of tags
         const auto found = fNameToReg.find(type);
-        if(found != fNameToReg.end()) return found->second->NewPlugin(config, std::forward<ARGS>(args)...); 
+        LOG_DEBUG("Setting up a plugin of type " << type)
+        try
+        {
+          if(found != fNameToReg.end()) return found->second->NewPlugin(config, std::forward<ARGS>(args)...);
+        }
+        catch(const YAML::Exception& e)
+        {
+          throw std::runtime_error(std::string("Got a YAML error when setting up a ") + type + ": " + e.what());
+        }
+
         throw NoSuchPlugin(type);
       }
 
@@ -99,9 +114,7 @@ namespace plgn
       {
         auto& reg = Factory<BASE, ARGS...>::instance();
         reg.Add(name, this);
-        #ifndef NDEBUG
-          //std::cout << "Registered a plugin named " << name << "\n";
-        #endif
+        LOG_DEBUG("Registered a plugin named " << name)
       }
 
       virtual ~Registrar() = default;
@@ -112,7 +125,6 @@ namespace plgn
       }
   };
 
-
   //Load a whole YAML map of plugins at once.
   template <class CUT>
   std::vector<std::unique_ptr<CUT>> loadPlugins(const YAML::Node& config)
@@ -120,7 +132,10 @@ namespace plgn
     std::vector<std::unique_ptr<CUT>> cuts;
     auto& factory = plgn::Factory<CUT>::instance();
 
-    for(auto block: config) cuts.emplace_back(factory.Get(block.second));
+    for(auto block: config)
+    {
+      cuts.emplace_back(factory.Get(block.second));
+    }
 
     return cuts;
   }

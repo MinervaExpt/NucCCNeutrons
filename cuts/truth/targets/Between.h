@@ -6,8 +6,8 @@
 #ifndef TRUTH_BETWEEN_H
 #define TRUTH_BETWEEN_H
 
-//units includes
-#include "units/NucCCNeutronsUnits.h"
+//util includes
+#include "util/units.h"
 
 //cut includes
 #include "cuts/truth/Cut.h"
@@ -21,7 +21,7 @@ namespace truth
       virtual ~Between() = default;
 
     protected:
-      virtual bool passesCut(const CVUniverse& event) const override;
+      virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
       const mm fZMin;

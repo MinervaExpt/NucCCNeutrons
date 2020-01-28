@@ -22,7 +22,7 @@ include_directories( "${PROJECT_SOURCE_DIR}" )
 
 #Find dependencies
 list( APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-find_package(ROOT REQUIRED COMPONENTS RIO Net Tree Core Geom EG GenVector)
+find_package(ROOT REQUIRED COMPONENTS RIO Net Tree Core Geom EG GenVector Cintex) #TODO: Remove CintEx if ROOT version > 5.34
 include(${ROOT_USE_FILE})
 
 find_package(yaml-cpp 0.6.0 REQUIRED)

@@ -6,59 +6,62 @@ app:
 #TODO: Figure out how to configure cuts that define neutron candidates.
 #      This is really more of a reconstruction step, but I have to do it
 #      now for flexibility of cut decisions and systematics.
-signal: !MuonMomentum &Variable
+signal: !MuonMomentum
   name: "Muon Momentum"
+  variable: &Variable
+  binning: &bins [ 0, 0.1, 0.2, 0.5, 0.7, 1.2, 3 ]
 
 cuts:
   truth:
     phaseSpace:
       MuonMomentum: !MuonMomentum
-        min: 2 #GeV/c
+        min: !GeV 2
       TrackAngle: !TrackAngle
         max: 17 #degrees; stricter constraint for the targets
     signal:
       Antineutrino: !IsAntineutrino
-      LowQ3: !Q3Range
-        min: 0 #GeV/c
-        max: 0.4 #GeV/c
-      Target3: !IsInTarget
-        *Target3
+      LowQ3: &Q3Range !Q3Range
+        min: !GeV 0
+        max: !GeV 0.4
+      Target3:
+        *OneTrackTarget3
       Iron: !Target3Iron
   reco:
-    OneTrack: !nTracksMax
+    OneTrack: !nTracks
       max: 1
-    LowQ3: !Q3Range
-      min: 0 #GeV/c
-      max: 0.4 #GeV/c
+    LowQ3: *Q3Range
     MinosDeltaT: !MinosDeltaT
-      max: 20 #ns
+      max: !ns 20
     TrackAngle: !TrackAngle
       max: 17 #degrees; stricter constraint for the targets
     MuonMomentum: !MuonMomentum
-      min: 2 #GeV/c
+      min: !GeV 2
     Antineutrino: !IsAntineutrino
-    Target3: !IsInTarget
-      *Target3
+    Target3:
+      *OneTrackTarget3
     Iron: !Target3Iron
 
 #Names in sidebands' "fails" blocks refer to truth cuts by block name.
 sidebands:
-  UpstreamPlastic:
+  UpstreamPlastic: !MuonMomentum
     variable: *Variable
+    binning: *bins
     fails: [Target3]
     passes:
-      Upstream: !Between &USPlastic
-        us: *Target2
-        ds: *Target3
-  DownstreamPlastic:
+      Upstream: &USPlastic !Between
+        us: *OneTrackTarget2
+        ds: *OneTrackTarget3
+  DownstreamPlastic: !MuonMomentum
     variable: *Variable
+    binning: *bins
     fails: [Target3]
     passes:
-      Downstream: !Between &DSPlastic
-        us: *Target3
-        ds: *Target4
-  WrongMaterial:
+      Downstream: &DSPlastic !Between
+        us: *OneTrackTarget3
+        ds: *OneTrackTarget4
+  WrongMaterial: !MuonMomentum
     variable: *Variable
+    binning: *bins
     fails: [Iron]
     #And implicitly passes the Target3 truth cut
 

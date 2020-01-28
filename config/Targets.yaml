@@ -8,103 +8,103 @@
 #Author: Andrew Olivier aolivier@ur.rochester.edu
 
 OneTrack:
-  "Target 1": &OneTrackTarget1
+  "Target 1": &OneTrackTarget1 !IsInTarget 
     truth:
-      min: 4465
-      max: 4500
+      min: !mm 4465
+      max: !mm 4500
     reco:
-      min: 4500
-      max: 4520
-  "Target 2": &OneTrackTarget2
+      min: !mm 4500
+      max: !mm 4520
+  "Target 2": &OneTrackTarget2 !IsInTarget
     truth:
-      min: 4680
-      max: 4720
+      min: !mm 4680
+      max: !mm 4720
     reco:
-      min: 4720
-      max: 4740
-  "Target 3": &OneTrackTarget3
+      min: !mm 4720
+      max: !mm 4740
+  "Target 3": &OneTrackTarget3 !IsInTarget
     truth:
-      min: 4900
-      max: 4990 #TODO: Jeffrey has a smaller range for the other materials!  He uses 4950 when target Z is not 6.  Does this doom me to per-section z cuts?  I guess anything in the lead section (for example) between 4950 and 4990 is in air.  Decided to just check target Z for target 3 iron and lead.
+      min: !mm 4900
+      max: !mm 4990 #TODO: Jeffrey has a smaller range for the other materials!  He uses 4950 when target Z is not 6.  Does this doom me to per-section z cuts?  I guess anything in the lead section (for example) between 4950 and 4990 is in air.  Decided to just check target Z for target 3 iron and lead.
     reco:
-      min: 4980
-      max: 5010
-  "Water Target": &OneTrackWaterTarget
+      min: !mm 4980
+      max: !mm 5010
+  "Water Target": &OneTrackWaterTarget !IsInTarget
     truth:
-      min: 5170
-      max: 5440
+      min: !mm 5170
+      max: !mm 5440
     reco:
-      min: 5450
-      max: 5460
-  "Target 4": &OneTrackTarget4
+      min: !mm 5450
+      max: !mm 5460
+  "Target 4": &OneTrackTarget4 !IsInTarget
     truth:
-      min: 5635
-      max: 5650
+      min: !mm 5635
+      max: !mm 5650
     reco:
-      min: 5660
-      max: 5690
-  "Target 5": &OneTrackTarget5
+      min: !mm 5660
+      max: !mm 5690
+  "Target 5": &OneTrackTarget5 !IsInTarget
     truth:
-      min: 5765
-      max: 5790
+      min: !mm 5765
+      max: !mm 5790
     reco:
-      min: 5800
-      max: 5820
+      min: !mm 5800
+      max: !mm 5820
   "Tracker": &OneTrackTracker
     truth:
-      min: 5890
-      max: 8467
+      min: !mm 5890
+      max: !mm 8467
     reco:
-      min: 6000
-      max: 8500
+      min: !mm 6000
+      max: !mm 8500
 
 MultiTrack:
-  "Target 1": &MultiTrackTarget1
+  "Target 1": &MultiTrackTarget1 !IsInTarget
     truth:
-      min: 4465
-      max: 4500
+      min: !mm 4465
+      max: !mm 4500
     reco:
-      min: 4500
-      max: 4530
-  "Target 2": &MultiTrackTarget2
+      min: !mm 4500
+      max: !mm 4530
+  "Target 2": &MultiTrackTarget2 !IsInTarget
     truth:
-      min: 4680
-      max: 4720
+      min: !mm 4680
+      max: !mm 4720
     reco:
-      min: 4685
-      max: 4730
-  "Target 3": &MultiTrackTarget3
+      min: !mm 4685
+      max: !mm 4730
+  "Target 3": &MultiTrackTarget3 !IsInTarget
     truth:
-      min: 4900
-      max: 4990
+      min: !mm 4900
+      max: !mm 4990
     reco:
-      min: 4910
-      max: 4980
-  "Water Target": &MultiTrackWaterTarget
+      min: !mm 4910
+      max: !mm 4980
+  "Water Target": &MultiTrackWaterTarget !IsInTarget
     truth:
-      min: 5170
-      max: 5440
+      min: !mm 5170
+      max: !mm 5440
     reco:
-      min: 5200
-      max: 5420
-  "Target 4": &MultiTrackTarget4
+      min: !mm 5200
+      max: !mm 5420
+  "Target 4": &MultiTrackTarget4 !IsInTarget
     truth:
-      min: 5635
-      max: 5650
+      min: !mm 5635
+      max: !mm 5650
     reco:
-      min: 5635
-      max: 5660
-  "Target 5": &MultiTrackTarget5
+      min: !mm 5635
+      max: !mm 5660
+  "Target 5": &MultiTrackTarget5 !IsInTarget
     truth:
-      min: 5765
-      max: 5790
+      min: !mm 5765
+      max: !mm 5790
     reco:
-      min: 5760
-      max: 5795
+      min: !mm 5760
+      max: !mm 5795
   "Tracker": &MultiTrackTracker
     truth:
-      min: 5890
-      max: 8467
+      min: !mm 5890
+      max: !mm 8467
     reco:
-      min: 6000
-      max: 8500
+      min: !mm 6000
+      max: !mm 8500

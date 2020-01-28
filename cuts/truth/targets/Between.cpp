@@ -6,9 +6,13 @@
 //targets includes
 #include "cuts/truth/targets/Between.h"
 
+//util includes
+#include "util/Factory.cpp"
+
 namespace truth
 {
-  Between::Between(const YAML::Node& config): fZMin(config["us"]["truth"]["max"].as<mm>()),
+  Between::Between(const YAML::Node& config): Cut(config),
+                                              fZMin(config["us"]["truth"]["max"].as<mm>()),
                                               fZMax(config["ds"]["truth"]["min"].as<mm>())
   {
   }
@@ -22,5 +26,5 @@ namespace truth
 //Register Between as a kind of Cut
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::Between> MainAnalysis_reg("Between");
+  static plgn::Registrar<truth::Cut, truth::Between> TruthBetween_reg("Between");
 }
