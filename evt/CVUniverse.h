@@ -8,7 +8,7 @@
 #define EVT_CVUNIVERSE_H
 
 //PlotUtils includes
-#include "PlotUtils/DefaultCVUniverse.h"
+#include "DefaultCVUniverse.h"
 
 //Get the unit definitions for my analysis
 #include "util/units.h"
@@ -44,6 +44,10 @@ namespace evt
     public:
       CVUniverse(/*const std::string& blobAlg,*/ PlotUtils::ChainWrapper* chw, const double nsigma = 0); //TODO: Get away from ChainWrapper?
       virtual ~CVUniverse() = default;
+
+      //DefaultCVUniverse interfaces
+      //This is really used as "hypothesis name" for NeutrinoInt-based branches.
+      virtual std::string GetAnaToolName() const override { return "CCNeutrons"; }
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
       //The user is responsible for deleting m_chw as in its normal usage.

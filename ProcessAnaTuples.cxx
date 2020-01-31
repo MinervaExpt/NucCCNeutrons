@@ -33,7 +33,7 @@
 #include "app/IsMC.h"
 
 //PlotUtils includes
-#include "PlotUtils/CrashOnROOTMessage.h"
+#include "CrashOnROOTMessage.h"
 
 //YAML-cpp includes
 #include "yaml-cpp/yaml.h"
