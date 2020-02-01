@@ -89,7 +89,7 @@ namespace evt
       {
         //Taken from Ben's code at https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/Personal/bmesserl/SystematicsFramework/CVUniverse.h
         const MeV Enu = GetDouble("mc_incomingE");
-        const int nu_type = GetInt("mc_incoming"); //TODO: Set nu_type for the type of neutrino I'm trying to analyze.  What if this event is truth wrong muon sign background?!
+        const int nu_type = GetInt("mc_incoming"); //Ben uses the truth PDG code of the current event here too.
         const double fluxAndCV = GetFluxAndCVWeight(Enu.in<MeV>(), nu_type);
         return fluxAndCV * GetGenieWeight(); //TODO: Other weights?
       }

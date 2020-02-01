@@ -34,6 +34,8 @@
 
 //PlotUtils includes
 #include "CrashOnROOTMessage.h"
+#include "GenieSystematics.h"
+#include "FluxSystematics.h"
 
 //YAML-cpp includes
 #include "yaml-cpp/yaml.h"
@@ -114,16 +116,28 @@ namespace
                        });
   }
 
-  std::vector<evt::CVUniverse*> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool /*isMC*/)
+  std::vector<evt::CVUniverse*> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
   {
-    //TODO: Get centralized systematics if !isMC
-    const std::vector<evt::CVUniverse*> result = {new evt::CVUniverse(chw)};
+    std::vector<evt::CVUniverse*> result = {new evt::CVUniverse(chw)};
 
     //"global" configuration for all DefaultCVUniverses
     DefaultCVUniverse::SetPlaylist(options.playlist());
     DefaultCVUniverse::SetAnalysisNuPDG(-14); //TODO: Get this from the user somehow
     DefaultCVUniverse::SetNuEConstraint(false); //No nu-e constraint for antineutrino mode yet
     DefaultCVUniverse::SetNonResPiReweight(false);
+
+    if(isMC)
+    {
+      const int nFluxUniverses = 50; //TODO: Get this number from the user and tune it
+      DefaultCVUniverse::SetNFluxUniverses(nFluxUniverses);
+
+      auto genieSystPlusOne = PlotUtils::GetGenieSystematics<evt::CVUniverse>(chw, 1);
+      result.insert(result.end(), genieSystPlusOne.begin(), genieSystPlusOne.end());
+      auto genieSystMinusOne = PlotUtils::GetGenieSystematics<evt::CVUniverse>(chw, -1);
+      result.insert(result.end(), genieSystMinusOne.begin(), genieSystMinusOne.end());
+      auto fluxSys = PlotUtils::GetFluxSystematics<evt::CVUniverse>(chw, nFluxUniverses);
+      result.insert(result.end(), fluxSys.begin(), fluxSys.end());
+    }
 
     return result;
   }
