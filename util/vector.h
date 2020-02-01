@@ -23,9 +23,9 @@ namespace units
 
   //Make the compiler try this before std::sqrt().  Ultimately, this should go in BaseUnits.
   template <class TAG, class PREFIX, class FLOAT>
-  quantity<TAG, PREFIX, FLOAT> sqrt(const quantity<productTag<TAG, TAG>, PREFIX, FLOAT> value)
+  quantity<TAG, std::ratio<1>, FLOAT> sqrt(const quantity<productTag<TAG, TAG>, PREFIX, FLOAT> value)
   {
-    return std::sqrt(value.template in<quantity<productTag<TAG, TAG>, PREFIX, FLOAT>>());
+    return std::sqrt(value.template in<quantity<productTag<TAG, TAG>, std::ratio<1>, FLOAT>>());
   }
 
   template <class TAG, class PREFIX, class FLOAT>

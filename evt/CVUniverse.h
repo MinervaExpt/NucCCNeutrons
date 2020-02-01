@@ -13,6 +13,9 @@
 //Get the unit definitions for my analysis
 #include "util/units.h"
 
+//c++ includes
+#include <numeric>
+
 //Preprocessor macros so that I have only one point of maintenance for
 //replacing ChainWrapper.
 //TODO: I'd have to extend TreeWrapper to have a template Get<>()
@@ -65,13 +68,21 @@ namespace evt
       virtual ns GetMINOSTrackDeltaT() const { return GetDouble("minos_minerva_track_deltaT"); }
       virtual int GetNTracks() const { return GetInt("n_tracks"); }
       virtual int GetHelicity() const { return GetInt("CCNeutrons_nuHelicity"); }
-      virtual momentum_t GetMuonP() const { return GetMuon4V(); }
+      virtual units::LorentzVector<MeV> GetMuonP() const { return GetMuon4V(); }
 
       //Truth branches
-      virtual GeV GetTruthQ3() const { return GetDouble("CCNeutrons_q3"); }
+      virtual MeV GetTruthQ3() const 
+      {
+        const auto fsP = Get<units::LorentzVector<MeV>>(GetVec<double>("mc_FSPartPx"), GetVec<double>("mc_FSPartPy"), GetVec<double>("mc_FSPartPz"), GetVec<double>("mc_FSPartE"));
+
+        const units::LorentzVector<MeV> nuP = GetVec<double>("mc_incomingPartVec");
+        const auto sumFSP = std::accumulate(fsP.begin(), fsP.end(), units::LorentzVector<MeV>{0, 0, 0, 0});
+        const auto q3 = (nuP - sumFSP).p().mag();
+        return q3;
+      }
       virtual vertex_t GetTruthVtx() const { return vertex_t(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
-      virtual momentum_t GetTruthPmu() const { return momentum_t(GetVec<double>("mc_primFSLepton")); }
+      virtual units::LorentzVector<GeV> GetTruthPmu() const { return momentum_t(GetVec<double>("mc_primFSLepton")); }
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
 
       virtual events GetWeight() const
@@ -150,35 +161,35 @@ namespace evt
       //      the user and whatever type checking I can do in FUNCTIONS to not even need
       //      return types from FUNCTIONS in principle.
 
-      //TODO: If passing member function pointers isn't convenient, I can just pass the vectors themselves.
+    //Implementation details that not even my custom universes should ever see.
+    private:
+      //"Abandon all hope ye who enter here."
+      template <class CAND, class TUPLE, size_t ...INDICES>
+      std::vector<CAND> Get_impl(const TUPLE tuple, std::index_sequence<INDICES...> /*indices*/) const
+      {
+        const size_t nCands = std::get<0>(tuple).size();
+        std::vector<CAND> result;
+
+        for(size_t whichCand = 0; whichCand < nCands; ++whichCand) result.push_back(CAND{std::get<INDICES>(tuple)[whichCand]...});
+
+        return result; 
+      }
+
+    public:
       template <class CAND, class ...FUNCTIONS>
-      std::vector<CAND> Get(FUNCTIONS... branches)
+      std::vector<CAND> Get(FUNCTIONS... branches) const
       {
         //Caching the entire vector from each branch at once probably avoids some overhead
         //no matter how you read from the TTree.  With ChainWrapper, it avoids a map lookup
         //for each CAND in exchange for making the compiler's job harder with std::make_index_sequence<>.
-        auto cache = std::make_tuple(FUNCTIONS()...);
+        auto cache = std::make_tuple(branches...);
 
-        return get_impl(cache, std::make_index_sequence<sizeof...(FUNCTIONS)>{});
+        return Get_impl<CAND>(cache, std::make_index_sequence<sizeof...(FUNCTIONS)>{});
       }
 
     protected:
       //Name of the blob algorithm to use
       const std::string m_blobAlg;
-
-    //Implementation details that not even my custom universes should ever see.
-    private:
-      //"Abandon all hope ye who enter here."
-      template <class CAND, class TUPLE, size_t ...INDICES>
-      std::vector<CAND> Get_impl(const TUPLE tuple, std::index_sequence<INDICES...> /*indices*/)
-      {
-        const size_t nCands = std::get<0>(tuple).size();
-        std::vector<CAND> result(nCands);
-
-        for(size_t whichCand = 0; whichCand < nCands; ++whichCand) result[whichCand] = {std::get<INDICES>(tuple)...};
-
-        return result; 
-      }
   };
 }
 

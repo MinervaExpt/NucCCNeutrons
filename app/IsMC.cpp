@@ -12,12 +12,13 @@
 
 //c++ includes
 #include <stdexcept>
+#include <memory>
 
 namespace app
 {
   bool IsMC(const std::string& fileName)
   {
-    auto file = TFile::Open(fileName.c_str()); //xrootd-compatible
+    std::unique_ptr<TFile> file(TFile::Open(fileName.c_str())); //xrootd-compatible
     if(!file)
     {
       throw std::runtime_error("Failed to open file named " + fileName

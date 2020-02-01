@@ -56,11 +56,11 @@ namespace sig
 
         fMigration = dir.make<MIGRATION>("Migration", ("Migration;Reco " + fVar.name() + ";Truth " + fVar.name() + ";entries").c_str(),
                                          binning, binning, universes);
-        fSignalEvents = dir.make<HIST>("Signal", ("Signal;" + fVar.name() + ";entries").c_str(),
+        fSignalEvents = dir.make<HIST>("Signal", ("Signal;Reco " + fVar.name() + ";entries").c_str(),
                                        binning, universes);
-        fEfficiencyNum = dir.make<HIST>("EfficiencyNumerator", ("Efficiency Numerator;" + fVar.name() + ";entries").c_str(),
+        fEfficiencyNum = dir.make<HIST>("EfficiencyNumerator", ("Efficiency Numerator;Truth " + fVar.name() + ";entries").c_str(),
                                         binning, universes);
-        fEfficiencyDenom = dir.make<HIST>("EfficiencyDenominator", ("Efficiency Denominator;" + fVar.name() + ";entries").c_str(),
+        fEfficiencyDenom = dir.make<HIST>("EfficiencyDenominator", ("Efficiency Denominator;Truth " + fVar.name() + ";entries").c_str(),
                                           binning, universes);
       }
 
@@ -69,7 +69,7 @@ namespace sig
       virtual void mcSignal(const evt::CVUniverse& event) override
       {
         fEfficiencyNum->Fill(&event, fVar.truth(event), event.GetWeight());
-        fMigration->Fill(&event, fVar.truth(event), fVar.reco(event), event.GetWeight());
+        fMigration->Fill(&event, fVar.reco(event), fVar.truth(event), event.GetWeight());
       }
 
       virtual void truth(const evt::CVUniverse& event) override

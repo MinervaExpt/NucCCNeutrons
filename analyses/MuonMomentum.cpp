@@ -39,8 +39,7 @@ namespace ana
 
     GeV reco(const evt::CVUniverse& event)
     {
-      //TODO: Is GetPmu() shifted appropriately?
-      return MeV(event.GetPmu()).in<GeV>(); //Put the NS Framework value into the units that truth uses
+      return event.GetMuonP().p().mag();
     }
   };
 }

@@ -54,15 +54,7 @@ namespace side
                                  binning, universes);
       }
 
-      //TODO: Hack to adapt to PlotUtils' MnvH1D ownership semantics?
       virtual ~CrossSection() = default;
-      /*{
-        fBackgrounds.visit([](auto hist)
-                           {
-                             delete &hist;
-                             &hist = nullptr;
-                           });
-      }*/
 
       virtual void data(const evt::CVUniverse& event) override
       {

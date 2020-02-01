@@ -47,6 +47,7 @@
 #include <iostream>
 #include <algorithm>
 #include <unordered_map>
+#include <bitset>
 
 //Macro to centralize how I print out debugging messages
 //TODO: Decide how I want this macro to work and centralize it.
@@ -71,25 +72,31 @@ namespace
     return *it;
   }
 
-  int hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<reco::Cut>>& allCuts, std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts)
+  //Given the names of cuts for a sideband, all reco cuts, and the cuts already associated with sidebands,
+  //create a hash code that describes which cuts an event must fail to be
+  //in this sideband and move any needed cuts from allCuts to sidebandCuts.
+  std::bitset<64> hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<reco::Cut>>& allCuts, std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts)
   {
-    uint64_t result = 0; //0x1 << sidebandCuts.size() - 1;
+    std::bitset<64> result;
+    result.set(); //Sets result to all true
 
     for(const auto& name: cutNames)
     {
       const auto found = std::find_if(allCuts.begin(), allCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
       if(found != allCuts.end())
       {
-        result |= 0x1 << sidebandCuts.size(); //BEFORE the update because of 0-based indexing
-        //TODO: Move found to the end of sidebandCuts
+        result.set(sidebandCuts.size(), false); //BEFORE the update because of 0-based indexing
+        sidebandCuts.push_back(std::move(*found));
+        allCuts.erase(found);
       }
       else
       {
         const auto inSideband = std::find_if(sidebandCuts.begin(), sidebandCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
         if(inSideband != sidebandCuts.end())
         {
-          result |= 0x1 << std::distance(sidebandCuts.begin(), inSideband);
+          result.set(std::distance(sidebandCuts.begin(), inSideband), false);
         } //If in sidebandCuts
+        else throw std::runtime_error("Failed to find a cut named " + name + " for a sideband.\n");
       } //If not in allCuts
     } //For each cut name
 
@@ -107,10 +114,18 @@ namespace
                        });
   }
 
-  std::vector<evt::CVUniverse*> getSystematics(PlotUtils::ChainWrapper* chw, const bool /*isMC*/)
+  std::vector<evt::CVUniverse*> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool /*isMC*/)
   {
     //TODO: Get centralized systematics if !isMC
-    return {new evt::CVUniverse(chw)};
+    const std::vector<evt::CVUniverse*> result = {new evt::CVUniverse(chw)};
+
+    //"global" configuration for all DefaultCVUniverses
+    DefaultCVUniverse::SetPlaylist(options.playlist());
+    DefaultCVUniverse::SetAnalysisNuPDG(-14); //TODO: Get this from the user somehow
+    DefaultCVUniverse::SetNuEConstraint(false); //No nu-e constraint for antineutrino mode yet
+    DefaultCVUniverse::SetNonResPiReweight(false);
+
+    return result;
   }
 }
 
@@ -135,14 +150,14 @@ int main(const int argc, const char** argv)
   //      MnvH1Ds' plots because MnvH1D insists on deleteing its own TH1Ds.  I've got
   //      to either Write() each TH1D or convince TFile not to delete the objects it
   //      owns.  I think there's a flag for the latter in TObject.
-  const bool isThisJobMC = app::IsMC(options.TupleFileNames().front());
+  const bool isThisJobMC = options.isMC();
   util::Directory histDir(*options.HistFile);
 
   //Decide which systematic universes to process, but delay setting the tree to
   //process until later.
   //TODO: Can't we just agree to use std::unique_ptr<>s instead?  Now, I've got
   //      to remember to delete these.
-  std::vector<evt::CVUniverse*> universes = ::getSystematics(nullptr, isThisJobMC);
+  std::vector<evt::CVUniverse*> universes = ::getSystematics(nullptr, options, isThisJobMC);
 
   //Set up backgrounds
   LOG_DEBUG("Setting up Backgrounds...")
@@ -215,7 +230,7 @@ int main(const int argc, const char** argv)
   LOG_DEBUG("Setting up sidebands...")
   decltype(recoCuts) sidebandCuts;
 
-  std::unordered_map<int, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
+  std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
   auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance();
   for(auto sideband: options.ConfigFile()["sidebands"])
   {
@@ -342,13 +357,13 @@ int main(const int argc, const char** argv)
             {
               //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
               //for sidebands defined by multiple cuts.
-              uint64_t passedReco = 0; //TODO: What does the default value for each bit need to be to work with XOR when I have fewer than 64 cuts?
-              const decltype(passedReco) passedAll = (1 << sidebandCuts.size()) - 1;
+              std::bitset<64> passedReco;
+              passedReco.set();
 
               for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
               {
                 const auto& cut = sidebandCuts[whichCut];
-                passedReco |= (*cut)(event) << whichCut;
+                if(!(*cut)(event)) passedReco.set(whichCut, false);
               }
 
               //Look up the sideband, if any, by which reco cuts failed.
@@ -368,7 +383,7 @@ int main(const int argc, const char** argv)
               //Categorize by whether this is signal or some background
               if(::requireAll(truthSignal, event))
               {
-                if(!(passedReco ^ passedAll)) signal->mcSignal(event);
+                if(passedReco.all()) signal->mcSignal(event);
                 else if(sideband) //If this is a sideband I'm interested in
                 {
                   sideband->truthSignal(event);
@@ -380,8 +395,8 @@ int main(const int argc, const char** argv)
                                                           [&event](const auto& background)
                                                           { return ::requireAll(background->passes, event); });
 
-                if(!(passedReco ^ passedAll)) signal->mcBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
-                else sideband->truthBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
+                if(passedReco.all()) signal->mcBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
+                else if(sideband) sideband->truthBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
               }
             } //If passed all non-sideband-related cuts
           } //For each MC systematic universe
@@ -426,15 +441,15 @@ int main(const int argc, const char** argv)
           event.SetEntry(entry);
           if(::requireAll(recoCuts, event))
           {
-            uint64_t passedCuts = 0;
-            const decltype(passedCuts) passedAll = (1 << sidebandCuts.size()) - 1; //TODO: Is 0 an appropriate default with XOR?
+            std::bitset<64> passedCuts;
+            passedCuts.set();
 
             for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
             {
-              passedCuts |= (*sidebandCuts[whichCut])(event) << whichCut;
+              if(!(*sidebandCuts[whichCut])(event)) passedCuts.set(whichCut, false);
             }
 
-            if(!(passedCuts ^ passedAll)) signal->data(event);
+            if(passedCuts.all()) signal->data(event);
             else
             {
               const auto foundSidebands = sidebands.find(passedCuts);
