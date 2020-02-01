@@ -11,7 +11,7 @@
 
 namespace sig
 {
-  Signal::Signal(const YAML::Node& /*config*/, util::Directory& /*dir*/, std::vector<background_t>& /*backgrounds*/, std::vector<evt::CVUniverse*>& /*universes*/)
+  Signal::Signal(const YAML::Node& /*config*/, util::Directory& /*dir*/, std::vector<background_t>& /*backgrounds*/, std::map<std::string, std::vector<evt::CVUniverse*>>& /*universes*/)
   {
   }
 }

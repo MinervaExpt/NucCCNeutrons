@@ -19,7 +19,7 @@ namespace side
 {
   Sideband::Sideband(const YAML::Node& /*config*/, util::Directory& /*dir*/,
                      cuts_t&& mustPass, const std::vector<background_t>& /*backgrounds*/,
-                     std::vector<evt::CVUniverse*>& /*universes*/): passes(std::move(mustPass))
+                     std::map<std::string, std::vector<evt::CVUniverse*>>& /*universes*/): passes(std::move(mustPass))
   {
   }
 }

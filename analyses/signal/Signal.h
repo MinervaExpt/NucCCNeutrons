@@ -12,6 +12,9 @@
 //yaml-cpp include for configuration
 #include "yaml-cpp/yaml.h"
 
+//c++ includes
+#include <map>
+
 namespace evt
 {
   class CVUniverse;
@@ -30,7 +33,7 @@ namespace sig
       using background_t = std::unique_ptr<bkg::Background>;
 
     public:
-      Signal(const YAML::Node& /*config*/, util::Directory& /*dir*/, std::vector<background_t>& /*backgrounds*/, std::vector<evt::CVUniverse*>& /*universes*/);
+      Signal(const YAML::Node& /*config*/, util::Directory& /*dir*/, std::vector<background_t>& /*backgrounds*/, std::map<std::string, std::vector<evt::CVUniverse*>>& /*universes*/);
       virtual ~Signal() = default;
 
       //The event loop will call these interfaces with events

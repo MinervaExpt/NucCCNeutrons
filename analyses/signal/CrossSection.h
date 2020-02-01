@@ -47,10 +47,10 @@ namespace sig
 
     public:
       CrossSection(const YAML::Node& config, util::Directory& dir, std::vector<background_t>& backgrounds,
-                   std::vector<evt::CVUniverse*>& universes): Signal(config, dir, backgrounds, universes),
-                                                              fVar(config["variable"]),
-                                                              fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
-                                                                           config["binning"].as<std::vector<double>>(), universes)
+                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Signal(config, dir, backgrounds, universes),
+                                                                                     fVar(config["variable"]),
+                                                                                     fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
+                                                                                                  config["binning"].as<std::vector<double>>(), universes)
       {
         const auto binning = config["binning"].as<std::vector<double>>(); //TODO: Upgrade WithUnits<> to check UNIT on bins?
 

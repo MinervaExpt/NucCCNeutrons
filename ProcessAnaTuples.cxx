@@ -116,9 +116,10 @@ namespace
                        });
   }
 
-  std::vector<evt::CVUniverse*> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
+  std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
   {
-    std::vector<evt::CVUniverse*> result = {new evt::CVUniverse(chw)};
+    std::map<std::string, std::vector<evt::CVUniverse*>> result;
+    result["cv"].push_back(new evt::CVUniverse(chw));
 
     //"global" configuration for all DefaultCVUniverses
     DefaultCVUniverse::SetPlaylist(options.playlist());
@@ -130,13 +131,11 @@ namespace
     {
       const int nFluxUniverses = 50; //TODO: Get this number from the user and tune it
       DefaultCVUniverse::SetNFluxUniverses(nFluxUniverses);
+      auto fluxSys = PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chw, nFluxUniverses);
+      result.insert(fluxSys.begin(), fluxSys.end());
 
-      auto genieSystPlusOne = PlotUtils::GetGenieSystematics<evt::CVUniverse>(chw, 1);
-      result.insert(result.end(), genieSystPlusOne.begin(), genieSystPlusOne.end());
-      auto genieSystMinusOne = PlotUtils::GetGenieSystematics<evt::CVUniverse>(chw, -1);
-      result.insert(result.end(), genieSystMinusOne.begin(), genieSystMinusOne.end());
-      auto fluxSys = PlotUtils::GetFluxSystematics<evt::CVUniverse>(chw, nFluxUniverses);
-      result.insert(result.end(), fluxSys.begin(), fluxSys.end());
+      auto genieSyst = PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chw);
+      result.insert(genieSyst.begin(), genieSyst.end());
     }
 
     return result;
@@ -171,7 +170,7 @@ int main(const int argc, const char** argv)
   //process until later.
   //TODO: Can't we just agree to use std::unique_ptr<>s instead?  Now, I've got
   //      to remember to delete these.
-  std::vector<evt::CVUniverse*> universes = ::getSystematics(nullptr, options, isThisJobMC);
+  auto universes = ::getSystematics(nullptr, options, isThisJobMC);
 
   //Set up backgrounds
   LOG_DEBUG("Setting up Backgrounds...")
@@ -192,7 +191,7 @@ int main(const int argc, const char** argv)
   std::unique_ptr<sig::Signal> signal;
   try
   {
-    signal = plgn::Factory<sig::Signal, util::Directory&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance().Get(options.ConfigFile()["signal"], signalDir, backgrounds, universes);
+    signal = plgn::Factory<sig::Signal, util::Directory&, std::vector<std::unique_ptr<bkg::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance().Get(options.ConfigFile()["signal"], signalDir, backgrounds, universes);
   }
   catch(const std::runtime_error& e)
   {
@@ -245,7 +244,7 @@ int main(const int argc, const char** argv)
   decltype(recoCuts) sidebandCuts;
 
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
-  auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance();
+  auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
   for(auto sideband: options.ConfigFile()["sidebands"])
   {
     try
@@ -353,7 +352,10 @@ int main(const int argc, const char** argv)
 
         //MC loop
         const size_t nMCEntries = anaTuple.GetEntries();
-        for(auto& univ: universes) univ->SetTree(&anaTuple);
+        for(auto& band: universes)
+        {
+          for(auto& univ: band.second) univ->SetTree(&anaTuple);
+        }
 
         for(size_t entry = 0; entry < nMCEntries; ++entry)
         {
@@ -361,64 +363,70 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with MC entry " << entry << "\n";
           #endif
 
-          for(const auto univ: universes)
+          for(const auto& band: universes)
           {
-            auto& event = *univ;
-            event.SetEntry(entry);
-
-            //MC loop
-            if(::requireAll(recoCuts, event))
+            for(const auto univ: band.second)
             {
-              //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
-              //for sidebands defined by multiple cuts.
-              std::bitset<64> passedReco;
-              passedReco.set();
+              auto& event = *univ;
+              event.SetEntry(entry);
 
-              for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
+              //MC loop
+              if(::requireAll(recoCuts, event))
               {
-                const auto& cut = sidebandCuts[whichCut];
-                if(!(*cut)(event)) passedReco.set(whichCut, false);
-              }
+                //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
+                //for sidebands defined by multiple cuts.
+                std::bitset<64> passedReco;
+                passedReco.set();
 
-              //Look up the sideband, if any, by which reco cuts failed.
-              //I might not find any sideband if this event is reconstructed signal
-              //or just isn't in a sideband I'm interested in.
-              //Putting the code here just makes it easier to maintain.
-              const auto relevantSidebands = sidebands.find(passedReco);
-              side::Sideband* sideband = nullptr; //TODO: Come up with some clever return value semantics to avoid the raw pointer here
-              if(relevantSidebands != sidebands.end())
-              {
-                const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
-                                                [&event](const auto& whichSideband)
-                                                { return ::requireAll(whichSideband->passes, event); });
-                if(found != relevantSidebands->second.end()) sideband = found->get();
-              }
-
-              //Categorize by whether this is signal or some background
-              if(::requireAll(truthSignal, event))
-              {
-                if(passedReco.all()) signal->mcSignal(event);
-                else if(sideband) //If this is a sideband I'm interested in
+                for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
                 {
-                  sideband->truthSignal(event);
+                  const auto& cut = sidebandCuts[whichCut];
+                  if(!(*cut)(event)) passedReco.set(whichCut, false);
                 }
-              }
-              else //If not truthSignal
-              {
-                const auto foundBackground = std::find_if(backgrounds.begin(), backgrounds.end(),
-                                                          [&event](const auto& background)
-                                                          { return ::requireAll(background->passes, event); });
 
-                if(passedReco.all()) signal->mcBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
-                else if(sideband) sideband->truthBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
-              }
-            } //If passed all non-sideband-related cuts
-          } //For each MC systematic universe
+                //Look up the sideband, if any, by which reco cuts failed.
+                //I might not find any sideband if this event is reconstructed signal
+                //or just isn't in a sideband I'm interested in.
+                //Putting the code here just makes it easier to maintain.
+                const auto relevantSidebands = sidebands.find(passedReco);
+                side::Sideband* sideband = nullptr; //TODO: Come up with some clever return value semantics to avoid the raw pointer here
+                if(relevantSidebands != sidebands.end())
+                {
+                  const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
+                                                  [&event](const auto& whichSideband)
+                                                  { return ::requireAll(whichSideband->passes, event); });
+                  if(found != relevantSidebands->second.end()) sideband = found->get();
+                }
+
+                //Categorize by whether this is signal or some background
+                if(::requireAll(truthSignal, event))
+                {
+                  if(passedReco.all()) signal->mcSignal(event);
+                  else if(sideband) //If this is a sideband I'm interested in
+                  {
+                    sideband->truthSignal(event);
+                  }
+                }
+                else //If not truthSignal
+                {
+                  const auto foundBackground = std::find_if(backgrounds.begin(), backgrounds.end(),
+                                                            [&event](const auto& background)
+                                                            { return ::requireAll(background->passes, event); });
+
+                  if(passedReco.all()) signal->mcBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
+                  else if(sideband) sideband->truthBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
+                }
+              } //If passed all non-sideband-related cuts
+            } //For each MC systematic universe
+          } //For each error band
         } //For each entry in the MC tree
 
         //Truth loop
         const size_t nTruthEntries = truthTree.GetEntries();
-        for(auto& univ: universes) univ->SetTree(&truthTree);
+        for(auto& band: universes)
+        {
+          for(auto univ: band.second) univ->SetTree(&truthTree);
+        }
 
         for(size_t entry = 0; entry < nTruthEntries; ++entry)
         {
@@ -426,23 +434,26 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with truth entry " << entry << "\n";
           #endif
 
-          for(const auto univ: universes)
+          for(const auto& band: universes)
           {
-            auto& event = *univ;
-            event.SetEntry(entry);
-
-            if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
+            for(const auto univ: band.second)
             {
-              signal->truth(event);
-            } //If event passes all truth cuts
-          } //For each systematic universe
+              auto& event = *univ;
+              event.SetEntry(entry);
+
+              if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
+              {
+                signal->truth(event);
+              } //If event passes all truth cuts
+            } //For each systematic universe
+          } //For each error band
         } //For each entry in Truth tree
       } //If isThisJobMC
       else
       {
         //Data loop
         const size_t nEntries = anaTuple.GetEntries();
-        auto& cv = universes.front(); //TODO: assert() that this is true?  Put data in a different program?
+        auto& cv = universes["cv"].front(); //TODO: assert() that this is true?  Put data in a different program?
         cv->SetTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)

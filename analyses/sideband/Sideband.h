@@ -8,6 +8,7 @@
 
 //c++ includes
 #include <vector>
+#include <map>
 #include <memory>
 
 namespace YAML
@@ -44,7 +45,7 @@ namespace side
       using background_t = std::unique_ptr<bkg::Background>;
 
       Sideband(const YAML::Node& /*config*/, util::Directory& /*dir*/, cuts_t&& mustPass,
-               const std::vector<background_t>& /*backgrounds*/, std::vector<evt::CVUniverse*>& universes);
+               const std::vector<background_t>& /*backgrounds*/, std::map<std::string, std::vector<evt::CVUniverse*>>& universes);
       virtual ~Sideband() = default;
 
       //In addition to the cuts that an event fails to get into
