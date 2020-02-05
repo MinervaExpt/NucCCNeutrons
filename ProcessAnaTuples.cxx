@@ -155,10 +155,13 @@ namespace
     for(const auto& band: bands)
     {
       if(band.first == "cv") vertical.insert(vertical.end(), band.second.begin(), band.second.end());
-      for(const auto univ: band.second)
+      else
       {
-        if(univ->IsVerticalOnly()) vertical.push_back(univ);
-        else groupedUnivs.emplace_back(std::vector<evt::CVUniverse*>{univ});
+        for(const auto univ: band.second)
+        {
+          if(univ->IsVerticalOnly()) vertical.push_back(univ);
+          else groupedUnivs.emplace_back(std::vector<evt::CVUniverse*>{univ});
+        }
       }
     }
 
