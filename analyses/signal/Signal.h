@@ -37,11 +37,15 @@ namespace sig
       virtual ~Signal() = default;
 
       //The event loop will call these interfaces with events
-      //that pass appropriate cuts.
-      virtual void mcSignal(const evt::CVUniverse& event) = 0;
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) = 0;
-      virtual void truth(const evt::CVUniverse& event) = 0;
-      virtual void data(const evt::CVUniverse& event) = 0;
+      //that pass appropriate cuts.  All universes passed to the
+      //same function call are guaranteed by the event loop to
+      //return the same physics values EXCEPT WEIGHT.  So, do
+      //any calculations with univs.front() and then loop over
+      //all univs to Fill() histograms.
+      virtual void mcSignal(const std::vector<evt::CVUniverse*>& univs) = 0;
+      virtual void mcBackground(const std::vector<evt::CVUniverse*>& univs, const background_t& background) = 0;
+      virtual void truth(const std::vector<evt::CVUniverse*>& univs) = 0;
+      virtual void data(const std::vector<evt::CVUniverse*>& univs) = 0;
   };
 }
 

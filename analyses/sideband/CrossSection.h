@@ -56,19 +56,25 @@ namespace side
 
       virtual ~CrossSection() = default;
 
-      virtual void data(const evt::CVUniverse& event) override
+      virtual void data(const std::vector<evt::CVUniverse*>& univs) override
       {
-        fData->Fill(&event, fVar.reco(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front());
+
+        for(const auto univ: univs) fData->Fill(univ, reco, univ->GetWeight());
       }
 
-      virtual void truthSignal(const evt::CVUniverse& event) override
+      virtual void truthSignal(const std::vector<evt::CVUniverse*>& univs) override
       {
-        fSignal->Fill(&event, fVar.reco(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front());
+
+        for(const auto univ: univs) fSignal->Fill(univ, reco, univ->GetWeight());
       }
 
-      virtual void truthBackground(const evt::CVUniverse& event, const background_t& background) override
+      virtual void truthBackground(const std::vector<evt::CVUniverse*>& univs, const background_t& background) override
       {
-        fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front()); 
+
+        for(const auto univ: univs) fBackgrounds[background].Fill(univ, reco, univ->GetWeight());
       }
 
     private:

@@ -66,25 +66,36 @@ namespace sig
 
       virtual ~CrossSection() = default;
 
-      virtual void mcSignal(const evt::CVUniverse& event) override
+      virtual void mcSignal(const std::vector<evt::CVUniverse*>& univs) override
       {
-        fEfficiencyNum->Fill(&event, fVar.truth(event), event.GetWeight());
-        fMigration->Fill(&event, fVar.reco(event), fVar.truth(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front()), truth = fVar.truth(*univs.front());
+
+        for(const auto univ: univs)
+        {
+          fEfficiencyNum->Fill(univ, truth, univ->GetWeight());
+          fMigration->Fill(univ, reco, truth, univ->GetWeight());
+        }
       }
 
-      virtual void truth(const evt::CVUniverse& event) override
+      virtual void truth(const std::vector<evt::CVUniverse*>& univs) override
       {
-        fEfficiencyDenom->Fill(&event, fVar.truth(event), event.GetWeight());
+        const auto truth = fVar.truth(*univs.front());
+
+        for(const auto univ: univs) fEfficiencyDenom->Fill(univ, truth, univ->GetWeight());
       }
 
-      virtual void data(const evt::CVUniverse& event) override
+      virtual void data(const std::vector<evt::CVUniverse*>& univs) override
       {
-        fSignalEvents->Fill(&event, fVar.reco(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front());
+
+        for(const auto univ: univs) fSignalEvents->Fill(univ, reco, univ->GetWeight());
       }
 
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) override
+      virtual void mcBackground(const std::vector<evt::CVUniverse*>& univs, const background_t& background) override
       {
-        fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front());
+
+        for(const auto univ: univs) fBackgrounds[background].Fill(univ, reco, univ->GetWeight());
       }
 
     private:
@@ -92,7 +103,7 @@ namespace sig
 
       //Signal histograms needed to extract a cross section
       MIGRATION* fMigration;
-      HIST* fSignalEvents; //TODO: This just needs to be a TH1D!  It only comes from data.
+      HIST* fSignalEvents; //TODO: make this just a TH1D.  Change the interface to data() appropriately.
       HIST* fEfficiencyNum;
       HIST* fEfficiencyDenom;
 

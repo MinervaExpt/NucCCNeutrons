@@ -54,10 +54,13 @@ namespace side
       cuts_t passes;
 
       //The event loop will call these interfaces with events
-      //that pass appropriate cuts.
-      virtual void data(const evt::CVUniverse& event) = 0;
-      virtual void truthSignal(const evt::CVUniverse& event) = 0;
-      virtual void truthBackground(const evt::CVUniverse& event, const background_t& background) = 0;
+      //that pass appropriate cuts.  Each universe in univs is
+      //guaranteed by the event loop to givethe same physics variables
+      //EXCEPT WEIGHT.  So, calculate your physics variables only
+      //once and then loop over univs to Fill() histograms.
+      virtual void data(const std::vector<evt::CVUniverse*>& univs) = 0;
+      virtual void truthSignal(const std::vector<evt::CVUniverse*>& univs) = 0;
+      virtual void truthBackground(const std::vector<evt::CVUniverse*>& univs, const background_t& background) = 0;
   };
 }
 

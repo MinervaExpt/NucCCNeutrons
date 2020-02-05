@@ -116,6 +116,7 @@ namespace
                        });
   }
 
+  //TODO: Replace with a "universe loader" that loads systematic universes from a file.
   std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
   {
     std::map<std::string, std::vector<evt::CVUniverse*>> result;
@@ -139,6 +140,29 @@ namespace
     }
 
     return result;
+  }
+
+  //Some systematic universes return true from IsVerticalOnly().  Those universes are guaranteed by the NS Framework to
+  //return the same physics variables as the CV EXCEPT FOR GETWEIGHT().  So, group them together to save on
+  //evaluating cuts and physics variables.
+  std::vector<std::vector<evt::CVUniverse*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::CVUniverse*>> bands)
+  {
+    std::vector<std::vector<evt::CVUniverse*>> groupedUnivs(1);
+
+    auto& vertical = groupedUnivs[0]; //By convention, put vertical universes at the beginning of this vector<>.
+                                      //This is an implementation detail that may change at any time.
+
+    for(const auto& band: bands)
+    {
+      if(band.first == "cv") vertical.insert(vertical.end(), band.second.begin(), band.second.end());
+      for(const auto univ: band.second)
+      {
+        if(univ->IsVerticalOnly()) vertical.push_back(univ);
+        else groupedUnivs.emplace_back(std::vector<evt::CVUniverse*>{univ});
+      }
+    }
+
+    return groupedUnivs;
   }
 }
 
@@ -277,6 +301,9 @@ int main(const int argc, const char** argv)
     }
   }
 
+  //TODO: Can I let universes go out of scope now to make the event loop simpler?
+  const auto groupedUnivs = ::groupCompatibleUniverses(universes);
+
   //Accumulate POT from each good file
   double pot_used = 0;
 
@@ -352,9 +379,9 @@ int main(const int argc, const char** argv)
 
         //MC loop
         const size_t nMCEntries = anaTuple.GetEntries();
-        for(auto& band: universes)
+        for(auto& compat: groupedUnivs)
         {
-          for(auto& univ: band.second) univ->SetTree(&anaTuple);
+          for(auto& univ: compat) univ->SetTree(&anaTuple);
         }
 
         for(size_t entry = 0; entry < nMCEntries; ++entry)
@@ -363,69 +390,66 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with MC entry " << entry << "\n";
           #endif
 
-          for(const auto& band: universes)
+          for(const auto& compat: groupedUnivs)
           {
-            for(const auto univ: band.second)
+            auto& event = *compat.front(); //All compatible universes pass the same cuts
+            for(const auto univ: compat) univ->SetEntry(entry); //I still need to GetWeight() for entry
+
+            //MC loop
+            if(::requireAll(recoCuts, event))
             {
-              auto& event = *univ;
-              event.SetEntry(entry);
+              //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
+              //for sidebands defined by multiple cuts.
+              std::bitset<64> passedReco;
+              passedReco.set();
 
-              //MC loop
-              if(::requireAll(recoCuts, event))
+              for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
               {
-                //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
-                //for sidebands defined by multiple cuts.
-                std::bitset<64> passedReco;
-                passedReco.set();
+                const auto& cut = sidebandCuts[whichCut];
+                if(!(*cut)(event)) passedReco.set(whichCut, false);
+              }
 
-                for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
-                {
-                  const auto& cut = sidebandCuts[whichCut];
-                  if(!(*cut)(event)) passedReco.set(whichCut, false);
-                }
+              //Look up the sideband, if any, by which reco cuts failed.
+              //I might not find any sideband if this event is reconstructed signal
+              //or just isn't in a sideband I'm interested in.
+              //Putting the code here just makes it easier to maintain.
+              const auto relevantSidebands = sidebands.find(passedReco);
+              side::Sideband* sideband = nullptr; //TODO: Come up with some clever return value semantics to avoid the raw pointer here
+              if(relevantSidebands != sidebands.end())
+              {
+                const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
+                                                [&event](const auto& whichSideband)
+                                                { return ::requireAll(whichSideband->passes, event); });
+                if(found != relevantSidebands->second.end()) sideband = found->get();
+              }
 
-                //Look up the sideband, if any, by which reco cuts failed.
-                //I might not find any sideband if this event is reconstructed signal
-                //or just isn't in a sideband I'm interested in.
-                //Putting the code here just makes it easier to maintain.
-                const auto relevantSidebands = sidebands.find(passedReco);
-                side::Sideband* sideband = nullptr; //TODO: Come up with some clever return value semantics to avoid the raw pointer here
-                if(relevantSidebands != sidebands.end())
+              //Categorize by whether this is signal or some background
+              if(::requireAll(truthSignal, event))
+              {
+                if(passedReco.all()) signal->mcSignal(compat);
+                else if(sideband) //If this is a sideband I'm interested in
                 {
-                  const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
-                                                  [&event](const auto& whichSideband)
-                                                  { return ::requireAll(whichSideband->passes, event); });
-                  if(found != relevantSidebands->second.end()) sideband = found->get();
+                  sideband->truthSignal(compat);
                 }
+              }
+              else //If not truthSignal
+              {
+                const auto foundBackground = std::find_if(backgrounds.begin(), backgrounds.end(),
+                                                          [&event](const auto& background)
+                                                          { return ::requireAll(background->passes, event); });
 
-                //Categorize by whether this is signal or some background
-                if(::requireAll(truthSignal, event))
-                {
-                  if(passedReco.all()) signal->mcSignal(event);
-                  else if(sideband) //If this is a sideband I'm interested in
-                  {
-                    sideband->truthSignal(event);
-                  }
-                }
-                else //If not truthSignal
-                {
-                  const auto foundBackground = std::find_if(backgrounds.begin(), backgrounds.end(),
-                                                            [&event](const auto& background)
-                                                            { return ::requireAll(background->passes, event); });
-
-                  if(passedReco.all()) signal->mcBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
-                  else if(sideband) sideband->truthBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
-                }
-              } //If passed all non-sideband-related cuts
-            } //For each MC systematic universe
+                if(passedReco.all()) signal->mcBackground(compat, ::derefOrNull(foundBackground, backgrounds.end()));
+                else if(sideband) sideband->truthBackground(compat, ::derefOrNull(foundBackground, backgrounds.end()));
+              }
+            } //If passed all non-sideband-related cuts
           } //For each error band
         } //For each entry in the MC tree
 
         //Truth loop
         const size_t nTruthEntries = truthTree.GetEntries();
-        for(auto& band: universes)
+        for(auto& compat: groupedUnivs)
         {
-          for(auto univ: band.second) univ->SetTree(&truthTree);
+          for(auto univ: compat) univ->SetTree(&truthTree);
         }
 
         for(size_t entry = 0; entry < nTruthEntries; ++entry)
@@ -434,24 +458,24 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with truth entry " << entry << "\n";
           #endif
 
-          for(const auto& band: universes)
+          for(const auto& compat: groupedUnivs)
           {
-            for(const auto univ: band.second)
-            {
-              auto& event = *univ;
-              event.SetEntry(entry);
+            auto& event = *compat.front(); //All compatible universes pass the same cuts
+            for(auto univ: compat) univ->SetEntry(entry);
 
-              if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
-              {
-                signal->truth(event);
-              } //If event passes all truth cuts
-            } //For each systematic universe
+            if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
+            {
+              signal->truth(compat);
+            } //If event passes all truth cuts
           } //For each error band
         } //For each entry in Truth tree
       } //If isThisJobMC
       else
       {
         //Data loop
+        //TODO: This data loop is looking worse and worse as I optimize the MC loop.
+        //      I'm also getting unfilled histograms from my MC jobs now.  I think
+        //      it's time to put the data loop back in its own program.
         const size_t nEntries = anaTuple.GetEntries();
         auto& cv = universes["cv"].front(); //TODO: assert() that this is true?  Put data in a different program?
         cv->SetTree(&anaTuple);
@@ -474,7 +498,7 @@ int main(const int argc, const char** argv)
               if(!(*sidebandCuts[whichCut])(event)) passedCuts.set(whichCut, false);
             }
 
-            if(passedCuts.all()) signal->data(event);
+            if(passedCuts.all()) signal->data({cv});
             else
             {
               const auto foundSidebands = sidebands.find(passedCuts);
@@ -483,7 +507,7 @@ int main(const int argc, const char** argv)
                 const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
                                                         [&event](const auto& sideband)
                                                         { return ::requireAll(sideband->passes, event); });
-                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(event);
+                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data({cv});
               } //If found a sideband and passed all of its reco constraints
             } //If not passed all sideband-related cuts
           } //If passed all cuts not related to sidebands
