@@ -38,12 +38,34 @@ namespace reco
 
       inline const std::string& name() { return fName; }
 
+      //Cut table style
+      struct TableConfig
+      {
+        size_t largestNameSize;
+        size_t largetsPassedSize;
+        size_t nDecimals;
+      };
+
+      //Update TableConfig based on this Cut
+      void enlargeTable(TableConfig& config) const;
+
+      //Print a row of the cut table for this cut
+      void printTableRow(std::ostream& os, const TableConfig config) const;
+
+      //Print a header explaining the entries in the cut table.
+      //TableConfig also gets large enough to fit each column's heading
+      static void printTableHeader(std::ostream& os, TableConfig& config);
+
     protected:
       //Your concrete Cut class must override these methods.
       virtual bool passesCut(const evt::CVUniverse& event) const = 0;
 
     private:
       std::string fName; //Name of this cut for reporting
+
+      //Data for the cut table
+      size_t fEventsEntered; //Number of events that entered operator()
+      size_t fEventsPassed; //Number of events for which operator() returned true
   };
 }
 
