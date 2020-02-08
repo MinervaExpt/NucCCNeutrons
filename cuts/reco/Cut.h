@@ -36,8 +36,14 @@ namespace reco
 
       inline const std::string& name() { return fName; }
 
+      //Automatic Cut table generation.  You don't need to do anything
+      //in your derived reco::Cuts to get this feature.  It's free!
+      //The table goes to STDOUT as markdown, and I like to turn it
+      //into a PDF with  pandoc -s -o testTable.pdf testTable.md
+
       //TODO: Percentage of truth signal events that passed?  Seems like
       //      I need to talk to the event loop about that.
+
       //Cut table style
       struct TableConfig
       {

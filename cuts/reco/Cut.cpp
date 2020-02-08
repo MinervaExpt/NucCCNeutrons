@@ -46,7 +46,9 @@ namespace reco
     os << "| " << std::setw(config.largestNameSize) << nameHeading << " | "
        << std::setw(config.largestPassedSize) << passedHeading << " | "
        << std::setw(config.nDecimals) << percentHeading << " |\n"
-       << "|" << std::setw(config.largestNameSize + config.largestPassedSize + config.sizeOfPercentTitle + 3*2 + 2*2)
-       << std::setfill('-') << "|\n" << std::setfill(' ');
+       << "|" << std::setfill('-') << std::setw(config.largestNameSize + 3) << "|"
+       << std::setw(config.largestPassedSize + 3) << "|" 
+       << std::setw(config.sizeOfPercentTitle + 4) << "|\n"
+       << std::setfill(' ');
   }
 }
