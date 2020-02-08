@@ -541,5 +541,15 @@ int main(const int argc, const char** argv)
     return app::CmdLine::ExitCode::AnalysisError;
   }
 
+  //Print the cut table to STDOUT
+  reco::Cut::TableConfig tableSize;
+  for(const auto& cut: recoCuts) cut->makeTableBigEnough(tableSize);
+
+  reco::Cut::printTableHeader(std::cout, tableSize);
+  for(const auto& cut: recoCuts) cut->printTableRow(std::cout, tableSize);
+
+  //Final Write()s to output file
+  //TODO: Put POT in a TParameter<double>
+
   return app::CmdLine::ExitCode::Success;
 }

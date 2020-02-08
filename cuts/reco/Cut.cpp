@@ -21,17 +21,17 @@ namespace reco
     return result;
   }
 
-  void Cut::enlargeTable(TableConfig& config) const
+  void Cut::makeTableBigEnough(TableConfig& config) const
   {
     config.largestNameSize = std::max(config.largestNameSize, fName.length());
-    config.largestPassedSize = std::max(config.largestPassedSize, std::log10(fEventsPassed));
+    config.largestPassedSize = std::max(config.largestPassedSize, static_cast<size_t>(std::log10(fEventsPassed)));
   }
 
   void Cut::printTableRow(std::ostream& os, const TableConfig config) const
   {
-    os << std::setw(config.largestNameSize) << fName << " | "
+    os << "| " << std::setw(config.largestNameSize) << fName << " | "
        << std::setw(config.largestPassedSize) << fEventsPassed << " | "
-       << std::setprecision(config.nDecimals) << fEventsPassed / fEventsEntered << "\n";
+       << std::setw(config.sizeOfPercentTitle) << std::setprecision(config.nDecimals) << static_cast<double>(fEventsPassed) / static_cast<double>(fEventsEntered) * 100. << " |\n";
   }
 
   void Cut::printTableHeader(std::ostream& os, TableConfig& config)
@@ -41,10 +41,12 @@ namespace reco
                       percentHeading = "Percent Passed";
     config.largestNameSize = std::max(config.largestNameSize, nameHeading.length());
     config.largestPassedSize = std::max(config.largestPassedSize, passedHeading.length());
-    config.nDecimals = std::max(config.nDecimals, config.percentHeading.length());
+    config.sizeOfPercentTitle = std::max(config.nDecimals, percentHeading.length());
 
-    os << std::setw(config.largestNameSize) << nameHeading << " | "
+    os << "| " << std::setw(config.largestNameSize) << nameHeading << " | "
        << std::setw(config.largestPassedSize) << passedHeading << " | "
-       << std::setw(config.nDecimals) << percentHeading << "\n";
+       << std::setw(config.nDecimals) << percentHeading << " |\n"
+       << "|" << std::setw(config.largestNameSize + config.largestPassedSize + config.sizeOfPercentTitle + 3*2 + 2*2)
+       << std::setfill('-') << "|\n" << std::setfill(' ');
   }
 }

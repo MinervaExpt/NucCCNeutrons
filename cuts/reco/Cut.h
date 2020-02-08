@@ -21,8 +21,6 @@
 
 namespace reco
 {
-  //TODO: This could easily be a class template on CVUniverse
-  //      for other analyses to use it.
   class Cut
   {
     public:
@@ -38,16 +36,19 @@ namespace reco
 
       inline const std::string& name() { return fName; }
 
+      //TODO: Percentage of truth signal events that passed?  Seems like
+      //      I need to talk to the event loop about that.
       //Cut table style
       struct TableConfig
       {
-        size_t largestNameSize;
-        size_t largetsPassedSize;
-        size_t nDecimals;
+        size_t largestNameSize = 0;
+        size_t largestPassedSize = 0;
+        size_t nDecimals = 5;
+        size_t sizeOfPercentTitle = 0;
       };
 
       //Update TableConfig based on this Cut
-      void enlargeTable(TableConfig& config) const;
+      void makeTableBigEnough(TableConfig& config) const;
 
       //Print a row of the cut table for this cut
       void printTableRow(std::ostream& os, const TableConfig config) const;
@@ -64,8 +65,8 @@ namespace reco
       std::string fName; //Name of this cut for reporting
 
       //Data for the cut table
-      size_t fEventsEntered; //Number of events that entered operator()
-      size_t fEventsPassed; //Number of events for which operator() returned true
+      size_t fEventsEntered = 0; //Number of events that entered operator()
+      size_t fEventsPassed = 0; //Number of events for which operator() returned true
   };
 }
 
