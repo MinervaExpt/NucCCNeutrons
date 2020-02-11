@@ -86,11 +86,8 @@ namespace evt
 
       virtual events GetWeight() const
       {
-        //Taken from Ben's code at https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/Personal/bmesserl/SystematicsFramework/CVUniverse.h
-        const MeV Enu = GetDouble("mc_incomingE");
-        const int nu_type = GetInt("mc_incoming"); //Ben uses the truth PDG code of the current event here too.
-        const double fluxAndCV = GetFluxAndCVWeight(Enu.in<MeV>(), nu_type);
-        return fluxAndCV * GetGenieWeight(); //TODO: Other weights?
+        //Rob told me that this is MnvGENIE v1.1 on 2/11/2020
+        return GetMinosEfficiencyWeight() * GetGenieWeight() * GetFluxAndCVWeight() * Get2p2hWeight() * GetRPAWeight();
       }
 
       //TODO: Turn neutron candidates back on when I'm ready to try my multiplicity analysis
@@ -112,7 +109,7 @@ namespace evt
       fs(PDG_code, int)
       fs(angle_wrt_z, double)
       fs(edep, MeV)
-      fs(energy, GeV)
+      fs(energy, MeV)
 
       //Branches for FS neutron energy loss study
       fs(leaving_energy, GeV)

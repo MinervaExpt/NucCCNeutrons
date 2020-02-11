@@ -47,16 +47,15 @@ namespace ana
     struct FSPart
     {
       int PDGCode;
-      GeV energy;
-      GeV edep;
+      MeV energy;
     };
 
     neutrons truth(const evt::CVUniverse& event)
     {
       //Count FS neutrons above an energy deposit threshold
-      const auto fs = event.Get<FSPart>(event.GetFSPDG_code(), event.GetFSenergy(), event.GetFSedep());
+      const auto fs = event.Get<FSPart>(event.GetFSPDG_code(), event.GetFSenergy());
       return std::count_if(fs.begin(), fs.end(), [this](const auto& fs)
-                                                 { return fs.PDGCode == 2112 && fs.edep > this->fTruthMinEDep;});
+                                                 { return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinEDep;});
     }
 
     neutrons reco(const evt::CVUniverse& event)

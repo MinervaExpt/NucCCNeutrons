@@ -9,7 +9,7 @@
 
 namespace evt
 {
-  CVUniverse::CVUniverse(/*const std::string& blobAlg,*/ PlotUtils::ChainWrapper* chw, const double nsigma): DefaultCVUniverse(chw, nsigma), m_blobAlg("proximity")
+  CVUniverse::CVUniverse(/*const std::string& blobAlg,*/ PlotUtils::ChainWrapper* chw, const double nsigma): DefaultCVUniverse(chw, nsigma), m_blobAlg("mergedTejinBlobs")
   {
   }
 }

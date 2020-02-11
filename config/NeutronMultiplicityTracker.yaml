@@ -22,7 +22,7 @@ signal: !NeutronMultiplicity
     reco:
       MinEDep: !MeV 1.5 #Just above cross-talk
       MaxZDist: !mm 1500 #roughly tuned for tracker
-  binning: &bins [ 0, 1, 3, 4, 10] #TODO: Accept any number of neutrons in last bin and label as > 4 
+  binning: &bins [ 0, 1, 2, 4, 10] #TODO: Accept any number of neutrons in last bin and label as > 4 
 
 cuts:
   truth:
@@ -42,7 +42,8 @@ cuts:
     LowQ3: &Q3Range !Q3Range
         max: !GeV 0.4
     MinosDeltaT: !MinosDeltaT
-      max: !ns 20
+      min: !ns -40
+      max: !ns 110
     TrackAngle: !TrackAngle
       max: 20 #degrees; stricter constraint for the targets
     MuonMomentum: !MuonMomentum
