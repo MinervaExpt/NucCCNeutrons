@@ -29,10 +29,9 @@ namespace sig
 {
   class Signal
   {
-    protected:
+    public:
       using background_t = std::unique_ptr<bkg::Background>;
 
-    public:
       Signal(const YAML::Node& /*config*/, util::Directory& /*dir*/, std::vector<background_t>& /*backgrounds*/, std::map<std::string, std::vector<evt::CVUniverse*>>& /*universes*/);
       virtual ~Signal() = default;
 
