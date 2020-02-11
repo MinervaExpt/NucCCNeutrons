@@ -5,6 +5,4 @@ install(FILES Background.h DESTINATION include)
 
 add_subdirectory(signal)
 add_subdirectory(sideband)
-#add_subdirectory(multiplicity)
-
-add_library(analyses OBJECT MuonMomentum.cpp)
+add_subdirectory(variables)
