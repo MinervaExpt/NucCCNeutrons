@@ -29,8 +29,9 @@ namespace ana
   //A muon momentum magnitude VARIABLE for the CrossSection<> templates.
   struct NeutronMultiplicity
   {
-    NeutronMultiplicity(const YAML::Node& config): fMinEDep(config["MinEDep"].as<MeV>()),
-                                                   fMaxZDist(config["MaxZDist"].as<mm>())
+    NeutronMultiplicity(const YAML::Node& config): fTruthMinEDep(config["truth"]["MinEDep"].as<MeV>()),
+                                                   fRecoMinEDep(config["reco"]["MinEDep"].as<MeV>()),
+                                                   fRecoMaxZDist(config["reco"]["MaxZDist"].as<mm>())
     {
     }
 
@@ -53,9 +54,9 @@ namespace ana
     neutrons truth(const evt::CVUniverse& event)
     {
       //Count FS neutrons above an energy deposit threshold
-      const auto fs = event.Get<FSPart>(event.GetFSPDG_Code(), event.GetFSenergy(), event.GetFSedep());
+      const auto fs = event.Get<FSPart>(event.GetFSPDG_code(), event.GetFSenergy(), event.GetFSedep());
       return std::count_if(fs.begin(), fs.end(), [this](const auto& fs)
-                                                 { return fs.PDGCode == 2112 && fs.edep > this->fMinEDep;});
+                                                 { return fs.PDGCode == 2112 && fs.edep > this->fTruthMinEDep;});
     }
 
     neutrons reco(const evt::CVUniverse& event)
@@ -65,12 +66,13 @@ namespace ana
 
       const auto cands = event.Get<Candidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex());
       return std::count_if(cands.begin(), cands.end(), [&vertex, this](const auto& cand)
-                                                       { return cand.z - vertex.z() < this->fMaxZDist && cand.edep > this->fMinEDep;});
+                                                       { return cand.z - vertex.z() < this->fRecoMaxZDist && cand.edep > this->fRecoMinEDep;});
     }
 
     private:
-      MeV fMinEDep; //Minimum energy deposit cut on candidates
-      mm fMaxZDist; //Minimum z distance from vertex for candidates
+      MeV fTruthMinEDep; //Minimum energy deposit cut on candidates
+      MeV fRecoMinEDep;
+      mm fRecoMaxZDist; //Minimum z distance from vertex for candidates
   };
 }
 

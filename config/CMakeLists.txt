@@ -1,3 +1,3 @@
-file(GLOB *.yaml configs)
+install(FILES LowRecoilMuonMomentum.yaml LowRecoilMuonMomentumTarget3Iron.yaml LowRecoilMuonMomentumTracker.yaml NeutronMultiplicityTracker.yaml DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-install(FILES ${configs} DESTINATION include/config)
+install(FILES Targets.yaml DESTINATION bin)

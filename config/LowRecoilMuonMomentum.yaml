@@ -1,3 +1,4 @@
+#!/usr/bin/env ProcessAnaTuples
 #Example of how to define an analysis job for a single target.
 
 app:

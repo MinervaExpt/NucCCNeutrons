@@ -1,0 +1,59 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: Targets.yaml
+#Brief: Z ranges of MINERvA's nuclear targets in truth and reconstruction.
+#       Reco cuts taken from Jeffrey's analysis in the Fall of 2019.
+#       See here for Jeffrey's reco cuts: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/AnalysisFramework/Ana/NukeCCQE/scripts/code_templates/target_cuts.cpp
+#       Truth cuts taken from Jeffrey's analysis in January 2020.
+#       See here for Jeffrey's truth cuts: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/AnalysisFramework/Ana/NukeCCQE/scripts/code_templates/true_target_cuts.cpp
+#       
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+app:
+  #TODO: candidate algorithm and other such options
+
+#TODO: Figure out how to configure cuts that define neutron candidates.
+#      This is really more of a reconstruction step, but I have to do it
+#      now for flexibility of cut decisions and systematics.
+signal: !NeutronMultiplicity
+  name: "Neutron Multiplicity"
+  variable: &Variable
+    truth:
+      MinEDep: !MeV 10 #Not many detectable candidates below this threshold
+    reco:
+      MinEDep: !MeV 1.5 #Just above cross-talk
+      MaxZDist: !mm 1500 #roughly tuned for tracker
+  binning: &bins [ 0, 1, 3, 4, 10] #TODO: Accept any number of neutrons in last bin and label as > 4 
+
+cuts:
+  truth:
+    phaseSpace:
+      MuonMomentum: !MuonMomentum
+        min: !GeV 2
+      TrackAngle: !TrackAngle
+        max: 20 #degrees; stricter constraint for the targets
+    signal:
+      Antineutrino: !IsAntineutrino
+      LowQ3: &Q3Range !Q3Range
+        max: !GeV 0.4
+      Tracker: *OneTrackTracker
+  reco:
+    OneTrack: !nTracks
+      max: 1
+    LowQ3: &Q3Range !Q3Range
+        max: !GeV 0.4
+    MinosDeltaT: !MinosDeltaT
+      max: !ns 20
+    TrackAngle: !TrackAngle
+      max: 20 #degrees; stricter constraint for the targets
+    MuonMomentum: !MuonMomentum
+      min: !GeV 2
+    Antineutrino: !IsAntineutrino
+    Tracker: *OneTrackTracker
+
+#Names in sidebands' "fails" blocks refer to truth cuts by block name.
+sidebands:
+
+#Backgrounds are defined by the truth::Cuts they pass in addition to
+#failing some regular truth cut.  So, these cuts had better be mutually
+#exclusive with regular truth::Cuts.
+backgrounds:

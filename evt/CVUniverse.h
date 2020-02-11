@@ -109,7 +109,7 @@ namespace evt
       blobTruth(blob_earliest_true_hit_time, ns)
 
       //Per FS particle branches
-      fs(PDG_Code, int)
+      fs(PDG_code, int)
       fs(angle_wrt_z, double)
       fs(edep, MeV)
       fs(energy, GeV)
