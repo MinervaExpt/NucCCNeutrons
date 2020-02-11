@@ -22,16 +22,15 @@
 //      for this to work with things like ROOT::Math::XYZTVector.
 //      Probably not the most evil thing I've ever done.
 #define blobReco(BRANCH, TYPE)\
-  virtual std::vector<TYPE> Get##Branch() const\
+  virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    /*return Get<TYPE>(#BRANCH);*/\
-    return GetVec<TYPE>(m_blobAlg + "_" #BRANCH);\
+    return GetVec<TYPE>((m_blobAlg + "_" #BRANCH).c_str());\
   }
 
 #define blobTruth(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    return GetVec<TYPE>("truth_" + m_blobAlg + "_" #BRANCH);\
+    return GetVec<TYPE>(("truth_" + m_blobAlg + "_" #BRANCH).c_str());\
   }
 
 #define fs(BRANCH, TYPE)\
@@ -96,55 +95,34 @@ namespace evt
 
       //TODO: Turn neutron candidates back on when I'm ready to try my multiplicity analysis
       //Functions to retrieve per-candidate values in vector<>s.  Put them back together with get<>() in each Analysis.
-      //Example: const auto cands = get<NeutronCandidate>(event.Getblob_edep, event.Getblob_zPos, event.Getblob_earliest_time);
-      /*blobReco("blob_edep", MeV)
-      blobReco("bob_transverse_dist_from_vertex", mm)
-      blobReco("blob_first_muon_transverse", mm)
-      blobReco("blob_zPos", mm)
-      blobReco("blob_first_muon_long", mm)
-      blobReco("blob_earliest_time", ns)
-      blobReco("blob_nViews", size_t)
+      //Example: const auto cands = Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_earliest_time());
+      blobReco(blob_edep, MeV)
+      blobReco(bob_transverse_dist_from_vertex, mm)
+      blobReco(blob_first_muon_transverse, mm)
+      blobReco(blob_zPos, mm)
+      blobReco(blob_first_muon_long, mm)
+      blobReco(blob_earliest_time, ns)
+      blobReco(blob_nViews, size_t)
 
-      blobTruth("blob_geant_dist_to_edep_as_neutron", mm)
-      blobTruth("blob_FS_index", size_t)
-      blobTruth("blob_earliest_true_hit_time", ns)
+      blobTruth(blob_geant_dist_to_edep_as_neutron, mm)
+      blobTruth(blob_FS_index, size_t)
+      blobTruth(blob_earliest_true_hit_time, ns)
 
       //Per FS particle branches
-      fs("PDG_Code", int)
-      fs("angle_wrt_z", double)
-      fs("edep", MeV)
-      fs("energy", GeV)
+      fs(PDG_Code, int)
+      fs(angle_wrt_z, double)
+      fs(edep, MeV)
+      fs(energy, GeV)
 
       //Branches for FS neutron energy loss study
-      fs("leaving_energy", GeV)
-      fs("late_energy", GeV)
-      fs("max_edep", MeV)
-      fs("elastic_loss", GeV)
-      fs("binding_energy", GeV)
-      fs("capture_energy", GeV)
-      fs("edep_before_birks", GeV)
-      fs("passive_loss", GeV)*/
-
-      //      What I would do without std::make_index_sequence<>: (thanks to https://stackoverflow.com/questions/49669958/details-of-stdmake-index-sequence-and-stdindex-sequence)
-      //      template <size_t... which>
-      //      struct index_sequence {};
-      //
-      //      template <size_t N_INDICES, size_t ...INDICES>
-      //      struct index_helper
-      //      {
-      //        using type = index_helper<N_INDICES - 1ul, N_INDICES - 1ul, INDICES...>::type;
-      //      };
-      //
-      //      template <size_t ...INDICES>
-      //      struct index_helper<0ul, INDICES...>
-      //      {
-      //        using type = index_sequence<INDICES...>;
-      //      };
-      //
-      //      template <size_t N_INDICES>
-      //      using make_index_sequence<N_INDICES> = index_helper<N_INDICES>::type;
-      //
-      //      Seems like I'm all set!
+      fs(leaving_energy, GeV)
+      fs(late_energy, GeV)
+      fs(max_edep, MeV)
+      fs(elastic_loss, GeV)
+      fs(binding_energy, GeV)
+      fs(capture_energy, GeV)
+      fs(edep_before_birks, GeV)
+      fs(passive_loss, GeV)
 
       //Unpack several related vector<> branches into an Analysis-specific struct called CAND.
       //One function to rule them all; one function to find them.
