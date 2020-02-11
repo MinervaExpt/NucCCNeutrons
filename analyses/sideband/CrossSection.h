@@ -60,7 +60,7 @@ namespace side
       {
         const auto reco = fVar.reco(*univs.front());
 
-        for(const auto univ: univs) fData->Fill(univ, reco, univ->GetWeight());
+        for(const auto univ: univs) fData->Fill(univ, reco);
       }
 
       virtual void truthSignal(const std::vector<evt::CVUniverse*>& univs) override

@@ -387,6 +387,9 @@ int main(const int argc, const char** argv)
           for(auto& univ: compat) univ->SetTree(&anaTuple);
         }
 
+        //Get MINOS weights
+        PlotUtils::DefaultCVUniverse::SetTruth(false);
+
         for(size_t entry = 0; entry < nMCEntries; ++entry)
         {
           #ifndef NDEBUG
@@ -454,6 +457,9 @@ int main(const int argc, const char** argv)
         {
           for(auto univ: compat) univ->SetTree(&truthTree);
         }
+
+        //Don't try to get MINOS weights in the truth tree loop
+        PlotUtils::DefaultCVUniverse::SetTruth(true);
 
         for(size_t entry = 0; entry < nTruthEntries; ++entry)
         {

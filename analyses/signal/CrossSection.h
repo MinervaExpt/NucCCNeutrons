@@ -88,7 +88,7 @@ namespace sig
       {
         const auto reco = fVar.reco(*univs.front());
 
-        for(const auto univ: univs) fSignalEvents->Fill(univ, reco, univ->GetWeight());
+        for(const auto univ: univs) fSignalEvents->Fill(univ, reco);
       }
 
       virtual void mcBackground(const std::vector<evt::CVUniverse*>& univs, const background_t& background) override
