@@ -33,9 +33,9 @@
 #include "app/IsMC.h"
 
 //PlotUtils includes
-#include "CrashOnROOTMessage.h"
-#include "GenieSystematics.h"
-#include "FluxSystematics.h"
+#include "PlotUtils/CrashOnROOTMessage.h"
+#include "PlotUtils/GenieSystematics.h"
+#include "PlotUtils/FluxSystematics.h"
 
 //YAML-cpp includes
 #include "yaml-cpp/yaml.h"
