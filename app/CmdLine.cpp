@@ -29,8 +29,8 @@ INSTALL_DIR "bin.\n"
 #include "app/IsMC.h"
 
 //PlotUtils includes
-#include "ROOTglob.h"
-#include "ErrorHandler.h"
+#include "PlotUtils/ROOTglob.h"
+#include "PlotUtils/ErrorHandler.h"
 
 //YAML-cpp includes
 #include "yaml-cpp/yaml.h"

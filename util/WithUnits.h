@@ -9,8 +9,8 @@
 #define UNIT_WITHUNITS_CPP
 
 //PlotUtils includes so I can specialize on HistWrapper
-#include "HistWrapper.h"
-#include "Hist2DWrapper.h"
+#include "PlotUtils/HistWrapper.h"
+#include "PlotUtils/Hist2DWrapper.h"
 
 //unit library includes
 #include "units/units.h"
