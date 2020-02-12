@@ -1,3 +1,4 @@
+#!/usr/bin/env ProcessAnaTuples
 #File: Targets.yaml
 #Brief: Z ranges of MINERvA's nuclear targets in truth and reconstruction.
 #       Reco cuts taken from Jeffrey's analysis in the Fall of 2019.
@@ -50,7 +51,7 @@ OneTrack:
     reco:
       min: !mm 5800
       max: !mm 5820
-  "Tracker": &OneTrackTracker !IsInTarget
+  "Tracker": &OneTrackTracker
     truth:
       min: !mm 5890
       max: !mm 8467
@@ -101,10 +102,91 @@ MultiTrack:
     reco:
       min: !mm 5760
       max: !mm 5795
-  "Tracker": &MultiTrackTracker !IsInTracker
+  "Tracker": &MultiTrackTracker
     truth:
       min: !mm 5890
       max: !mm 8467
     reco:
       min: !mm 6000
       max: !mm 8500
+#Example of how to define an analysis job for a single target.
+
+app:
+  #TODO: candidate algorithm and other such options
+
+#TODO: Figure out how to configure cuts that define neutron candidates.
+#      This is really more of a reconstruction step, but I have to do it
+#      now for flexibility of cut decisions and systematics.
+signal: !MuonMomentum
+  name: "Muon Momentum"
+  variable: &Variable
+  binning: &bins [ 1.5, 2.0, 2.5, 3.0, 3.2, 3.5, 3.8, 4, 4.5, 5, 7, 10, 20 ]
+
+cuts:
+  truth:
+    phaseSpace:
+      MuonMomentum: !MuonMomentum
+        min: !GeV 2
+      TrackAngle: !TrackAngle
+        max: 17 #degrees; stricter constraint for the targets
+    signal:
+      Antineutrino: !IsAntineutrino
+      LowQ3: &Q3Range !Q3Range
+        max: !GeV 0.4
+      Target3:
+        *OneTrackTarget3
+      Iron: !Target3Iron
+  reco:
+    OneTrack: !nTracks
+      max: 1
+    LowQ3: &Q3Range !Q3Range
+        max: !GeV 0.4
+    MinosDeltaT: !MinosDeltaT
+      max: !ns 20
+    TrackAngle: !TrackAngle
+      max: 17 #degrees; stricter constraint for the targets
+    MuonMomentum: !MuonMomentum
+      min: !GeV 2
+    Antineutrino: !IsAntineutrino
+    Target3:
+      *OneTrackTarget3
+    Iron: !Target3Iron
+
+#Names in sidebands' "fails" blocks refer to truth cuts by block name.
+sidebands:
+  UpstreamPlastic: !MuonMomentum
+    variable: *Variable
+    binning: *bins
+    fails: [Target3]
+    passes:
+      Upstream: &USPlastic !Between
+        us: *OneTrackTarget2
+        ds: *OneTrackTarget3
+  DownstreamPlastic: !MuonMomentum
+    variable: *Variable
+    binning: *bins
+    fails: [Target3]
+    passes:
+      Downstream: &DSPlastic !Between
+        us: *OneTrackTarget3
+        ds: *OneTrackTarget4
+  WrongMaterial: !MuonMomentum
+    variable: *Variable
+    binning: *bins
+    fails: [Iron]
+    #And implicitly passes the Target3 truth cut
+
+#Backgrounds are defined by the truth::Cuts they pass in addition to
+#failing some regular truth cut.  So, these cuts had better be mutually
+#exclusive with regular truth::Cuts.
+backgrounds:
+  UpstreamPlastic:
+    Upstream: *USPlastic
+  DownstreamPlastic:
+    Downstream: *DSPlastic
+  Lead:
+    IsInLead: !Target3Lead
+  Carbon:
+    IsInCarbon: !Target3Carbon
+  Water:
+    IsInWater: !Water

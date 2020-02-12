@@ -27,6 +27,7 @@ INSTALL_DIR "bin.\n"
 //NucCCNeutrons includes
 #include "app/CmdLine.h"
 #include "app/IsMC.h"
+#include "app/GetPlaylist.h"
 
 //PlotUtils includes
 #include "PlotUtils/ROOTglob.h"
@@ -121,6 +122,7 @@ namespace app
     }
 
     fIsMC = app::IsMC(fTupleFileNames.front());
+    fPlaylist = app::GetPlaylist(fTupleFileNames.front(), "NucCCNeutron", fIsMC); //TODO: Generalize hard-coded AnaTuple name
     #ifndef NDEBUG
       //std::cout << "Am I processing MC?  " << std::boolalpha << fIsMC << "\n";
     #endif

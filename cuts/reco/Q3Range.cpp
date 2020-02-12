@@ -7,7 +7,7 @@
 
 namespace reco
 {
-  Q3Range::Q3Range(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["min"].as<GeV>())
+  Q3Range::Q3Range(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>())
   {
   }
 

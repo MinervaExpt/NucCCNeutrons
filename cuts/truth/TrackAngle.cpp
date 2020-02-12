@@ -11,7 +11,7 @@
 
 namespace truth
 {
-  TrackAngle::TrackAngle(const YAML::Node& config): Cut(config), fMax(config["max"].as<double>())
+  TrackAngle::TrackAngle(const YAML::Node& config): Cut(config), fMax(config["max"].as<double>()/180.*M_PI)
   {
   }
 

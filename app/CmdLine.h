@@ -51,6 +51,8 @@ namespace app
 
       inline bool isMC() const { return fIsMC; }
 
+      inline const std::string& playlist() const { return fPlaylist; }
+
       //Error codes that I can return to the operating system.  Might be useful
       //if applications using CmdLine are ever part of bash scripts.
       enum ExitCode: int
@@ -79,12 +81,14 @@ namespace app
     private:
       std::unique_ptr<YAML::Node> fConfigFile; //The parsed configuration file for this job.
                                                //Using a const accessor function is easier than creating it const.
-     std::vector<std::string> fTupleFileNames; //List of NTuple files to read
+      std::vector<std::string> fTupleFileNames; //List of NTuple files to read
 
-     bool fIsMC; //Am I processing data or MC files?  Decided based on the
-                 //first file to be processed.  Output file gets named based
-                 //on this, and I also make sure the two don't get mixed,
-                 //even in OPTimized builds.
+      bool fIsMC; //Am I processing data or MC files?  Decided based on the
+                  //first file to be processed.  Output file gets named based
+                  //on this, and I also make sure the two don't get mixed,
+                  //even in OPTimized builds.
+
+      std::string fPlaylist; //Playlist name for FluxReweighter
 
       //Centralize argument parsing that is shared between argv and STDIN
       void HandleArg(const std::string& scriptName, const std::string arg, std::string& outFileName, std::string& configFile);

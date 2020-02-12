@@ -52,11 +52,15 @@
 
 #define DECLARE_UNIT_WITH_YAML(UNIT)\
   DECLARE_UNIT(UNIT)\
-  ADD_YAML_TO_UNIT(UNIT)\
+  ADD_YAML_TO_UNIT(UNIT)
 
 #define DELCARE_RELATED_UNIT_WITH_YAML(NEW_UNIT, BASE_UNIT, NUM, DENOM)\
   DECLARE_RELATED_UNIT(NEW_UNIT, BASE_UNIT, NUM, DENOM)\
   ADD_YAML_TO_UNIT(NEW_UNIT)
+
+#define DECLARE_UNIT_WITH_TYPE_AND_YAML(UNIT, TYPE)\
+  DECLARE_UNIT_WITH_TYPE(UNIT, TYPE)\
+  ADD_YAML_TO_UNIT(UNIT)
 
 //Define base units using my new macros
 DECLARE_UNIT_WITH_YAML(GeV)
@@ -70,6 +74,8 @@ DECLARE_UNIT_WITH_YAML(ns)
 DECLARE_UNIT_WITH_YAML(degrees)
 
 DECLARE_UNIT_WITH_YAML(events) //Base events on double so I can reweight
+
+DECLARE_UNIT_WITH_TYPE_AND_YAML(neutrons, int)
 
 //TODO: ROOT::Math::LorentzVector::mass2() returns just SCALAR which does not work with my unit library.
 //      Write some wrapper over LorentzVector?  For now, I'm providing my own bare-bones Lorentz vector class.

@@ -8,7 +8,7 @@
 
 namespace reco
 {
-  TrackAngle::TrackAngle(const YAML::Node& config, const std::string& name): Cut(config, name), fMax(config["max"].as<double>())
+  TrackAngle::TrackAngle(const YAML::Node& config, const std::string& name): Cut(config, name), fMax(config["max"].as<double>()/180.*M_PI)
   {
   }
 

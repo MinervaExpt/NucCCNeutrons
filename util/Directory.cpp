@@ -11,6 +11,7 @@
 
 //util includes
 #include "util/Directory.h"
+#include "util/SafeROOTName.h"
 
 //ROOT includes
 #include "TFile.h"
@@ -24,7 +25,7 @@ namespace util
                                                                                                                               
   Directory Directory::mkdir(const std::string& name)
   {
-    Directory child(name, *this);
+    Directory child(util::SafeROOTName(name), *this);
     return child;
   }
                                                                                                                               

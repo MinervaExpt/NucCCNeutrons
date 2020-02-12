@@ -33,7 +33,9 @@
 #include "app/IsMC.h"
 
 //PlotUtils includes
-#include "PlotUtils/CrashOnROOTMessage.h"
+#include "CrashOnROOTMessage.h"
+#include "GenieSystematics.h"
+#include "FluxSystematics.h"
 
 //YAML-cpp includes
 #include "yaml-cpp/yaml.h"
@@ -52,6 +54,7 @@
 #include <iostream>
 #include <algorithm>
 #include <unordered_map>
+#include <bitset>
 
 //Macro to centralize how I print out debugging messages
 //TODO: Decide how I want this macro to work and centralize it.
@@ -76,25 +79,31 @@ namespace
     return *it;
   }
 
-  int hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<reco::Cut>>& allCuts, std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts)
+  //Given the names of cuts for a sideband, all reco cuts, and the cuts already associated with sidebands,
+  //create a hash code that describes which cuts an event must fail to be
+  //in this sideband and move any needed cuts from allCuts to sidebandCuts.
+  std::bitset<64> hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<reco::Cut>>& allCuts, std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts)
   {
-    uint64_t result = 0; //0x1 << sidebandCuts.size() - 1;
+    std::bitset<64> result;
+    result.set(); //Sets result to all true
 
     for(const auto& name: cutNames)
     {
       const auto found = std::find_if(allCuts.begin(), allCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
       if(found != allCuts.end())
       {
-        result |= 0x1 << sidebandCuts.size(); //BEFORE the update because of 0-based indexing
-        //TODO: Move found to the end of sidebandCuts
+        result.set(sidebandCuts.size(), false); //BEFORE the update because of 0-based indexing
+        sidebandCuts.push_back(std::move(*found));
+        allCuts.erase(found);
       }
       else
       {
         const auto inSideband = std::find_if(sidebandCuts.begin(), sidebandCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
         if(inSideband != sidebandCuts.end())
         {
-          result |= 0x1 << std::distance(sidebandCuts.begin(), inSideband);
+          result.set(std::distance(sidebandCuts.begin(), inSideband), false);
         } //If in sidebandCuts
+        else throw std::runtime_error("Failed to find a cut named " + name + " for a sideband.\n");
       } //If not in allCuts
     } //For each cut name
 
@@ -112,10 +121,56 @@ namespace
                        });
   }
 
-  std::vector<evt::CVUniverse*> getSystematics(PlotUtils::ChainWrapper* chw, const bool /*isMC*/)
+  //TODO: Replace with a "universe loader" that loads systematic universes from a file.
+  std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
   {
-    //TODO: Get centralized systematics if !isMC
-    return {new evt::CVUniverse(chw)};
+    std::map<std::string, std::vector<evt::CVUniverse*>> result;
+    result["cv"].push_back(new evt::CVUniverse(chw));
+
+    //"global" configuration for all DefaultCVUniverses
+    DefaultCVUniverse::SetPlaylist(options.playlist());
+    DefaultCVUniverse::SetAnalysisNuPDG(-14); //TODO: Get this from the user somehow
+    DefaultCVUniverse::SetNuEConstraint(false); //No nu-e constraint for antineutrino mode yet
+    DefaultCVUniverse::SetNonResPiReweight(false);
+
+    if(isMC)
+    {
+      const int nFluxUniverses = 50; //TODO: Get this number from the user and tune it
+      DefaultCVUniverse::SetNFluxUniverses(nFluxUniverses);
+      auto fluxSys = PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chw, nFluxUniverses);
+      result.insert(fluxSys.begin(), fluxSys.end());
+
+      auto genieSyst = PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chw);
+      result.insert(genieSyst.begin(), genieSyst.end());
+    }
+
+    return result;
+  }
+
+  //Some systematic universes return true from IsVerticalOnly().  Those universes are guaranteed by the NS Framework to
+  //return the same physics variables as the CV EXCEPT FOR GETWEIGHT().  So, group them together to save on
+  //evaluating cuts and physics variables.
+  std::vector<std::vector<evt::CVUniverse*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::CVUniverse*>> bands)
+  {
+    std::vector<std::vector<evt::CVUniverse*>> groupedUnivs(1);
+
+    auto& vertical = groupedUnivs[0]; //By convention, put vertical universes at the beginning of this vector<>.
+                                      //This is an implementation detail that may change at any time.
+
+    for(const auto& band: bands)
+    {
+      if(band.first == "cv") vertical.insert(vertical.end(), band.second.begin(), band.second.end());
+      else
+      {
+        for(const auto univ: band.second)
+        {
+          if(univ->IsVerticalOnly()) vertical.push_back(univ);
+          else groupedUnivs.emplace_back(std::vector<evt::CVUniverse*>{univ});
+        }
+      }
+    }
+
+    return groupedUnivs;
   }
 }
 
@@ -143,14 +198,14 @@ int main(const int argc, const char** argv)
   //      MnvH1Ds' plots because MnvH1D insists on deleteing its own TH1Ds.  I've got
   //      to either Write() each TH1D or convince TFile not to delete the objects it
   //      owns.  I think there's a flag for the latter in TObject.
-  const bool isThisJobMC = app::IsMC(options.TupleFileNames().front());
+  const bool isThisJobMC = options.isMC();
   util::Directory histDir(*options.HistFile);
 
   //Decide which systematic universes to process, but delay setting the tree to
   //process until later.
   //TODO: Can't we just agree to use std::unique_ptr<>s instead?  Now, I've got
   //      to remember to delete these.
-  std::vector<evt::CVUniverse*> universes = ::getSystematics(nullptr, isThisJobMC);
+  auto universes = ::getSystematics(nullptr, options, isThisJobMC);
 
   //Set up backgrounds
   LOG_DEBUG("Setting up Backgrounds...")
@@ -171,7 +226,7 @@ int main(const int argc, const char** argv)
   std::unique_ptr<sig::Signal> signal;
   try
   {
-    signal = plgn::Factory<sig::Signal, util::Directory&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance().Get(options.ConfigFile()["signal"], signalDir, backgrounds, universes);
+    signal = plgn::Factory<sig::Signal, util::Directory&, std::vector<std::unique_ptr<bkg::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance().Get(options.ConfigFile()["signal"], signalDir, backgrounds, universes);
   }
   catch(const std::runtime_error& e)
   {
@@ -223,8 +278,8 @@ int main(const int argc, const char** argv)
   LOG_DEBUG("Setting up sidebands...")
   decltype(recoCuts) sidebandCuts;
 
-  std::unordered_map<int, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
-  auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::vector<evt::CVUniverse*>&>::instance();
+  std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
+  auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
   for(auto sideband: options.ConfigFile()["sidebands"])
   {
     try
@@ -256,6 +311,9 @@ int main(const int argc, const char** argv)
       return app::CmdLine::ExitCode::YAMLError;
     }
   }
+
+  //TODO: Can I let universes go out of scope now to make the event loop simpler?
+  const auto groupedUnivs = ::groupCompatibleUniverses(universes);
 
   //Accumulate POT from each good file
   double pot_used = 0;
@@ -332,7 +390,13 @@ int main(const int argc, const char** argv)
 
         //MC loop
         const size_t nMCEntries = anaTuple.GetEntries();
-        for(auto& univ: universes) univ->SetTree(&anaTuple);
+        for(auto& compat: groupedUnivs)
+        {
+          for(auto& univ: compat) univ->SetTree(&anaTuple);
+        }
+
+        //Get MINOS weights
+        PlotUtils::DefaultCVUniverse::SetTruth(false);
 
         for(size_t entry = 0; entry < nMCEntries; ++entry)
         {
@@ -340,23 +404,23 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with MC entry " << entry << "\n";
           #endif
 
-          for(const auto univ: universes)
+          for(const auto& compat: groupedUnivs)
           {
-            auto& event = *univ;
-            event.SetEntry(entry);
+            auto& event = *compat.front(); //All compatible universes pass the same cuts
+            for(const auto univ: compat) univ->SetEntry(entry); //I still need to GetWeight() for entry
 
             //MC loop
             if(::requireAll(recoCuts, event))
             {
               //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
               //for sidebands defined by multiple cuts.
-              uint64_t passedReco = 0; //TODO: What does the default value for each bit need to be to work with XOR when I have fewer than 64 cuts?
-              const decltype(passedReco) passedAll = (1 << sidebandCuts.size()) - 1;
+              std::bitset<64> passedReco;
+              passedReco.set();
 
               for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
               {
                 const auto& cut = sidebandCuts[whichCut];
-                passedReco |= (*cut)(event) << whichCut;
+                if(!(*cut)(event)) passedReco.set(whichCut, false);
               }
 
               //Look up the sideband, if any, by which reco cuts failed.
@@ -376,10 +440,10 @@ int main(const int argc, const char** argv)
               //Categorize by whether this is signal or some background
               if(::requireAll(truthSignal, event))
               {
-                if(!(passedReco ^ passedAll)) signal->mcSignal(event);
+                if(passedReco.all()) signal->mcSignal(compat);
                 else if(sideband) //If this is a sideband I'm interested in
                 {
-                  sideband->truthSignal(event);
+                  sideband->truthSignal(compat);
                 }
               }
               else //If not truthSignal
@@ -388,16 +452,22 @@ int main(const int argc, const char** argv)
                                                           [&event](const auto& background)
                                                           { return ::requireAll(background->passes, event); });
 
-                if(!(passedReco ^ passedAll)) signal->mcBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
-                else sideband->truthBackground(event, ::derefOrNull(foundBackground, backgrounds.end()));
+                if(passedReco.all()) signal->mcBackground(compat, ::derefOrNull(foundBackground, backgrounds.end()));
+                else if(sideband) sideband->truthBackground(compat, ::derefOrNull(foundBackground, backgrounds.end()));
               }
             } //If passed all non-sideband-related cuts
-          } //For each MC systematic universe
+          } //For each error band
         } //For each entry in the MC tree
 
         //Truth loop
         const size_t nTruthEntries = truthTree.GetEntries();
-        for(auto& univ: universes) univ->SetTree(&truthTree);
+        for(auto& compat: groupedUnivs)
+        {
+          for(auto univ: compat) univ->SetTree(&truthTree);
+        }
+
+        //Don't try to get MINOS weights in the truth tree loop
+        PlotUtils::DefaultCVUniverse::SetTruth(true);
 
         for(size_t entry = 0; entry < nTruthEntries; ++entry)
         {
@@ -405,23 +475,26 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with truth entry " << entry << "\n";
           #endif
 
-          for(const auto univ: universes)
+          for(const auto& compat: groupedUnivs)
           {
-            auto& event = *univ;
-            event.SetEntry(entry);
+            auto& event = *compat.front(); //All compatible universes pass the same cuts
+            for(auto univ: compat) univ->SetEntry(entry);
 
             if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
             {
-              signal->truth(event);
+              signal->truth(compat);
             } //If event passes all truth cuts
-          } //For each systematic universe
+          } //For each error band
         } //For each entry in Truth tree
       } //If isThisJobMC
       else
       {
         //Data loop
+        //TODO: This data loop is looking worse and worse as I optimize the MC loop.
+        //      I'm also getting unfilled histograms from my MC jobs now.  I think
+        //      it's time to put the data loop back in its own program.
         const size_t nEntries = anaTuple.GetEntries();
-        auto& cv = universes.front(); //TODO: assert() that this is true?  Put data in a different program?
+        auto& cv = universes["cv"].front(); //TODO: assert() that this is true?  Put data in a different program?
         cv->SetTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)
@@ -434,15 +507,15 @@ int main(const int argc, const char** argv)
           event.SetEntry(entry);
           if(::requireAll(recoCuts, event))
           {
-            uint64_t passedCuts = 0;
-            const decltype(passedCuts) passedAll = (1 << sidebandCuts.size()) - 1; //TODO: Is 0 an appropriate default with XOR?
+            std::bitset<64> passedCuts;
+            passedCuts.set();
 
             for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
             {
-              passedCuts |= (*sidebandCuts[whichCut])(event) << whichCut;
+              if(!(*sidebandCuts[whichCut])(event)) passedCuts.set(whichCut, false);
             }
 
-            if(!(passedCuts ^ passedAll)) signal->data(event);
+            if(passedCuts.all()) signal->data({cv});
             else
             {
               const auto foundSidebands = sidebands.find(passedCuts);
@@ -451,7 +524,7 @@ int main(const int argc, const char** argv)
                 const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
                                                         [&event](const auto& sideband)
                                                         { return ::requireAll(sideband->passes, event); });
-                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(event);
+                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data({cv});
               } //If found a sideband and passed all of its reco constraints
             } //If not passed all sideband-related cuts
           } //If passed all cuts not related to sidebands
@@ -481,6 +554,16 @@ int main(const int argc, const char** argv)
               << e.what() << "\nExiting immediately, so you probably got incomplete results!\n";
     return app::CmdLine::ExitCode::AnalysisError;
   }
+
+  //Print the cut table to STDOUT
+  reco::Cut::TableConfig tableSize;
+  for(const auto& cut: recoCuts) cut->makeTableBigEnough(tableSize);
+
+  reco::Cut::printTableHeader(std::cout, tableSize);
+  for(const auto& cut: recoCuts) cut->printTableRow(std::cout, tableSize);
+
+  //Final Write()s to output file
+  //TODO: Put POT in a TParameter<double>
 
   return app::CmdLine::ExitCode::Success;
 }

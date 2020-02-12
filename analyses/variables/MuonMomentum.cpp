@@ -39,8 +39,7 @@ namespace ana
 
     GeV reco(const evt::CVUniverse& event)
     {
-      //TODO: Is GetPmu() shifted appropriately?
-      return MeV(event.GetPmu()).in<GeV>(); //Put the NS Framework value into the units that truth uses
+      return event.GetMuonP().p().mag();
     }
   };
 }
@@ -49,8 +48,8 @@ namespace
 {
   static plgn::Registrar<sig::Signal, sig::CrossSection<ana::MuonMomentum>, util::Directory&,
                          std::vector<typename side::Sideband::background_t>&,
-                         std::vector<evt::CVUniverse*>&> MuonMomentumSignal_reg("MuonMomentum");
+                         std::map<std::string, std::vector<evt::CVUniverse*>>&> MuonMomentumSignal_reg("MuonMomentum");
   static plgn::Registrar<side::Sideband, side::CrossSection<ana::MuonMomentum>, util::Directory&,
                          typename side::Sideband::cuts_t&&, std::vector<typename side::Sideband::background_t>&,
-                         std::vector<evt::CVUniverse*>&> MuonMomentumSideband_reg("MuonMomentum");
+                         std::map<std::string, std::vector<evt::CVUniverse*>>&> MuonMomentumSideband_reg("MuonMomentum");
 }

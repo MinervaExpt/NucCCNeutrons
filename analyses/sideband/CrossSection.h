@@ -41,10 +41,10 @@ namespace side
     public:
       CrossSection(const YAML::Node& config, util::Directory& dir,
                    cuts_t&& passes, const std::vector<background_t>& backgrounds,
-                   std::vector<evt::CVUniverse*>& universes): Sideband(config, dir, std::move(passes), backgrounds, universes),
-                                                              fVar(config["variable"]),
-                                                              fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
-                                                                           config["binning"].as<std::vector<double>>(), universes)
+                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Sideband(config, dir, std::move(passes), backgrounds, universes),
+                                                                                     fVar(config["variable"]),
+                                                                                     fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
+                                                                                                  config["binning"].as<std::vector<double>>(), universes)
       {
         const auto binning = config["binning"].as<std::vector<double>>(); //TODO: Upgrade WithUnits<> to check UNIT on bins?
 
@@ -54,29 +54,27 @@ namespace side
                                  binning, universes);
       }
 
-      //TODO: Hack to adapt to PlotUtils' MnvH1D ownership semantics?
       virtual ~CrossSection() = default;
-      /*{
-        fBackgrounds.visit([](auto hist)
-                           {
-                             delete &hist;
-                             &hist = nullptr;
-                           });
-      }*/
 
-      virtual void data(const evt::CVUniverse& event) override
+      virtual void data(const std::vector<evt::CVUniverse*>& univs) override
       {
-        fData->Fill(&event, fVar.reco(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front());
+
+        for(const auto univ: univs) fData->Fill(univ, reco);
       }
 
-      virtual void truthSignal(const evt::CVUniverse& event) override
+      virtual void truthSignal(const std::vector<evt::CVUniverse*>& univs) override
       {
-        fSignal->Fill(&event, fVar.reco(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front());
+
+        for(const auto univ: univs) fSignal->Fill(univ, reco, univ->GetWeight());
       }
 
-      virtual void truthBackground(const evt::CVUniverse& event, const background_t& background) override
+      virtual void truthBackground(const std::vector<evt::CVUniverse*>& univs, const background_t& background) override
       {
-        fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
+        const auto reco = fVar.reco(*univs.front()); 
+
+        for(const auto univ: univs) fBackgrounds[background].Fill(univ, reco, univ->GetWeight());
       }
 
     private:
