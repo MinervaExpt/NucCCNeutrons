@@ -23,8 +23,8 @@
 //know that MnvH1D does horrible horrible things.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#include "HistWrapper.h"
-#include "Hist2DWrapper.h"
+#include "PlotUtils/HistWrapper.h"
+#include "PlotUtils/Hist2DWrapper.h"
 #pragma GCC diagnostic pop
 
 //Units includes

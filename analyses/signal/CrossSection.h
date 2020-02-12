@@ -22,8 +22,8 @@
 #pragma GCC diagnostic push //Learned to use these GCC-specific preprocessor macros from 
                             //https://stackoverflow.com/questions/6321839/how-to-disable-warnings-for-particular-include-files 
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#include "HistWrapper.h"
-#include "Hist2DWrapper.h"
+#include "PlotUtils/HistWrapper.h"
+#include "PlotUtils/Hist2DWrapper.h"
 #pragma GCC diagnostic pop
 
 namespace sig

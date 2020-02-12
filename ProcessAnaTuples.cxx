@@ -33,9 +33,9 @@
 #include "app/IsMC.h"
 
 //PlotUtils includes
-#include "CrashOnROOTMessage.h"
-#include "GenieSystematics.h"
-#include "FluxSystematics.h"
+#include "PlotUtils/CrashOnROOTMessage.h"
+#include "PlotUtils/GenieSystematics.h"
+#include "PlotUtils/FluxSystematics.h"
 
 //YAML-cpp includes
 #include "yaml-cpp/yaml.h"
@@ -43,7 +43,12 @@
 //ROOT includes
 #include "TFile.h"
 #include "TTree.h"
+
+//Cintex is only needed for older ROOT versions like the GPVMs.
+//Let CMake decide whether it's needed.
+#ifndef NCINTEX
 #include "Cintex/Cintex.h"
+#endif
 
 //c++ includes
 #include <iostream>
@@ -172,7 +177,10 @@ namespace
 
 int main(const int argc, const char** argv)
 {
+  #ifndef NCINTEX
   ROOT::Cintex::Cintex::Enable(); //Needed to look up dictionaries for PlotUtils classes like MnvH1D
+  #endif
+
   TH1::AddDirectory(kFALSE); //Needed so that MnvH1D gets to clean up its own MnvLatErrorBands (which are TH1Ds).
 
   //TODO: Move these parameters somehwere that can be shared between applications?

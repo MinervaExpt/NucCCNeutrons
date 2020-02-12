@@ -1,8 +1,5 @@
 cmake_minimum_required( VERSION 2.8.12 )
 
-set( CMAKE_C_COMPILER "$ENV{GCC_DIR}/bin/gcc")
-set( CMAKE_CXX_COMPILER "$ENV{GCC_DIR}/bin/g++")
-
 project( Utilities )
 
 #Add extra "modules" to CMake
@@ -22,7 +19,25 @@ include_directories( "${PROJECT_SOURCE_DIR}" )
 
 #Find dependencies
 list( APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-find_package(ROOT REQUIRED COMPONENTS RIO Net Tree Core Geom EG GenVector Cintex) #TODO: Remove CintEx if ROOT version > 5.34
+find_package(ROOT REQUIRED COMPONENTS RIO Net Tree Core Geom EG GenVector OPTIONAL_COMPONENTS Cintex) #TODO: Remove CintEx if ROOT version > 5.34
+
+if(${ROOT_VERSION} VERSION_LESS 6 AND NOT ${ROOT_Cintex_FOUND})
+  MESSAGE(FATAL_ERROR "Cintex is optional except when it's not.  ROOT 6 has Reflex "
+                      "support built in, so it doesn't have a separate component "
+                      "for Cintex.  Cintex was an experimental feature in ROOT 5, "
+                      "so I have to require it as a component there.  You appear to "
+                      "be using ${ROOT_VERSION}, so I can't let you get away with "
+                      "skipping out on Cintex support!  I need Cintex to load metadata "
+                      "about MnvH1D and MnvH2D at runtime.")
+endif()
+
+if(${ROOT_Cintex_FOUND})
+  MESSAGE("I need Cintex on this platform, so making sure to compile against it...")
+else()
+  MESSAGE("I don't need Cintex on this platform, so skipping it...")
+  add_definitions(-DNCINTEX)
+endif()
+
 include(${ROOT_USE_FILE})
 
 find_package(yaml-cpp 0.6.0 REQUIRED)

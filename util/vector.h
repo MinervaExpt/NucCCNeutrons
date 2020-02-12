@@ -95,7 +95,7 @@ namespace units
       template <class OTHERUNIT>
       XYZVector<decltype(std::declval<SCALAR>().template in<OTHERUNIT>())> in() const
       {
-        return {fX.in<OTHERUNIT>(), fY.in<OTHERUNIT>(), fZ.in<OTHERUNIT>()};
+        return {fX.template in<OTHERUNIT>(), fY.template in<OTHERUNIT>(), fZ.template in<OTHERUNIT>()};
       }
 
       //Vector algebra
@@ -209,7 +209,7 @@ namespace units
       template <class OTHERUNIT>
       LorentzVector<decltype(std::declval<SCALAR>().template in<OTHERUNIT>())> in() const
       {
-        return {fX.in<OTHERUNIT>(), fY.in<OTHERUNIT>(), fZ.in<OTHERUNIT>(), fT.in<OTHERUNIT>()};
+        return {fX.template in<OTHERUNIT>(), fY.template in<OTHERUNIT>(), fZ.template in<OTHERUNIT>(), fT.template in<OTHERUNIT>()};
       }
 
       //Convert into a 3-vector

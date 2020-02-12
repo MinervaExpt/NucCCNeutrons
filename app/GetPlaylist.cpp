@@ -6,7 +6,7 @@
 #include "app/GetPlaylist.h"
 
 //PlotUtils includes
-#include "TreeWrapper.h"
+#include "PlotUtils/TreeWrapper.h"
 
 //ROOT includes
 #include "TFile.h"
