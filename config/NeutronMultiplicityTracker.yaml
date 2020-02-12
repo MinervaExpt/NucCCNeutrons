@@ -35,6 +35,8 @@ cuts:
       Antineutrino: !IsAntineutrino
       LowQ3: &Q3Range !Q3Range
         max: !GeV 0.4
+      Apothem: &ApothemCut !Apothem
+        apothem: !mm 850
       Tracker: *OneTrackTracker
   reco:
     OneTrack: !nTracks
@@ -49,6 +51,7 @@ cuts:
     MuonMomentum: !MuonMomentum
       min: !GeV 2
     Antineutrino: !IsAntineutrino
+    Apothem: *ApothemCut
     Tracker: *OneTrackTracker
 
 #Names in sidebands' "fails" blocks refer to truth cuts by block name.
