@@ -130,13 +130,14 @@ namespace
 
     if(isMC)
     {
-      const int nFluxUniverses = 50; //TODO: Get this number from the user and tune it
+      //TODO: Turn this universes back on when I'm ready to deal with weights in a reasonable way
+      /*const int nFluxUniverses = 50; //TODO: Get this number from the user and tune it
       DefaultCVUniverse::SetNFluxUniverses(nFluxUniverses);
       auto fluxSys = PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chw, nFluxUniverses);
       result.insert(fluxSys.begin(), fluxSys.end());
 
       auto genieSyst = PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chw);
-      result.insert(genieSyst.begin(), genieSyst.end());
+      result.insert(genieSyst.begin(), genieSyst.end());*/
     }
 
     return result;

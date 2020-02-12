@@ -46,6 +46,12 @@ namespace units
     return std::atan2(x.template in<quantity<TAG, PREFIX, FLOAT>>(), y.template in<quantity<TAG, PREFIX, FLOAT>>());
   }
 
+  template <class TAG, class PREFIX, class FLOAT>
+  quantity<TAG, PREFIX, FLOAT> fabs(const quantity<TAG, PREFIX, FLOAT> value)
+  {
+    return (value.template in<quantity<TAG, PREFIX, FLOAT>>() < 0)?-value:value;
+  }
+
   namespace detail
   {
     template <class T>
