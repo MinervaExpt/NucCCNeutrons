@@ -6,23 +6,14 @@
 #include <string>
 #include <algorithm>
 
-//analyses includes
-//That's right, I'm covering up a base class function.  Suppress the warnings from it because "I know what I'm doing".
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#include "analyses/signal/CrossSection.h"
-#include "analyses/sideband/CrossSection.h"
-#pragma GCC diagnostic pop
+//util includes
+#include "util/vector.h"
 
 //evt includes
 #include "evt/CVUniverse.h"
 
-//cuts includes
-#include "cuts/reco/Cut.h"
-#include "cuts/truth/Cut.h"
-
-//util includes
-#include "util/Factory.cpp"
+#ifndef ANA_NEUTRONMULTIPLICITY_CPP
+#define ANA_NEUTRONMULTIPLICITY_CPP
 
 namespace ana
 {
@@ -41,7 +32,6 @@ namespace ana
     {
       MeV edep;
       mm z;
-      mm transverse;
     };
 
     struct FSPart
@@ -50,12 +40,26 @@ namespace ana
       MeV energy;
     };
 
+    //Decide whether a neutron candidate/FS particle should be counted.
+    //Splitting code up this way lets me reuse this in studies.
+    template <class CAND>
+    bool countAsReco(const CAND& cand, const units::LorentzVector<mm>& vertex) const
+    {
+      return cand.z - vertex.z() < this->fRecoMaxZDist && cand.edep > this->fRecoMinEDep;
+    }
+
+    template <class FS>
+    bool countAsTruth(const FS& fs) const
+    {
+      return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinEDep;
+    }
+
     neutrons truth(const evt::CVUniverse& event)
     {
       //Count FS neutrons above an energy deposit threshold
       const auto fs = event.Get<FSPart>(event.GetFSPDG_code(), event.GetFSenergy());
       return std::count_if(fs.begin(), fs.end(), [this](const auto& fs)
-                                                 { return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinEDep;});
+                                                 { return this->countAsTruth(fs);});
     }
 
     neutrons reco(const evt::CVUniverse& event)
@@ -63,9 +67,9 @@ namespace ana
       //Count candidates close enough to the vertex and with enough energy deposit
       const auto vertex = event.GetVtx();
 
-      const auto cands = event.Get<Candidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex());
+      const auto cands = event.Get<Candidate>(event.Getblob_edep(), event.Getblob_zPos());
       return std::count_if(cands.begin(), cands.end(), [&vertex, this](const auto& cand)
-                                                       { return cand.z - vertex.z() < this->fRecoMaxZDist && cand.edep > this->fRecoMinEDep;});
+                                                       { return this->countAsReco(cand, vertex);});
     }
 
     private:
@@ -75,12 +79,4 @@ namespace ana
   };
 }
 
-namespace
-{
-  static plgn::Registrar<sig::Signal, sig::CrossSection<ana::NeutronMultiplicity>, util::Directory&,
-                         std::vector<typename sig::Signal::background_t>&,
-                         std::map<std::string, std::vector<evt::CVUniverse*>>&> NeutronMultiplicitySignal_reg("NeutronMultiplicity");
-  static plgn::Registrar<side::Sideband, side::CrossSection<ana::NeutronMultiplicity>, util::Directory&,
-                         typename side::Sideband::cuts_t&&, std::vector<typename side::Sideband::background_t>&,
-                         std::map<std::string, std::vector<evt::CVUniverse*>>&> NeutronMultiplicitySideband_reg("NeutronMultiplicity");
-}
+#endif //ANA_NEUTRONMULTIPLICITY_CPP

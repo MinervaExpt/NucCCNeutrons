@@ -102,7 +102,7 @@ namespace evt
       blobReco(blob_nViews, size_t)
 
       blobTruth(blob_geant_dist_to_edep_as_neutron, mm)
-      blobTruth(blob_FS_index, size_t)
+      blobTruth(blob_FS_index, int)
       blobTruth(blob_earliest_true_hit_time, ns)
 
       //Per FS particle branches

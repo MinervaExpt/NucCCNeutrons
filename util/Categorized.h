@@ -24,7 +24,7 @@ namespace util
   template <class value_t>
   struct NamedCategory
   {
-    std::vector<const value_t> values;
+    std::vector<value_t> values;
     std::string name;
   };
 

@@ -1,1 +1,1 @@
-add_library(analyses OBJECT MuonMomentum.cpp NeutronMultiplicity.cpp)
+add_library(variables MuonMomentum.cpp NeutronMultiplicity.cpp)

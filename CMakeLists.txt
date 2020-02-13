@@ -54,7 +54,7 @@ add_subdirectory(analyses)
 add_subdirectory(cuts)
 
 #Build main executables
-add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:analyses> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets>)
+add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:crossSections> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets>)
 #This TARGET_OBJECTS song and dance solves the problem of the compiler
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library

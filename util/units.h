@@ -75,7 +75,7 @@ DECLARE_UNIT_WITH_YAML(degrees)
 
 DECLARE_UNIT_WITH_YAML(events) //Base events on double so I can reweight
 
-DECLARE_UNIT_WITH_TYPE_AND_YAML(neutrons, int)
+DECLARE_UNIT_WITH_YAML(neutrons)
 
 //TODO: ROOT::Math::LorentzVector::mass2() returns just SCALAR which does not work with my unit library.
 //      Write some wrapper over LorentzVector?  For now, I'm providing my own bare-bones Lorentz vector class.
