@@ -20,9 +20,8 @@
 #include "util/Factory.cpp"
 
 //analysis includes
-#include "analyses/signal/Signal.h"
-#include "analyses/sideband/Sideband.h"
-#include "analyses/Background.h"
+#include "analyses/base/Study.h"
+#include "analyses/base/Background.h"
 
 //Cuts includes
 #include "cuts/truth/Cut.h"
@@ -223,11 +222,21 @@ int main(const int argc, const char** argv)
 
   //Set up Signal
   LOG_DEBUG("Setting up Signal...")
+  auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<bkg::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
   auto signalDir = histDir.mkdir(options.ConfigFile()["signal"]["name"].as<std::string>());
-  std::unique_ptr<sig::Signal> signal;
+  std::unique_ptr<ana::Study> signal;
   try
   {
-    signal = plgn::Factory<sig::Signal, util::Directory&, std::vector<std::unique_ptr<bkg::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance().Get(options.ConfigFile()["signal"], signalDir, backgrounds, universes);
+    ana::Study::cuts_t noCuts = {};
+    signal = studyFactory.Get(options.ConfigFile()["signal"], signalDir, std::move(noCuts), backgrounds, universes);
+
+    //Warn the user if there were additional Cuts specified for the signal.
+    //Put those cuts in recoCuts instead.
+    if(options.ConfigFile()["signal"]["passes"])
+    {
+      std::cerr << "Warning: You specified additional cuts for the signal Study:\n" << options.ConfigFile()["signal"]["passes"]
+                << "\n\nPut them in reco/cuts instead!  Ignoring these Cuts.\n";
+    }
   }
   catch(const std::runtime_error& e)
   {
@@ -279,8 +288,7 @@ int main(const int argc, const char** argv)
   LOG_DEBUG("Setting up sidebands...")
   decltype(recoCuts) sidebandCuts;
 
-  std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<side::Sideband>>> sidebands; //Mapping from truth cuts to sidebands
-  auto& sideFactory = plgn::Factory<side::Sideband, util::Directory&, std::vector<std::unique_ptr<reco::Cut>>&&, std::vector<std::unique_ptr<bkg::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
+  std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands; //Mapping from truth cuts to sidebands
   for(auto sideband: options.ConfigFile()["sidebands"])
   {
     try
@@ -304,7 +312,7 @@ int main(const int argc, const char** argv)
       }
 
       const auto hashPattern = ::hashCuts(fails, recoCuts, sidebandCuts); //Also transfers relevant cuts from recoCuts to sidebandCuts
-      sidebands[hashPattern].emplace_back(sideFactory.Get(sideband.second, dir, std::move(passes), backgrounds, universes));
+      sidebands[hashPattern].emplace_back(studyFactory.Get(sideband.second, dir, std::move(passes), backgrounds, universes));
     }
     catch(const std::runtime_error& e)
     {
@@ -429,22 +437,25 @@ int main(const int argc, const char** argv)
               //or just isn't in a sideband I'm interested in.
               //Putting the code here just makes it easier to maintain.
               const auto relevantSidebands = sidebands.find(passedReco);
-              side::Sideband* sideband = nullptr; //TODO: Come up with some clever return value semantics to avoid the raw pointer here
+              ana::Study* sideband = nullptr; //TODO: Come up with some clever return value semantics to avoid the raw pointer here
               if(relevantSidebands != sidebands.end())
               {
                 const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
                                                 [&event](const auto& whichSideband)
-                                                { return ::requireAll(whichSideband->passes, event); });
+                                                { return whichSideband->passesCuts(event); });
                 if(found != relevantSidebands->second.end()) sideband = found->get();
               }
 
               //Categorize by whether this is signal or some background
               if(::requireAll(truthSignal, event))
               {
-                if(passedReco.all()) signal->mcSignal(compat);
+                if(passedReco.all())
+                {
+                  for(const auto univ: compat) signal->mcSignal(*univ);
+                }
                 else if(sideband) //If this is a sideband I'm interested in
                 {
-                  sideband->truthSignal(compat);
+                  for(const auto univ: compat) sideband->mcSignal(*univ);
                 }
               }
               else //If not truthSignal
@@ -453,8 +464,14 @@ int main(const int argc, const char** argv)
                                                           [&event](const auto& background)
                                                           { return ::requireAll(background->passes, event); });
 
-                if(passedReco.all()) signal->mcBackground(compat, ::derefOrNull(foundBackground, backgrounds.end()));
-                else if(sideband) sideband->truthBackground(compat, ::derefOrNull(foundBackground, backgrounds.end()));
+                if(passedReco.all())
+                {
+                  for(const auto univ: compat) signal->mcBackground(*univ, ::derefOrNull(foundBackground, backgrounds.end()));
+                }
+                else if(sideband)
+                {
+                  for(const auto univ: compat) sideband->mcBackground(*univ, ::derefOrNull(foundBackground, backgrounds.end()));
+                }
               }
             } //If passed all non-sideband-related cuts
           } //For each error band
@@ -483,7 +500,7 @@ int main(const int argc, const char** argv)
 
             if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
             {
-              signal->truth(compat);
+              for(const auto univ: compat) signal->truth(*univ);
             } //If event passes all truth cuts
           } //For each error band
         } //For each entry in Truth tree
@@ -495,8 +512,8 @@ int main(const int argc, const char** argv)
         //      I'm also getting unfilled histograms from my MC jobs now.  I think
         //      it's time to put the data loop back in its own program.
         const size_t nEntries = anaTuple.GetEntries();
-        auto& cv = universes["cv"].front(); //TODO: assert() that this is true?  Put data in a different program?
-        cv->SetTree(&anaTuple);
+        auto& cv = *universes["cv"].front(); //TODO: assert() that this is true?  Put data in a different program?
+        cv.SetTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)
         {
@@ -504,28 +521,27 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with data entry " << entry << "\n";
           #endif
 
-          auto& event = *cv;
-          event.SetEntry(entry);
-          if(::requireAll(recoCuts, event))
+          cv.SetEntry(entry);
+          if(::requireAll(recoCuts, cv))
           {
             std::bitset<64> passedCuts;
             passedCuts.set();
 
             for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
             {
-              if(!(*sidebandCuts[whichCut])(event)) passedCuts.set(whichCut, false);
+              if(!(*sidebandCuts[whichCut])(cv)) passedCuts.set(whichCut, false);
             }
 
-            if(passedCuts.all()) signal->data({cv});
+            if(passedCuts.all()) signal->data(cv);
             else
             {
               const auto foundSidebands = sidebands.find(passedCuts);
               if(foundSidebands != sidebands.end())
               {
                 const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
-                                                        [&event](const auto& sideband)
-                                                        { return ::requireAll(sideband->passes, event); });
-                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data({cv});
+                                                        [&cv](const auto& sideband)
+                                                        { return sideband->passesCuts(cv); });
+                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(cv);
               } //If found a sideband and passed all of its reco constraints
             } //If not passed all sideband-related cuts
           } //If passed all cuts not related to sidebands

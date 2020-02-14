@@ -1,12 +1,16 @@
-//File: CrossSection.h
-//Brief: A Signal template that just produces the plots you need
+//File: CrossSectionSignal.h
+//Brief: A Study template that just produces the plots you need
 //       to extract a differential cross section in 1D (TODO in an arbitrary
-//       number of dimensions).  Use it to implement a CrossSection
+//       number of dimensions).  Use it to implement a CrossSectionSignal
 //       for your VARIABLE of interest.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-//signal includes
-#include "analyses/signal/Signal.h"
+//base includes
+#include "analyses/base/Study.h"
+#include "analyses/base/Background.h"
+
+//cut includes
+#include "cuts/reco/Cut.h"
 
 //evt includes
 #include "evt/CVUniverse.h"
@@ -26,7 +30,10 @@
 #include "PlotUtils/Hist2DWrapper.h"
 #pragma GCC diagnostic pop
 
-namespace sig
+#ifndef ANA_CROSSSECTIONSIGNAL_H
+#define ANA_CROSSSECTIONSIGNAL_H
+
+namespace ana
 {
   //A VARIABLE shall have:
   //1) A std::string name() const method that will be used to name all of the plots produced
@@ -34,7 +41,7 @@ namespace sig
   //3) A UNIT truth(const CVUniverse& unix) const method
   //4) The return type of reco() and truth() must match
   template <class VARIABLE>
-  class CrossSection: public Signal
+  class CrossSectionSignal: public Study
   {
     //First, check that VARIABLE makes sense
     private:
@@ -46,8 +53,8 @@ namespace sig
       using MIGRATION = units::WithUnits<Hist2DWrapper<evt::CVUniverse>, UNIT, UNIT, events>;
 
     public:
-      CrossSection(const YAML::Node& config, util::Directory& dir, std::vector<background_t>& backgrounds,
-                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Signal(config, dir, backgrounds, universes),
+      CrossSectionSignal(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, const std::vector<background_t>& backgrounds,
+                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
                                                                                      fVar(config["variable"]),
                                                                                      fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
                                                                                                   config["binning"].as<std::vector<double>>(), universes)
@@ -64,38 +71,30 @@ namespace sig
                                           binning, universes);
       }
 
-      virtual ~CrossSection() = default;
+      virtual ~CrossSectionSignal() = default;
 
-      virtual void mcSignal(const std::vector<evt::CVUniverse*>& univs) override
+      virtual void mcSignal(const evt::CVUniverse& event) override
       {
-        const auto reco = fVar.reco(*univs.front()), truth = fVar.truth(*univs.front());
+        const auto reco = fVar.reco(event), truth = fVar.truth(event);
+        const auto weight = event.GetWeight();
 
-        for(const auto univ: univs)
-        {
-          fEfficiencyNum->Fill(univ, truth, univ->GetWeight());
-          fMigration->Fill(univ, reco, truth, univ->GetWeight());
-        }
+        fEfficiencyNum->Fill(&event, truth, weight);
+        fMigration->Fill(&event, reco, truth, weight);
       }
 
-      virtual void truth(const std::vector<evt::CVUniverse*>& univs) override
+      virtual void truth(const evt::CVUniverse& event) override
       {
-        const auto truth = fVar.truth(*univs.front());
-
-        for(const auto univ: univs) fEfficiencyDenom->Fill(univ, truth, univ->GetWeight());
+        fEfficiencyDenom->Fill(&event, fVar.truth(event), event.GetWeight());
       }
 
-      virtual void data(const std::vector<evt::CVUniverse*>& univs) override
+      virtual void data(const evt::CVUniverse& event) override
       {
-        const auto reco = fVar.reco(*univs.front());
-
-        for(const auto univ: univs) fSignalEvents->Fill(univ, reco);
+        fSignalEvents->Fill(&event, fVar.reco(event)); //No weight applied to data
       }
 
-      virtual void mcBackground(const std::vector<evt::CVUniverse*>& univs, const background_t& background) override
+      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) override
       {
-        const auto reco = fVar.reco(*univs.front());
-
-        for(const auto univ: univs) fBackgrounds[background].Fill(univ, reco, univ->GetWeight());
+        fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
       }
 
     private:
@@ -110,3 +109,5 @@ namespace sig
       util::Categorized<HIST, background_t> fBackgrounds; //Background event distributions in the reco signal region
   };
 }
+
+#endif //ANA_CROSSSECTIONSIGNAL_H

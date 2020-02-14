@@ -2,6 +2,10 @@
 //Brief: A NeutronMultiplicity VARIABLE to demonstrate my analysis machinery.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+//analyses includes
+#include "analyses/studies/CrossSectionSignal.h"
+#include "analyses/studies/CrossSectionSideband.h"
+
 //c++ includes
 #include <string>
 #include <algorithm>
@@ -77,6 +81,16 @@ namespace ana
       MeV fRecoMinEDep;
       mm fRecoMaxZDist; //Minimum z distance from vertex for candidates
   };
+}
+
+namespace
+{
+  static plgn::Registrar<ana::Study, ana::CrossSectionSignal<ana::NeutronMultiplicity>, util::Directory&,
+                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
+                         std::map<std::string, std::vector<evt::CVUniverse*>>&> NeutronMultiplicitySignal_reg("NeutronMultiplicitySignal");
+  static plgn::Registrar<ana::Study, ana::CrossSectionSideband<ana::NeutronMultiplicity>, util::Directory&,
+                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
+                         std::map<std::string, std::vector<evt::CVUniverse*>>&> NeutronMultiplicitySideband_reg("NeutronMultiplicitySideband");
 }
 
 #endif //ANA_NEUTRONMULTIPLICITY_CPP

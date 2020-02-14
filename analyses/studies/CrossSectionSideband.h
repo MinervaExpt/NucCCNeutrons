@@ -1,13 +1,16 @@
-//File: CrossSection.h
+//File: CrossSectionSideband.h
 //Brief: The sideband plots needed to extract a cross section in a single
 //       VARIABLE (TODO: in multiple dimensions).  A sideband is defined by
 //       1 or more reconstruction cuts that an event fails and can be delimited
 //       by that event passes a set of selection cuts.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-//sideband includes
-#include "analyses/sideband/Sideband.h"
-#include "analyses/Background.h"
+//base includes
+#include "analyses/base/Study.h"
+#include "analyses/base/Background.h"
+
+//cut includes
+#include "cuts/reco/Cut.h"
 
 //evt includes
 #include "evt/CVUniverse.h"
@@ -18,9 +21,12 @@
 #include "util/Directory.h"
 #include "util/Categorized.h"
 
-namespace side
+#ifndef ANA_CROSSSECTIONSIDEBAND_H
+#define ANA_CROSSSECTIONSIDEBAND_H
+
+namespace ana
 {
-  //This is the same concept of VARIABLE as used in analyses/signal/CrossSection.h and
+  //This is the same concept of VARIABLE as used in analyses/signal/CrossSectionSideband.h and
   //all other CrossSeciton headers.
   //A VARIABLE shall have:
   //1) A std::string name() const method that will be used to name all of the plots produced
@@ -28,7 +34,7 @@ namespace side
   //3) A UNIT truth(const CVUniverse& unix) const method
   //4) The return type of reco() and truth() must match
   template <class VARIABLE>
-  class CrossSection: public Sideband
+  class CrossSectionSideband: public Study
   {
     //Sanity checks on VARIABLE
     private:
@@ -39,9 +45,9 @@ namespace side
       using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;
 
     public:
-      CrossSection(const YAML::Node& config, util::Directory& dir,
+      CrossSectionSideband(const YAML::Node& config, util::Directory& dir,
                    cuts_t&& passes, const std::vector<background_t>& backgrounds,
-                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Sideband(config, dir, std::move(passes), backgrounds, universes),
+                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(passes), backgrounds, universes),
                                                                                      fVar(config["variable"]),
                                                                                      fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
                                                                                                   config["binning"].as<std::vector<double>>(), universes)
@@ -54,27 +60,26 @@ namespace side
                                  binning, universes);
       }
 
-      virtual ~CrossSection() = default;
+      virtual ~CrossSectionSideband() = default;
 
-      virtual void data(const std::vector<evt::CVUniverse*>& univs) override
+      virtual void data(const evt::CVUniverse& event) override
       {
-        const auto reco = fVar.reco(*univs.front());
-
-        for(const auto univ: univs) fData->Fill(univ, reco);
+        fData->Fill(&event, fVar.reco(event)); //No weight applied to data
       }
 
-      virtual void truthSignal(const std::vector<evt::CVUniverse*>& univs) override
+      virtual void mcSignal(const evt::CVUniverse& event) override
       {
-        const auto reco = fVar.reco(*univs.front());
-
-        for(const auto univ: univs) fSignal->Fill(univ, reco, univ->GetWeight());
+        fSignal->Fill(&event, fVar.reco(event), event.GetWeight());
       }
 
-      virtual void truthBackground(const std::vector<evt::CVUniverse*>& univs, const background_t& background) override
+      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) override
       {
-        const auto reco = fVar.reco(*univs.front()); 
+        fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
+      }
 
-        for(const auto univ: univs) fBackgrounds[background].Fill(univ, reco, univ->GetWeight());
+      //Sidebands aren't defined in the truth tree, so do nothing
+      virtual void truth(const evt::CVUniverse& /*event*/) override
+      {
       }
 
     private:
@@ -88,3 +93,5 @@ namespace side
       util::Categorized<HIST, background_t> fBackgrounds;
   };
 }
+
+#endif //ANA_CROSSSECTIONSIDEBAND_H

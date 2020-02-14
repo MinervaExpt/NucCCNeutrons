@@ -8,7 +8,7 @@
 #include <cmath>
 
 //signal includes
-#include "analyses/signal/NeutronDetection.h"
+#include "analyses/studies/NeutronDetection.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -36,10 +36,10 @@ namespace
   }
 }
 
-namespace sig
+namespace ana
 {
-  NeutronDetection::NeutronDetection(const YAML::Node& config, util::Directory& dir, std::vector<background_t>& backgrounds,
-                                     std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Signal(config, dir, backgrounds, univs),
+  NeutronDetection::NeutronDetection(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
+                                     std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                                                    fCuts(config["variable"]),
                                                                                                    fPDGToObservables(pdgCategories, dir, "", "Reco", univs,
                                                                                                                      config["binning"]["edep"].as<std::vector<double>>(),
@@ -54,14 +54,12 @@ namespace sig
     fEffDenominator = dir.make<CandidateObservables>("EfficiencyDenominator", "Truth", univs, edepBins, angleBins, betaBins);
   }
 
-  void NeutronDetection::mcSignal(const std::vector<evt::CVUniverse*>& univs)
+  void NeutronDetection::mcSignal(const evt::CVUniverse& event)
   {
     //Cache weight for each universe
-    std::map<evt::CVUniverse*, neutrons> weights;
-    for(const auto univ: univs) weights[univ] = neutrons(univ->GetWeight().in<events>());
+    const neutrons weight = event.GetWeight().in<events>();
 
     //Physics objects I'll need
-    const auto& event = *univs.front();
     const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_FS_index());
     const auto fs = event.Get<FSPart>(event.GetFSPDG_code(), event.GetFSenergy(), event.GetFSangle_wrt_z());
     const auto vertex = event.GetVtx();
@@ -79,15 +77,15 @@ namespace sig
           if(fCuts.countAsTruth(fs[cand.FS_index])) FSWithCands.insert(cand.FS_index);
         }
 
-        fPDGToObservables[pdg].Fill(weights, cand, vertex);
+        fPDGToObservables[pdg].Fill(event, weight, cand, vertex);
       }
     }
 
-    for(const auto& withCands: FSWithCands) fEffNumerator->Fill(weights, fs[withCands]);
+    for(const auto& withCands: FSWithCands) fEffNumerator->Fill(event, weight, fs[withCands]);
 
     for(const auto& part: fs)
     {
-      if(fCuts.countAsTruth(part)) fEffDenominator->Fill(weights, part);
+      if(fCuts.countAsTruth(part)) fEffDenominator->Fill(event, weight, part);
     }
   }
 
@@ -99,31 +97,25 @@ namespace sig
   {
   }
 
-  void NeutronDetection::CandidateObservables::Fill(std::map<evt::CVUniverse*, neutrons>& univs, const MCCandidate& cand, const units::LorentzVector<mm>& vertex)
+  void NeutronDetection::CandidateObservables::Fill(const evt::CVUniverse& event, neutrons weight, const MCCandidate& cand, const units::LorentzVector<mm>& vertex)
   {
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
     const double dist = std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
     const double angle = deltaZ.in<mm>() / std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
     const double beta = cand.time.in<ns>() / dist / 300.; //Speed of light is 300mm/ns
 
-    for(const auto univ: univs)
-    {
-      fEDeps.Fill(univ.first, cand.edep, univ.second);
-      fAngles.FillUniverse(univ.first, angle, univ.second.in<neutrons>());
-      fBeta.FillUniverse(univ.first, beta, univ.second.in<neutrons>());
-    }
+    fEDeps.Fill(&event, cand.edep, weight);
+    fAngles.FillUniverse(&event, angle, weight.in<neutrons>());
+    fBeta.FillUniverse(&event, beta, weight.in<neutrons>());
   }
 
-  void NeutronDetection::CandidateObservables::Fill(std::map<evt::CVUniverse*, neutrons>& univs, const FSPart& fs)
+  void NeutronDetection::CandidateObservables::Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs)
   {
     const double beta = std::sqrt(1. - pow<2>(939.6/fs.energy.in<MeV>())); //939.6 MeV is neutron mass
 
-    for(const auto univ: univs)
-    {
-      fEDeps.Fill(univ.first, fs.energy, univ.second);
-      fAngles.FillUniverse(univ.first, fs.angle_wrt_z, univ.second.in<neutrons>());
-      fBeta.FillUniverse(univ.first, beta, univ.second.in<neutrons>());
-    }
+    fEDeps.Fill(&event, fs.energy, weight);
+    fAngles.FillUniverse(&event, fs.angle_wrt_z, weight.in<neutrons>());
+    fBeta.FillUniverse(&event, beta, weight.in<neutrons>());
   }
 
   void NeutronDetection::CandidateObservables::SetDirectory(TDirectory* dir)
@@ -137,7 +129,7 @@ namespace sig
 //Register with Factory
 namespace
 {
-  static plgn::Registrar<sig::Signal, sig::NeutronDetection, util::Directory&,
-                         std::vector<typename sig::Signal::background_t>&,
+  static plgn::Registrar<ana::Study, ana::NeutronDetection, util::Directory&,
+                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
                          std::map<std::string, std::vector<evt::CVUniverse*>>&> NeutronDetection_reg("NeutronDetection");
 }

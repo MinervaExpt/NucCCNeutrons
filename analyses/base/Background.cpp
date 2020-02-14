@@ -4,7 +4,7 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //backgrounds includes
-#include "analyses/Background.h"
+#include "analyses/base/Background.h"
 
 //cuts includes
 #include "cuts/truth/Cut.h"

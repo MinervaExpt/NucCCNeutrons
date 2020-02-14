@@ -5,10 +5,10 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //signal includes
-#include "analyses/signal/Signal.h"
+#include "analyses/base/Study.h"
 
 //variables includes
-#include "analyses/variables/NeutronMultiplicity.cpp"
+#include "analyses/studies/NeutronMultiplicity.cpp"
 
 //util includes
 #include "util/Categorized.h"
@@ -16,21 +16,22 @@
 #ifndef SIG_NEUTRONDETECTION_H
 #define SIG_NEUTRONDETECTION_H
 
-namespace sig
+namespace ana
 {
-  class NeutronDetection: public Signal
+  class NeutronDetection: public Study
   {
     public:
-      NeutronDetection(const YAML::Node& config, util::Directory& dir, std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::CVUniverse*>>& universes);
+      NeutronDetection(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
+                       std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::CVUniverse*>>& universes);
       virtual ~NeutronDetection() = default;
 
       //Do this study only for MC signal events.
-      virtual void mcSignal(const std::vector<evt::CVUniverse*>& univs) override;
+      virtual void mcSignal(const evt::CVUniverse& event) override;
 
       //Do nothing for backgrounds, the Truth tree, and data
-      virtual void mcBackground(const std::vector<evt::CVUniverse*>& /*univs*/, const background_t& /*background*/) override {};
-      virtual void truth(const std::vector<evt::CVUniverse*>& /*univs*/) override {};
-      virtual void data(const std::vector<evt::CVUniverse*>& /*univs*/) override {}; //TODO: Do I want to plot candidate observables in data?
+      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/) override {};
+      virtual void truth(const evt::CVUniverse& /*event*/) override {};
+      virtual void data(const evt::CVUniverse& /*event*/) override {}; //TODO: Do I want to plot candidate observables in data?
 
     private:
       //Cuts that decide whether a Candidate or FSPart should be counted
@@ -62,8 +63,8 @@ namespace sig
         CandidateObservables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
                              const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& betaBins);
 
-        void Fill(std::map<evt::CVUniverse*, neutrons>& univs, const MCCandidate& cand, const units::LorentzVector<mm>& vertex);
-        void Fill(std::map<evt::CVUniverse*, neutrons>& univ, const FSPart& fs);
+        void Fill(const evt::CVUniverse& event, const neutrons weight, const MCCandidate& cand, const units::LorentzVector<mm>& vertex);
+        void Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs);
 
         void SetDirectory(TDirectory* dir);
 

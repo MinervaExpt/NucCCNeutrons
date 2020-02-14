@@ -54,7 +54,7 @@ add_subdirectory(analyses)
 add_subdirectory(cuts)
 
 #Build main executables
-add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:signal> $<TARGET_OBJECTS:crossSections> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets>)
+add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets>)
 #This TARGET_OBJECTS song and dance solves the problem of the compiler
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library
@@ -66,7 +66,7 @@ add_subdirectory(evt)
 add_subdirectory(config)
 add_subdirectory(app)
 
-target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt sideband background support yaml-cpp app)
+target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 
