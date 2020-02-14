@@ -118,7 +118,7 @@ namespace ana
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
     const double dist = std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
     const double angle = deltaZ.in<mm>() / std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
-    const double beta = cand.time.in<ns>() / dist / 300.; //Speed of light is 300mm/ns
+    const double beta = dist / cand.time.in<ns>() / 300.; //Speed of light is 300mm/ns
 
     fEDeps.Fill(&event, cand.edep, weight);
     fAngles.FillUniverse(&event, angle, weight.in<neutrons>());
