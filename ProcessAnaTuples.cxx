@@ -572,6 +572,13 @@ int main(const int argc, const char** argv)
     return app::CmdLine::ExitCode::AnalysisError;
   }
 
+  //Give Studies a chance to syncCVHistos()
+  signal->afterAllFiles();
+  for(auto& cutGroup: sidebands)
+  {
+    for(auto& sideband: cutGroup.second) sideband->afterAllFiles();
+  }
+
   //Print the cut table to STDOUT
   reco::Cut::TableConfig tableSize;
   for(const auto& cut: recoCuts) cut->makeTableBigEnough(tableSize);
