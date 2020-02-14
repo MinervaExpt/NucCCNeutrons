@@ -46,12 +46,12 @@ namespace ana
                                                                                                                      config["binning"]["angle"].as<std::vector<double>>(),
                                                                                                                      config["binning"]["beta"].as<std::vector<double>>())
   {
-    const auto edepBins = config["binning"]["edep"].as<std::vector<double>>();
+    const auto energyBins = config["binning"]["energy"].as<std::vector<double>>();
     const auto angleBins = config["binning"]["angle"].as<std::vector<double>>();
     const auto betaBins = config["binning"]["beta"].as<std::vector<double>>();
 
-    fEffNumerator = dir.make<CandidateObservables>("EfficiencyNumerator", "Reco", univs, edepBins, angleBins, betaBins);
-    fEffDenominator = dir.make<CandidateObservables>("EfficiencyDenominator", "Truth", univs, edepBins, angleBins, betaBins);
+    fEffNumerator = dir.make<Efficiency>("EfficiencyNumerator", "Reco", univs, energyBins, angleBins, betaBins);
+    fEffDenominator = dir.make<Efficiency>("EfficiencyDenominator", "Truth", univs, energyBins, angleBins, betaBins);
   }
 
   void NeutronDetection::mcSignal(const evt::CVUniverse& event)
@@ -105,15 +105,15 @@ namespace ana
     fEffDenominator->SyncCVHistos();
   }
 
-  NeutronDetection::CandidateObservables::CandidateObservables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
-                                                               const std::vector<double>& edepBins, const std::vector<double>& angleBins,
-                                                               const std::vector<double>& betaBins): fEDeps((name + "EDeps").c_str(), (title + " Energy Deposit").c_str(), edepBins, univs),
-                                                                                                     fAngles((name + "Angles").c_str(), (title + " Angle w.r.t. Z Axis [radians]").c_str(), angleBins, univs),
-                                                                                                     fBeta((name + "Beta").c_str(), (title + " Beta").c_str(), betaBins, univs)
+  NeutronDetection::Observables::Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
+                                             const std::vector<double>& edepBins, const std::vector<double>& angleBins,
+                                             const std::vector<double>& betaBins): fEDeps((name + "EDeps").c_str(), (title + " Energy Deposit").c_str(), edepBins, univs),
+                                                                                   fAngles((name + "Angles").c_str(), (title + " Angle w.r.t. Z Axis [radians]").c_str(), angleBins, univs),
+                                                                                   fBeta((name + "Beta").c_str(), (title + " Beta").c_str(), betaBins, univs)
   {
   }
 
-  void NeutronDetection::CandidateObservables::Fill(const evt::CVUniverse& event, neutrons weight, const MCCandidate& cand, const units::LorentzVector<mm>& vertex)
+  void NeutronDetection::Observables::Fill(const evt::CVUniverse& event, neutrons weight, const MCCandidate& cand, const units::LorentzVector<mm>& vertex)
   {
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
     const double dist = std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
@@ -125,34 +125,58 @@ namespace ana
     fBeta.FillUniverse(&event, beta, weight.in<neutrons>());
   }
 
-  void NeutronDetection::CandidateObservables::Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs)
-  {
-    const double beta = std::sqrt(1. - pow<2>(939.6/fs.energy.in<MeV>())); //939.6 MeV is neutron mass
-
-    fEDeps.Fill(&event, fs.energy, weight);
-    fAngles.FillUniverse(&event, fs.angle_wrt_z, weight.in<neutrons>());
-    fBeta.FillUniverse(&event, beta, weight.in<neutrons>());
-  }
-
-  void NeutronDetection::CandidateObservables::SetDirectory(TDirectory* dir)
+  void NeutronDetection::Observables::SetDirectory(TDirectory* dir)
   {
     fEDeps.hist->SetDirectory(dir);
     fAngles.hist->SetDirectory(dir);
     fBeta.hist->SetDirectory(dir);
   }
 
-  void NeutronDetection::CandidateObservables::SyncCVHistos()
+  void NeutronDetection::Observables::SyncCVHistos()
   {
     fEDeps.SyncCVHistos();
     fAngles.SyncCVHistos();
     fBeta.SyncCVHistos();
   }
 
-  void NeutronDetection::CandidateObservables::Scale(const double value, const char* option)
+  void NeutronDetection::Observables::Scale(const double value, const char* option)
   {
     fEDeps.hist->Scale(value, option);
     fAngles.hist->Scale(value, option);
     fBeta.hist->Scale(value, option);
+  }
+
+
+  NeutronDetection::Efficiency::Efficiency(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
+                                           const std::vector<double>& energyBins, const std::vector<double>& angleBins,
+                                           const std::vector<double>& betaBins): fEnergies((name + "Energy").c_str(), (title + " Energy").c_str(), energyBins, univs),
+                                                                                 fAngles((name + "Angles").c_str(), (title + " Angle w.r.t. Z Axis [radians]").c_str(), angleBins, univs),
+                                                                                 fBeta((name + "Beta").c_str(), (title + " Beta").c_str(), betaBins, univs)
+  {
+  }
+
+  void NeutronDetection::Efficiency::Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs)
+  {
+    const auto neutronMass = 939.6_MeV;
+    const double beta = std::sqrt(1. - pow<2>(neutronMass.in<MeV>()/fs.energy.in<MeV>())); //939.6 MeV is neutron mass
+
+    fEnergies.Fill(&event, fs.energy - neutronMass, weight);
+    fAngles.FillUniverse(&event, fs.angle_wrt_z, weight.in<neutrons>());
+    fBeta.FillUniverse(&event, beta, weight.in<neutrons>());
+  }
+
+  void NeutronDetection::Efficiency::SetDirectory(TDirectory* dir)
+  {
+    fEnergies.hist->SetDirectory(dir);
+    fAngles.hist->SetDirectory(dir);
+    fBeta.hist->SetDirectory(dir);
+  }
+
+  void NeutronDetection::Efficiency::SyncCVHistos()
+  {
+    fEnergies.SyncCVHistos();
+    fAngles.SyncCVHistos();
+    fBeta.SyncCVHistos();
   }
 }
 

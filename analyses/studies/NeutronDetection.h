@@ -64,13 +64,12 @@ namespace ana
       //Histograms I'm going to Fill()
       //First, group them together by variables I'm going to histogram
       //TODO: Maybe move CandidateObservables into its own header.  That's what I eventually did last time.
-      struct CandidateObservables
+      struct Observables
       {
-        CandidateObservables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
-                             const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& betaBins);
+        Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
+                    const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& betaBins);
 
         void Fill(const evt::CVUniverse& event, const neutrons weight, const MCCandidate& cand, const units::LorentzVector<mm>& vertex);
-        void Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs);
 
         void SetDirectory(TDirectory* dir);
         void SyncCVHistos();
@@ -81,10 +80,26 @@ namespace ana
         HistWrapper<evt::CVUniverse> fBeta;
       };
 
-      util::Categorized<CandidateObservables, int> fPDGToObservables; //Map FS PDG code to Candidate observables
+      struct Efficiency
+      {
+        Efficiency(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
+                   const std::vector<double>& energyBins, const std::vector<double>& angleBins, const std::vector<double>& betaBins);
+
+        void Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs);
+
+        void SetDirectory(TDirectory* dir);
+        void SyncCVHistos();
+        void Scale(const double value, const char* option = "");
+
+        units::WithUnits<HistWrapper<evt::CVUniverse>, MeV, neutrons> fEnergies;
+        HistWrapper<evt::CVUniverse> fAngles;
+        HistWrapper<evt::CVUniverse> fBeta;
+      };
+
+      util::Categorized<Observables, int> fPDGToObservables; //Map FS PDG code to Candidate observables
                                                                       //to explore backgrounds in phase space.
-      CandidateObservables* fEffNumerator; //Neutron detection efficiency numerator
-      CandidateObservables* fEffDenominator; //Neutron detection efficiency denominator
+      Efficiency* fEffNumerator; //Neutron detection efficiency numerator
+      Efficiency* fEffDenominator; //Neutron detection efficiency denominator
   };
 }
 
