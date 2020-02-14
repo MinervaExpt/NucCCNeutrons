@@ -97,6 +97,14 @@ namespace ana
         fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
       }
 
+      virtual void afterAllFiles() override
+      {
+        fMigration->SyncCVHistos();
+        fEfficiencyNum->SyncCVHistos();
+        fEfficiencyDenom->SyncCVHistos();
+        fBackgrounds.visit([](auto& hist) { hist.SyncCVHistos(); });
+      }
+
     private:
       VARIABLE fVar;  //VARIABLE in which a differential cross section will be extracted
 

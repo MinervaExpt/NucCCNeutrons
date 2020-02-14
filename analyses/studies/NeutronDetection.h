@@ -28,12 +28,18 @@ namespace ana
       //Do this study only for MC signal events.
       virtual void mcSignal(const evt::CVUniverse& event) override;
 
+      //Normalize fPDGToObservables and syncCVHistos()
+      virtual void afterAllFiles() override;
+
       //Do nothing for backgrounds, the Truth tree, and data
       virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/) override {};
       virtual void truth(const evt::CVUniverse& /*event*/) override {};
       virtual void data(const evt::CVUniverse& /*event*/) override {}; //TODO: Do I want to plot candidate observables in data?
 
     private:
+      //Total number of events seen in mcSignal().  Used to normalize fPDGToObservables.
+      size_t fEventsSeen;
+
       //Cuts that decide whether a Candidate or FSPart should be counted
       ana::NeutronMultiplicity fCuts;
 
@@ -67,6 +73,8 @@ namespace ana
         void Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs);
 
         void SetDirectory(TDirectory* dir);
+        void SyncCVHistos();
+        void Scale(const double value, const char* option = "");
 
         units::WithUnits<HistWrapper<evt::CVUniverse>, MeV, neutrons> fEDeps;
         HistWrapper<evt::CVUniverse> fAngles;

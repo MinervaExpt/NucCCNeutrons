@@ -82,6 +82,13 @@ namespace ana
       {
       }
 
+      virtual void afterAllFiles() override
+      {
+        fData->SyncCVHistos();
+        fSignal->SyncCVHistos();
+        fBackgrounds.visit([](auto& hist) { hist.SyncCVHistos();});
+      }
+
     private:
       VARIABLE fVar;
 

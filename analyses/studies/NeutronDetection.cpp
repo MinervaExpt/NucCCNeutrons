@@ -56,6 +56,10 @@ namespace ana
 
   void NeutronDetection::mcSignal(const evt::CVUniverse& event)
   {
+    //Even if there are no neutron candidates in this event, it's an event
+    //that passed the cuts to get here.
+    ++fEventsSeen;
+
     //Cache weight for each universe
     const neutrons weight = event.GetWeight().in<events>();
 
@@ -87,6 +91,18 @@ namespace ana
     {
       if(fCuts.countAsTruth(part)) fEffDenominator->Fill(event, weight, part);
     }
+  }
+
+  void NeutronDetection::afterAllFiles()
+  {
+    fPDGToObservables.visit([this](auto& hist)
+                            {
+                              hist.Scale(1./fEventsSeen);
+                              hist.SyncCVHistos();
+                            });
+
+    fEffNumerator->SyncCVHistos();
+    fEffDenominator->SyncCVHistos();
   }
 
   NeutronDetection::CandidateObservables::CandidateObservables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
@@ -123,6 +139,20 @@ namespace ana
     fEDeps.hist->SetDirectory(dir);
     fAngles.hist->SetDirectory(dir);
     fBeta.hist->SetDirectory(dir);
+  }
+
+  void NeutronDetection::CandidateObservables::SyncCVHistos()
+  {
+    fEDeps.SyncCVHistos();
+    fAngles.SyncCVHistos();
+    fBeta.SyncCVHistos();
+  }
+
+  void NeutronDetection::CandidateObservables::Scale(const double value, const char* option)
+  {
+    fEDeps.hist->Scale(value, option);
+    fAngles.hist->Scale(value, option);
+    fBeta.hist->Scale(value, option);
   }
 }
 
