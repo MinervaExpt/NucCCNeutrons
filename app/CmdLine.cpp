@@ -73,10 +73,10 @@ namespace app
         readFile.open(std::string(INSTALL_DIR "bin/") + arg);
         if(!readFile.is_open()) throw exception(binName, std::string("No such file or directory: ") + arg + ".\n", ExitCode::BadCommandLine);
       }
-     
-      //If this is the first YAML file I've seen, derive the name of the
-      //output file from it.
-      if(configFile.empty()) outFileName = arg;
+
+      //Eventually set the name of the output file to the last YAML file passed.
+      //The last file is the one that has to contain the keywords.
+      outFileName = arg;
  
       configFile.append(std::istreambuf_iterator<char>(readFile), std::istreambuf_iterator<char>());
     }
