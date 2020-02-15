@@ -5,8 +5,6 @@
 //       files.  The target and analysis cuts it uses need to be configured
 //       by a YAML file.
 //
-//       Based on NewIO with experimental support for systematics and modularized Cuts.
-//
 //       Usage:
 //       ProcessAnaTuples <yourCuts.yaml> [moreConfigsInOrder.yaml]... <yourTuple.root> [moreTuples.root]..."
 //Author: Andrew Olivier aolivier@ur.rochester.edu
@@ -152,105 +150,52 @@ int main(const int argc, const char** argv)
 
   TH1::AddDirectory(kFALSE); //Needed so that MnvH1D gets to clean up its own MnvLatErrorBands (which are TH1Ds).
 
-  //TODO: Move these parameters somehwere that can be shared between applications?
-  constexpr auto anaTupleName = "NucCCNeutron";
-
-  const app::CmdLine options(argc, argv); //Parses the command line for input and configuration file, assembles a
-                                          //list of files to process, prepares a file for histograms, and puts the configuration
-                                          //file together.  See CmdLine.h for more details.
-
-  //Set up other application options
-  const auto& appOptions = options.ConfigFile()["app"];
-  const auto blobAlg = appOptions["BlobAlg"].as<std::string>("proximity");
-
-  //The file where I will put histrograms I produce.
-  //TODO: I learned when helping Christian that I can't use TFile::Write() to write
-  //      MnvH1Ds' plots because MnvH1D insists on deleteing its own TH1Ds.  I've got
-  //      to either Write() each TH1D or convince TFile not to delete the objects it
-  //      owns.  I think there's a flag for the latter in TObject.
-  const bool isThisJobMC = options.isMC();
-  util::Directory histDir(*options.HistFile);
-
-  //Decide which systematic universes to process, but delay setting the tree to
-  //process until later.
-  //TODO: Can't we just agree to use std::unique_ptr<>s instead?  Now, I've got
-  //      to remember to delete these.
-  auto universes = ::getSystematics(nullptr, options, isThisJobMC);
-
-  //Set up backgrounds
-  LOG_DEBUG("Setting up Backgrounds...")
+  //Components I need for the event loop
+  std::vector<std::vector<evt::CVUniverse*>> groupedUnivs;
   std::vector<std::unique_ptr<ana::Background>> backgrounds;
-  try
-  {
-    for(const auto config: options.ConfigFile()["backgrounds"]) backgrounds.emplace_back(new ana::Background(config.first.as<std::string>(), config.second));
-  }
-  catch(const std::runtime_error& e)
-  {
-    std::cerr << "Failed to setup up a Background:\n" << e.what() << "\n";
-    return app::CmdLine::ExitCode::YAMLError;
-  }
-
-  //Set up Signal
-  LOG_DEBUG("Setting up Signal...")
   std::unique_ptr<ana::Study> signal;
-  try
-  {
-    signal = app::setupSignal(options.ConfigFile()["signal"], histDir, backgrounds, universes);
-  }
-  catch(const std::runtime_error& e)
-  {
-    std::cerr << "Failed to set up the Signal:\n" << e.what() << "\n";
-    return app::CmdLine::ExitCode::YAMLError;
-  }
-
-  //Set up cuts, sidebands, and backgrounds
-  LOG_DEBUG("Setting up truth cuts...")
   std::vector<std::unique_ptr<truth::Cut>> truthPhaseSpace;
-  try
-  {
-    truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options.ConfigFile()["cuts"]["truth"]["phaseSpace"]);
-  }
-  catch(const std::runtime_error& e)
-  {
-    std::cerr << "Failed to set up a phase space truth::Cut:\n" << e.what() << "\n";
-    return app::CmdLine::ExitCode::YAMLError;
-  }
-
   std::vector<std::unique_ptr<truth::Cut>> truthSignal;
-  try
-  {
-    truthSignal = plgn::loadPlugins<truth::Cut>(options.ConfigFile()["cuts"]["truth"]["signal"]);
-  }
-  catch(const std::runtime_error& e)
-  {
-    std::cerr << "Failed to set up a signal definition truth::Cut:\n" << e.what() << "\n";
-    return app::CmdLine::ExitCode::YAMLError;
-  }
-  
-  LOG_DEBUG("Setting up reco cuts...")
   std::vector<std::unique_ptr<reco::Cut>> recoCuts;
-  auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
-  try
-  {
-    for(auto config: options.ConfigFile()["cuts"]["reco"])
-    {
-      auto name = config.first.as<std::string>();
-      recoCuts.emplace_back(cutFactory.Get(config.second, name));
-    }
-  }
-  catch(const std::runtime_error& e)
-  {
-    std::cerr << "Failed to set up a reco::Cut:\n" << e.what() << "\n";
-    return app::CmdLine::ExitCode::YAMLError;
-  }
-
-  LOG_DEBUG("Setting up sidebands...")
+  std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands;
   decltype(recoCuts) sidebandCuts;
 
-  const auto sidebands = app::setupSidebands(options.ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
+  //TODO: Move these parameters somehwere that can be shared between applications?
+  constexpr auto anaTupleName = "NucCCNeutron";
+  std::unique_ptr<app::CmdLine> options;
 
-  //TODO: Can I let universes go out of scope now to make the event loop simpler?
-  const auto groupedUnivs = ::groupCompatibleUniverses(universes);
+  try
+  {
+    //TODO: Options' HistFile is getting deleted when options goes out of scope!
+    options.reset(new app::CmdLine(argc, argv)); //Parses the command line for input and configuration file, assembles a
+                                            //list of files to process, prepares a file for histograms, and puts the configuration
+                                            //file together.  See CmdLine.h for more details.
+
+    //Set up other application options
+    const auto& appOptions = options->ConfigFile()["app"];
+    const auto blobAlg = appOptions["BlobAlg"].as<std::string>("proximity");
+
+    //The file where I will put histrograms I produce.
+    //TODO: I learned when helping Christian that I can't use TFile::Write() to write
+    //      MnvH1Ds' plots because MnvH1D insists on deleteing its own TH1Ds.  I've got
+    //      to either Write() each TH1D or convince TFile not to delete the objects it
+    //      owns.  I think there's a flag for the latter in TObject.
+    util::Directory histDir(*options->HistFile);
+
+    auto universes = ::getSystematics(nullptr, *options, options->isMC());
+    backgrounds = app::setupBackgrounds(options->ConfigFile()["backgrounds"]);
+    signal = app::setupSignal(options->ConfigFile()["signal"], histDir, backgrounds, universes);
+    truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"]); //TODO: Tell the user which Cut failed
+    truthSignal = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"]); //TODO: Tell the user which Cut failed
+    recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
+    sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
+    groupedUnivs = ::groupCompatibleUniverses(universes);
+  }
+  catch(const std::runtime_error& e)
+  {
+    std::cerr << e.what();
+    return app::CmdLine::YAMLError;
+  }
 
   //Accumulate POT from each good file
   double pot_used = 0;
@@ -259,7 +204,7 @@ int main(const int argc, const char** argv)
   LOG_DEBUG("Beginning loop over files!")
   try
   {
-    for(const auto& fName: options.TupleFileNames())
+    for(const auto& fName: options->TupleFileNames())
     {
       LOG_DEBUG("Loading " << fName)
       //Sanity checks on AnaTuple files
@@ -272,9 +217,9 @@ int main(const int argc, const char** argv)
       }
 
       //TODO: Doesn't my ROOT error checking function throw an exception here?
-      if(app::IsMC(fName) != isThisJobMC)
+      if(app::IsMC(fName) != options->isMC())
       {
-        std::cerr << "This job " << (isThisJobMC?"is":"is not")
+        std::cerr << "This job " << (options->isMC()?"is":"is not")
                   << " processing MC files, but " << fName << " is a "
                   << (app::IsMC(fName)?"MC":"data")
                   << "file.  Skipping this file!\n";
@@ -308,7 +253,7 @@ int main(const int argc, const char** argv)
       }
 
       //On to the event loops
-      if(isThisJobMC)
+      if(options->isMC())
       {
         //Check for Truth tree
         //TODO: ChainWrapper -> TreeWrapper to avoid opening tupleFile again
@@ -440,7 +385,8 @@ int main(const int argc, const char** argv)
         //      I'm also getting unfilled histograms from my MC jobs now.  I think
         //      it's time to put the data loop back in its own program.
         const size_t nEntries = anaTuple.GetEntries();
-        auto& cv = *universes["cv"].front(); //TODO: assert() that this is true?  Put data in a different program?
+        auto& cv = *groupedUnivs.front().front();
+        assert(cv.ShortName() == "cv");
         cv.SetTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)

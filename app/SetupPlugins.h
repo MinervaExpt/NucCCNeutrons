@@ -38,6 +38,12 @@ namespace app
                                                                                                std::map<std::string, std::vector<evt::CVUniverse*>>& universes,
                                                                                                std::vector<std::unique_ptr<reco::Cut>>& recoCuts,
                                                                                                std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts);
+  //Set up Background categories.  Signal and sideband Studies will categorize histograms
+  //by these Backgrounds' names.
+  std::vector<std::unique_ptr<ana::Background>> setupBackgrounds(const YAML::Node& config);
+
+  //Set up reco::Cuts that define an event selection.
+  std::vector<std::unique_ptr<reco::Cut>> setupRecoCuts(const YAML::Node& config);
 }
 
 #endif //APP_SETUPPLUGINS_H

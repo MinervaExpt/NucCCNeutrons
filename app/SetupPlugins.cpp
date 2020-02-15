@@ -10,6 +10,7 @@
 
 //cuts includes
 #include "cuts/reco/Cut.h"
+#include "cuts/truth/Cut.h"
 
 //evt includes
 #include "evt/CVUniverse.h"
@@ -118,5 +119,43 @@ namespace app
     }
 
     return result;
+  }
+
+  std::vector<std::unique_ptr<ana::Background>> setupBackgrounds(const YAML::Node& config)
+  {
+    std::vector<std::unique_ptr<ana::Background>> backgrounds;
+    for(const auto background: config)
+    {
+      try
+      {
+        backgrounds.emplace_back(new ana::Background(background.first.as<std::string>(), background.second));
+      }
+      catch(const std::runtime_error& e)
+      {
+        throw std::runtime_error(std::string("Failed to set up a Background named " + background.first.as<std::string>() + ":\n") + e.what());
+      }
+    }
+
+    return backgrounds;
+  }
+
+  std::vector<std::unique_ptr<reco::Cut>> setupRecoCuts(const YAML::Node& config)
+  {
+    std::vector<std::unique_ptr<reco::Cut>> recoCuts;
+    auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
+    for(auto cut: config)
+    {
+      auto name = cut.first.as<std::string>();
+      try
+      {
+        recoCuts.emplace_back(cutFactory.Get(cut.second, name));
+      }
+      catch(const std::runtime_error& e)
+      {
+        throw std::runtime_error(std::string("Failed to set up a reco::Cut named " + name + ":\n") + e.what());
+      }
+    }
+
+    return recoCuts;
   }
 }
