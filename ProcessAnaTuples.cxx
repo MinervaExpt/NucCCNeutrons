@@ -16,6 +16,7 @@
 
 //utility includes
 #include "util/Factory.cpp"
+#include "util/Table.h"
 
 //analysis includes
 #include "analyses/base/Study.h"
@@ -53,6 +54,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <bitset>
+#include <fstream>
 
 //Macro to centralize how I print out debugging messages
 //TODO: Decide how I want this macro to work and centralize it.
@@ -78,13 +80,13 @@ namespace
   }
 
   //TODO: Since I've got to do this to dereference std::unique_ptr<CUT>, I could give Cut's cut function a more descriptive name
-  template <class CUT>
-  bool requireAll(const std::vector<std::unique_ptr<CUT>>& cuts, const evt::CVUniverse& event)
+  template <class CUT, class ...ARGS>
+  bool requireAll(const std::vector<std::unique_ptr<CUT>>& cuts, const evt::CVUniverse& event, ARGS... args)
   {
     return std::all_of(cuts.begin(), cuts.end(),
-                       [&event](const auto& cut)
+                       [&event, args...](const auto& cut)
                        {
-                         return (*cut)(event);
+                         return (*cut)(event, args...);
                        });
   }
 }
@@ -99,6 +101,7 @@ int main(const int argc, const char** argv)
 
   //Components I need for the event loop
   std::vector<std::vector<evt::CVUniverse*>> groupedUnivs;
+  evt::CVUniverse* cv;
   std::vector<std::unique_ptr<ana::Background>> backgrounds;
   std::unique_ptr<ana::Study> signal;
   std::vector<std::unique_ptr<truth::Cut>> truthPhaseSpace;
@@ -106,6 +109,9 @@ int main(const int argc, const char** argv)
   std::vector<std::unique_ptr<reco::Cut>> recoCuts;
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands;
   decltype(recoCuts) sidebandCuts;
+  double sumWeights = 0;
+  double sumSignal = 0;
+  size_t nEntriesTotal = 0;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
   constexpr auto anaTupleName = "NucCCNeutron";
@@ -136,6 +142,7 @@ int main(const int argc, const char** argv)
     truthSignal = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"]); //TODO: Tell the user which Cut failed
     recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
     sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
+    cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
   }
   catch(const std::runtime_error& e)
@@ -219,6 +226,7 @@ int main(const int argc, const char** argv)
 
         //MC loop
         const size_t nMCEntries = anaTuple.GetEntries();
+        nEntriesTotal += nMCEntries;
         for(auto& compat: groupedUnivs)
         {
           for(auto& univ: compat) univ->SetTree(&anaTuple);
@@ -233,13 +241,22 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with MC entry " << entry << "\n";
           #endif
 
+          //Hacky way to avoid incrementing cut table entries for
+          //anything besides the CV.
+          cv->SetEntry(entry);
+          double weightForCuts = cv->GetWeight().in<events>();
+          sumWeights += weightForCuts;
+          if(::requireAll(truthSignal, *cv)) sumSignal += weightForCuts;
+
           for(const auto& compat: groupedUnivs)
           {
             auto& event = *compat.front(); //All compatible universes pass the same cuts
             for(const auto univ: compat) univ->SetEntry(entry); //I still need to GetWeight() for entry
 
             //MC loop
-            if(::requireAll(recoCuts, event))
+            const bool isTruthSignal = ::requireAll(truthSignal, event);
+
+            if(::requireAll(recoCuts, event, weightForCuts, isTruthSignal))
             {
               //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
               //for sidebands defined by multiple cuts.
@@ -249,7 +266,7 @@ int main(const int argc, const char** argv)
               for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
               {
                 const auto& cut = sidebandCuts[whichCut];
-                if(!(*cut)(event)) passedReco.set(whichCut, false);
+                if(!(*cut)(event, weightForCuts, isTruthSignal)) passedReco.set(whichCut, false);
               }
 
               //Look up the sideband, if any, by which reco cuts failed.
@@ -267,7 +284,7 @@ int main(const int argc, const char** argv)
               }
 
               //Categorize by whether this is signal or some background
-              if(::requireAll(truthSignal, event))
+              if(isTruthSignal)
               {
                 if(passedReco.all())
                 {
@@ -294,6 +311,7 @@ int main(const int argc, const char** argv)
                 }
               }
             } //If passed all non-sideband-related cuts
+            weightForCuts = 0; //Only fill the Cut table for the CV
           } //For each error band
         } //For each entry in the MC tree
 
@@ -332,9 +350,8 @@ int main(const int argc, const char** argv)
         //      I'm also getting unfilled histograms from my MC jobs now.  I think
         //      it's time to put the data loop back in its own program.
         const size_t nEntries = anaTuple.GetEntries();
-        auto& cv = *groupedUnivs.front().front();
-        assert(cv.ShortName() == "cv");
-        cv.SetTree(&anaTuple);
+        nEntriesTotal += nEntries;
+        cv->SetTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)
         {
@@ -342,18 +359,18 @@ int main(const int argc, const char** argv)
             if((entry % printFreq) == 0) std::cout << "Done with data entry " << entry << "\n";
           #endif
 
-          cv.SetEntry(entry);
-          if(::requireAll(recoCuts, cv))
+          cv->SetEntry(entry);
+          if(::requireAll(recoCuts, *cv))
           {
             std::bitset<64> passedCuts;
             passedCuts.set();
 
             for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
             {
-              if(!(*sidebandCuts[whichCut])(cv)) passedCuts.set(whichCut, false);
+              if(!(*sidebandCuts[whichCut])(*cv)) passedCuts.set(whichCut, false);
             }
 
-            if(passedCuts.all()) signal->data(cv);
+            if(passedCuts.all()) signal->data(*cv);
             else
             {
               const auto foundSidebands = sidebands.find(passedCuts);
@@ -361,8 +378,8 @@ int main(const int argc, const char** argv)
               {
                 const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
                                                         [&cv](const auto& sideband)
-                                                        { return sideband->passesCuts(cv); });
-                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(cv);
+                                                        { return sideband->passesCuts(*cv); });
+                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(*cv);
               } //If found a sideband and passed all of its reco constraints
             } //If not passed all sideband-related cuts
           } //If passed all cuts not related to sidebands
@@ -401,11 +418,43 @@ int main(const int argc, const char** argv)
   }
 
   //Print the cut table to STDOUT
-  reco::Cut::TableConfig tableSize;
-  for(const auto& cut: recoCuts) cut->makeTableBigEnough(tableSize);
+  std::string tableName = options->HistFile->GetName();
+  tableName = tableName.substr(0, tableName.find('.'));
+  tableName += ".md"; //Markdown
 
-  reco::Cut::printTableHeader(std::cout, tableSize);
-  for(const auto& cut: recoCuts) cut->printTableRow(std::cout, tableSize);
+  if(options->isMC())
+  {
+    util::Table<6> truthSummary({"Cut Name", "Total Weight", "Overall \% Efficiency", "Overall \% Purity", "Relative \% Efficiency", "Relative \% Sample Left"});
+
+    double prevSignal = sumSignal;
+    int prevTotal = nEntriesTotal;
+    for(const auto& cut: recoCuts)
+    {
+      //TODO: purity is (signal at this point) / (total sample at this point).  I'm only keeping (signal at this point)
+      truthSummary.appendRow(cut->name(), cut->signalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
+      prevSignal = cut->signalPassed();
+      prevTotal = cut->totalPassed();
+    }
+
+    std::ofstream tableFile(tableName);
+    truthSummary.print(tableFile);
+    truthSummary.print(std::cout);
+  }
+  else
+  {
+    util::Table<3> recoSummary({"Cut Name", "Total Entries", "Relative \% Sample Left"});
+
+    int prevSampleLeft = nEntriesTotal;
+    for(const auto& cut: recoCuts)
+    {
+      recoSummary.appendRow(cut->name(), cut->totalPassed(), (double)cut->totalPassed() / prevSampleLeft * 100.);
+      prevSampleLeft = cut->totalPassed();
+    }
+
+    std::ofstream tableFile(tableName);
+    recoSummary.print(tableFile);
+    recoSummary.print(std::cout);
+  }
 
   //Final Write()s to output file
   //TODO: Put POT in a TParameter<double>

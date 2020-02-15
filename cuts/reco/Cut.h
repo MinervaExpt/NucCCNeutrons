@@ -32,36 +32,12 @@ namespace reco
       //
       //I designed Cut this way so I have a hook to keep
       //statistics for a cut table later.
-      bool operator ()(const evt::CVUniverse& event);
+      bool operator ()(const evt::CVUniverse& event, const double weight = 1, const bool isSignal = true);
 
-      inline const std::string& name() { return fName; }
-
-      //Automatic Cut table generation.  You don't need to do anything
-      //in your derived reco::Cuts to get this feature.  It's free!
-      //The table goes to STDOUT as markdown, and I like to turn it
-      //into a PDF with  pandoc -s -o testTable.pdf testTable.md
-
-      //TODO: Percentage of truth signal events that passed?  Seems like
-      //      I need to talk to the event loop about that.
-
-      //Cut table style
-      struct TableConfig
-      {
-        size_t largestNameSize = 0;
-        size_t largestPassedSize = 0;
-        size_t nDecimals = 5;
-        size_t sizeOfPercentTitle = 0;
-      };
-
-      //Update TableConfig based on this Cut
-      void makeTableBigEnough(TableConfig& config) const;
-
-      //Print a row of the cut table for this cut
-      void printTableRow(std::ostream& os, const TableConfig config) const;
-
-      //Print a header explaining the entries in the cut table.
-      //TableConfig also gets large enough to fit each column's heading
-      static void printTableHeader(std::ostream& os, TableConfig& config);
+      //Access to Cut performance statistics
+      inline double signalPassed() const { return fSignalPassed; }
+      inline size_t totalPassed() const { return fTotalPassed; }
+      inline const std::string& name() const { return fName; }
 
     protected:
       //Your concrete Cut class must override these methods.
@@ -71,8 +47,8 @@ namespace reco
       std::string fName; //Name of this cut for reporting
 
       //Data for the cut table
-      size_t fEventsEntered = 0; //Number of events that entered operator()
-      size_t fEventsPassed = 0; //Number of events for which operator() returned true
+      double fSignalPassed = 0; //Sum of event weights for which operator() returned true
+      double fTotalPassed = 0; //Number of times an event passed this Cut
   };
 }
 
