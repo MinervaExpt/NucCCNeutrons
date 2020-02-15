@@ -79,37 +79,6 @@ namespace
     return *it;
   }
 
-  //Given the names of cuts for a sideband, all reco cuts, and the cuts already associated with sidebands,
-  //create a hash code that describes which cuts an event must fail to be
-  //in this sideband and move any needed cuts from allCuts to sidebandCuts.
-  std::bitset<64> hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<reco::Cut>>& allCuts, std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts)
-  {
-    std::bitset<64> result;
-    result.set(); //Sets result to all true
-
-    for(const auto& name: cutNames)
-    {
-      const auto found = std::find_if(allCuts.begin(), allCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
-      if(found != allCuts.end())
-      {
-        result.set(sidebandCuts.size(), false); //BEFORE the update because of 0-based indexing
-        sidebandCuts.push_back(std::move(*found));
-        allCuts.erase(found);
-      }
-      else
-      {
-        const auto inSideband = std::find_if(sidebandCuts.begin(), sidebandCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
-        if(inSideband != sidebandCuts.end())
-        {
-          result.set(std::distance(sidebandCuts.begin(), inSideband), false);
-        } //If in sidebandCuts
-        else throw std::runtime_error("Failed to find a cut named " + name + " for a sideband.\n");
-      } //If not in allCuts
-    } //For each cut name
-
-    return result;
-  }
-
   //TODO: Since I've got to do this to dereference std::unique_ptr<CUT>, I could give Cut's cut function a more descriptive name
   template <class CUT>
   bool requireAll(const std::vector<std::unique_ptr<CUT>>& cuts, const evt::CVUniverse& event)
@@ -278,39 +247,7 @@ int main(const int argc, const char** argv)
   LOG_DEBUG("Setting up sidebands...")
   decltype(recoCuts) sidebandCuts;
 
-  std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands; //Mapping from truth cuts to sidebands
-  auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<ana::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
-  for(auto sideband: options.ConfigFile()["sidebands"])
-  {
-    try
-    {
-      auto dir = histDir.mkdir(sideband.first.as<std::string>());
-      const auto& fails = sideband.second["fails"].as<std::vector<std::string>>();
-
-      std::vector<std::unique_ptr<reco::Cut>> passes;
-      for(const auto config: sideband.second["passes"])
-      {
-        auto name = config.first.as<std::string>();
-        try
-        {
-          passes.emplace_back(cutFactory.Get(config.second, name));
-        }
-        catch(const std::runtime_error& e)
-        {
-          std::cerr << "Failed to set up a reco::Cut named " << name << " for Sideband " << sideband.first.as<std::string>() << ":\n" << e.what() << "\n";
-          return app::CmdLine::ExitCode::YAMLError;
-        }
-      }
-
-      const auto hashPattern = ::hashCuts(fails, recoCuts, sidebandCuts); //Also transfers relevant cuts from recoCuts to sidebandCuts
-      sidebands[hashPattern].emplace_back(studyFactory.Get(sideband.second, dir, std::move(passes), backgrounds, universes));
-    }
-    catch(const std::runtime_error& e)
-    {
-      std::cerr << "Failed to set up a Sideband named " << sideband.first.as<std::string>() << ":\n" << e.what() << "\n";
-      return app::CmdLine::ExitCode::YAMLError;
-    }
-  }
+  const auto sidebands = app::setupSidebands(options.ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
 
   //TODO: Can I let universes go out of scope now to make the event loop simpler?
   const auto groupedUnivs = ::groupCompatibleUniverses(universes);
