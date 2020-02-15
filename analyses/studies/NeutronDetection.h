@@ -38,7 +38,7 @@ namespace ana
 
     private:
       //Total number of events seen in mcSignal().  Used to normalize fPDGToObservables.
-      size_t fEventsSeen;
+      double fEventsSeen;
 
       //Cuts that decide whether a Candidate or FSPart should be counted
       ana::NeutronMultiplicity fCuts;
@@ -67,7 +67,8 @@ namespace ana
       struct Observables
       {
         Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
-                    const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& betaBins);
+                    const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& zBins,
+                    const std::vector<double>& betaBins);
 
         void Fill(const evt::CVUniverse& event, const neutrons weight, const MCCandidate& cand, const units::LorentzVector<mm>& vertex);
 
@@ -78,6 +79,7 @@ namespace ana
         units::WithUnits<HistWrapper<evt::CVUniverse>, MeV, neutrons> fEDeps;
         HistWrapper<evt::CVUniverse> fAngles;
         HistWrapper<evt::CVUniverse> fBeta;
+        units::WithUnits<HistWrapper<evt::CVUniverse>, mm, neutrons> fZDistFromVertex;
       };
 
       struct Efficiency

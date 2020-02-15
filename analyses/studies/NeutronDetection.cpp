@@ -40,10 +40,12 @@ namespace ana
 {
   NeutronDetection::NeutronDetection(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
                                      std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
+                                                                                                   fEventsSeen(0),
                                                                                                    fCuts(config["variable"]),
                                                                                                    fPDGToObservables(pdgCategories, dir, "", "Reco", univs,
                                                                                                                      config["binning"]["edep"].as<std::vector<double>>(),
                                                                                                                      config["binning"]["angle"].as<std::vector<double>>(),
+                                                                                                                     config["binning"]["zDist"].as<std::vector<double>>(),
                                                                                                                      config["binning"]["beta"].as<std::vector<double>>())
   {
     const auto energyBins = config["binning"]["energy"].as<std::vector<double>>();
@@ -56,12 +58,12 @@ namespace ana
 
   void NeutronDetection::mcSignal(const evt::CVUniverse& event)
   {
-    //Even if there are no neutron candidates in this event, it's an event
-    //that passed the cuts to get here.
-    ++fEventsSeen;
-
     //Cache weight for each universe
     const neutrons weight = event.GetWeight().in<events>();
+
+    //Even if there are no neutron candidates in this event, it's an event
+    //that passed the cuts to get here.
+    fEventsSeen += weight.in<neutrons>();
 
     //Physics objects I'll need
     const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_FS_index());
@@ -97,7 +99,7 @@ namespace ana
   {
     fPDGToObservables.visit([this](auto& hist)
                             {
-                              hist.Scale(1./fEventsSeen);
+                              hist.Scale(1./(double)fEventsSeen);
                               hist.SyncCVHistos();
                             });
 
@@ -106,10 +108,11 @@ namespace ana
   }
 
   NeutronDetection::Observables::Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
-                                             const std::vector<double>& edepBins, const std::vector<double>& angleBins,
-                                             const std::vector<double>& betaBins): fEDeps((name + "EDeps").c_str(), (title + " Energy Deposit").c_str(), edepBins, univs),
-                                                                                   fAngles((name + "Angles").c_str(), (title + " Angle w.r.t. Z Axis [radians]").c_str(), angleBins, univs),
-                                                                                   fBeta((name + "Beta").c_str(), (title + " Beta").c_str(), betaBins, univs)
+                                             const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& zBins,
+                                             const std::vector<double>& betaBins): fEDeps((name + "EDeps").c_str(), (title + ";Energy Deposit;candidates per event").c_str(), edepBins, univs),
+                                                                                   fAngles((name + "Angles").c_str(), (title + ";Angle w.r.t. Z Axis [radians];candidates per event").c_str(), angleBins, univs),
+                                                                                   fBeta((name + "#beta").c_str(), (title + ";#beta;candidates per event").c_str(), betaBins, univs),
+                                                                                   fZDistFromVertex((name + "ZDistFromVertex").c_str(), (title + ";Z Distance;candidates per event").c_str(), zBins, univs)
   {
   }
 
@@ -123,6 +126,7 @@ namespace ana
     fEDeps.Fill(&event, cand.edep, weight);
     fAngles.FillUniverse(&event, angle, weight.in<neutrons>());
     fBeta.FillUniverse(&event, beta, weight.in<neutrons>());
+    fZDistFromVertex.Fill(&event, cand.z - vertex.z(), weight);
   }
 
   void NeutronDetection::Observables::SetDirectory(TDirectory* dir)
@@ -130,6 +134,7 @@ namespace ana
     fEDeps.hist->SetDirectory(dir);
     fAngles.hist->SetDirectory(dir);
     fBeta.hist->SetDirectory(dir);
+    fZDistFromVertex.hist->SetDirectory(dir);
   }
 
   void NeutronDetection::Observables::SyncCVHistos()
@@ -137,6 +142,7 @@ namespace ana
     fEDeps.SyncCVHistos();
     fAngles.SyncCVHistos();
     fBeta.SyncCVHistos();
+    fZDistFromVertex.SyncCVHistos();
   }
 
   void NeutronDetection::Observables::Scale(const double value, const char* option)
@@ -144,14 +150,15 @@ namespace ana
     fEDeps.hist->Scale(value, option);
     fAngles.hist->Scale(value, option);
     fBeta.hist->Scale(value, option);
+    fZDistFromVertex.hist->Scale(value, option);
   }
 
 
   NeutronDetection::Efficiency::Efficiency(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
                                            const std::vector<double>& energyBins, const std::vector<double>& angleBins,
-                                           const std::vector<double>& betaBins): fEnergies((name + "Energy").c_str(), (title + " Energy").c_str(), energyBins, univs),
-                                                                                 fAngles((name + "Angles").c_str(), (title + " Angle w.r.t. Z Axis [radians]").c_str(), angleBins, univs),
-                                                                                 fBeta((name + "Beta").c_str(), (title + " Beta").c_str(), betaBins, univs)
+                                           const std::vector<double>& betaBins): fEnergies((name + "Energy").c_str(), (title + ";Kinetic Energy;FS Neutrons").c_str(), energyBins, univs),
+                                                                                 fAngles((name + "Angles").c_str(), (title + ";Angle w.r.t. Z Axis [radians]; FS Neutrons").c_str(), angleBins, univs),
+                                                                                 fBeta((name + "Beta").c_str(), (title + ";#beta;FS Neutrons").c_str(), betaBins, univs)
   {
   }
 
