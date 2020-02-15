@@ -30,6 +30,7 @@
 //app includes
 #include "app/CmdLine.h"
 #include "app/IsMC.h"
+#include "app/SetupPlugins.h"
 
 //PlotUtils includes
 #include "PlotUtils/CrashOnROOTMessage.h"
@@ -69,7 +70,7 @@ namespace
   //How often I print out entry number when in debug mode
   constexpr auto printFreq = 1000ul;
 
-  std::unique_ptr<bkg::Background> null(nullptr); //TODO: This is a horrible hack so I can hold a reference to a nullptr
+  std::unique_ptr<ana::Background> null(nullptr); //TODO: This is a horrible hack so I can hold a reference to a nullptr
 
   template <class ITERATOR>
   auto derefOrNull(const ITERATOR it, const ITERATOR end) -> decltype(*it)
@@ -209,10 +210,10 @@ int main(const int argc, const char** argv)
 
   //Set up backgrounds
   LOG_DEBUG("Setting up Backgrounds...")
-  std::vector<std::unique_ptr<bkg::Background>> backgrounds;
+  std::vector<std::unique_ptr<ana::Background>> backgrounds;
   try
   {
-    for(const auto config: options.ConfigFile()["backgrounds"]) backgrounds.emplace_back(new bkg::Background(config.first.as<std::string>(), config.second));
+    for(const auto config: options.ConfigFile()["backgrounds"]) backgrounds.emplace_back(new ana::Background(config.first.as<std::string>(), config.second));
   }
   catch(const std::runtime_error& e)
   {
@@ -222,21 +223,10 @@ int main(const int argc, const char** argv)
 
   //Set up Signal
   LOG_DEBUG("Setting up Signal...")
-  auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<bkg::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
-  auto signalDir = histDir.mkdir(options.ConfigFile()["signal"]["name"].as<std::string>());
   std::unique_ptr<ana::Study> signal;
   try
   {
-    ana::Study::cuts_t noCuts = {};
-    signal = studyFactory.Get(options.ConfigFile()["signal"], signalDir, std::move(noCuts), backgrounds, universes);
-
-    //Warn the user if there were additional Cuts specified for the signal.
-    //Put those cuts in recoCuts instead.
-    if(options.ConfigFile()["signal"]["passes"])
-    {
-      std::cerr << "Warning: You specified additional cuts for the signal Study:\n" << options.ConfigFile()["signal"]["passes"]
-                << "\n\nPut them in reco/cuts instead!  Ignoring these Cuts.\n";
-    }
+    signal = app::setupSignal(options.ConfigFile()["signal"], histDir, backgrounds, universes);
   }
   catch(const std::runtime_error& e)
   {
@@ -289,6 +279,7 @@ int main(const int argc, const char** argv)
   decltype(recoCuts) sidebandCuts;
 
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands; //Mapping from truth cuts to sidebands
+  auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<ana::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
   for(auto sideband: options.ConfigFile()["sidebands"])
   {
     try

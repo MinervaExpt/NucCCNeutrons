@@ -22,7 +22,7 @@ namespace evt
   class CVUniverse;
 }
 
-namespace bkg
+namespace ana
 {
   class Background;
 }
@@ -38,7 +38,7 @@ namespace ana
   {
     public:
       using cuts_t = std::vector<std::unique_ptr<reco::Cut>>;
-      using background_t = std::unique_ptr<bkg::Background>;
+      using background_t = std::unique_ptr<ana::Background>;
 
       Study(const YAML::Node& /*config*/, util::Directory& /*dir*/, cuts_t&& mustPass,
             const std::vector<background_t>& /*backgrounds*/, std::map<std::string, std::vector<evt::CVUniverse*>>& /*universes*/);

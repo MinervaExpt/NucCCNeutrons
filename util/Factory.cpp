@@ -78,7 +78,7 @@ namespace plgn
           const std::string typeName;
       };
 
-      std::unique_ptr<BASE> Get(const YAML::Node& config, ARGS&&... args)
+      std::unique_ptr<BASE> Get(const YAML::Node& config, ARGS... args)
       {
         const auto type = config.Tag().substr(1); //yaml-cpp doesn't strip the ! off of tags
         const auto found = fNameToReg.find(type);
@@ -119,7 +119,7 @@ namespace plgn
 
       virtual ~Registrar() = default;
 
-      virtual std::unique_ptr<BASE> NewPlugin(const YAML::Node& config, ARGS&&... args)
+      virtual std::unique_ptr<BASE> NewPlugin(const YAML::Node& config, ARGS... args)
       {
         return std::unique_ptr<BASE>(new DERIVED(config, std::forward<ARGS>(args)...));
       }

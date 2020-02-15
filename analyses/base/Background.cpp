@@ -12,7 +12,7 @@
 //util includes
 #include "util/Factory.cpp"
 
-namespace bkg
+namespace ana
 {
   Background::Background(const std::string& nodeName, const YAML::Node& config): passes(plgn::loadPlugins<truth::Cut>(config)),
                                                                                  fName(nodeName)

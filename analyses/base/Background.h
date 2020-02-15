@@ -2,8 +2,8 @@
 //Brief: A set of cuts with a name that defines a background category.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#ifndef BKG_BACKGROUND_H
-#define BKG_BACKGROUND_H
+#ifndef ANA_BACKGROUND_H
+#define ANA_BACKGROUND_H
 
 //yaml-cpp include for configuration
 #include "yaml-cpp/yaml.h"
@@ -22,7 +22,7 @@ namespace truth
   class Cut;
 }
 
-namespace bkg
+namespace ana
 {
   struct Background
   {
@@ -42,4 +42,4 @@ namespace bkg
   };
 }
 
-#endif //BKG_BACKGROUND_H
+#endif //ANA_BACKGROUND_H
