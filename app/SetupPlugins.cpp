@@ -19,6 +19,12 @@
 #include "util/Directory.h"
 #include "util/Factory.cpp"
 
+//app includes
+#include "app/CmdLine.h"
+
+//PlotUtils includes
+#include "PlotUtils/ChainWrapper.h"
+
 //c++ includes
 #include <algorithm>
 
@@ -157,5 +163,57 @@ namespace app
     }
 
     return recoCuts;
+  }
+
+  std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
+  {
+    std::map<std::string, std::vector<evt::CVUniverse*>> result;
+    result["cv"].push_back(new evt::CVUniverse(chw));
+
+    //"global" configuration for all DefaultCVUniverses
+    DefaultCVUniverse::SetPlaylist(options.playlist());
+    DefaultCVUniverse::SetAnalysisNuPDG(-14); //TODO: Get this from the user somehow
+    DefaultCVUniverse::SetNuEConstraint(false); //No nu-e constraint for antineutrino mode yet
+    DefaultCVUniverse::SetNonResPiReweight(false);
+
+    if(isMC)
+    {
+      //TODO: Turn this universes back on when I'm ready to deal with weights in a reasonable way
+      /*const int nFluxUniverses = 50; //TODO: Get this number from the user and tune it
+      DefaultCVUniverse::SetNFluxUniverses(nFluxUniverses);
+      auto fluxSys = PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chw, nFluxUniverses);
+      result.insert(fluxSys.begin(), fluxSys.end());
+
+      auto genieSyst = PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chw);
+      result.insert(genieSyst.begin(), genieSyst.end());*/
+    }
+
+    return result;
+  }
+
+  //Some systematic universes return true from IsVerticalOnly().  Those universes are guaranteed by the NS Framework to
+  //return the same physics variables as the CV EXCEPT FOR GETWEIGHT().  So, group them together to save on
+  //evaluating cuts and physics variables.
+  std::vector<std::vector<evt::CVUniverse*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::CVUniverse*>> bands)
+  {
+    std::vector<std::vector<evt::CVUniverse*>> groupedUnivs(1);
+                                                                                                                                        
+    auto& vertical = groupedUnivs[0]; //By convention, put vertical universes at the beginning of this vector<>.
+                                      //This is an implementation detail that may change at any time.
+                                                                                                                                        
+    for(const auto& band: bands)
+    {
+      if(band.first == "cv") vertical.insert(vertical.end(), band.second.begin(), band.second.end());
+      else
+      {
+        for(const auto univ: band.second)
+        {
+          if(univ->IsVerticalOnly()) vertical.push_back(univ);
+          else groupedUnivs.emplace_back(std::vector<evt::CVUniverse*>{univ});
+        }
+      }
+    }
+                                                                                                                                        
+    return groupedUnivs;
   }
 }

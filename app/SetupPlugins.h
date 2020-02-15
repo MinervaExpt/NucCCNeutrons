@@ -22,8 +22,15 @@ namespace util
   class Directory;
 }
 
+namespace PlotUtils
+{
+  class ChainWrapper;
+}
+
 namespace app
 {
+  class CmdLine;
+
   //Set up a Study for physics in the reco signal region given a list of Backgrounds to sort by
   //and a list of systematic universes to process.
   std::unique_ptr<ana::Study> setupSignal(const YAML::Node& config, util::Directory& histDir,
@@ -44,6 +51,13 @@ namespace app
 
   //Set up reco::Cuts that define an event selection.
   std::vector<std::unique_ptr<reco::Cut>> setupRecoCuts(const YAML::Node& config);
+
+  //Load the set of systematics I'm going to process this event with.
+  std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC);
+
+  //Group together systematic universes that always pass the same set of Cuts.  For now, that
+  //just means IsVerticalOnly() universes grouped with the CV.
+  std::vector<std::vector<evt::CVUniverse*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::CVUniverse*>> bands);
 }
 
 #endif //APP_SETUPPLUGINS_H
