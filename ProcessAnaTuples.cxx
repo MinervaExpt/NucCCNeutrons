@@ -154,6 +154,13 @@ int main(const int argc, const char** argv)
   //Accumulate POT from each good file
   double pot_used = 0;
 
+  //Experimental weight cache
+  evt::weightCache weights;
+  for(auto& group: groupedUnivs)
+  {
+    for(auto univ: group) univ->setWeightCache(weights);
+  }
+
   //Loop over files
   LOG_DEBUG("Beginning loop over files!")
   try
@@ -244,6 +251,7 @@ int main(const int argc, const char** argv)
           //Hacky way to avoid incrementing cut table entries for
           //anything besides the CV.
           cv->SetEntry(entry);
+          weights.SetEntry(*cv);
           double weightForCuts = cv->GetWeight().in<events>();
           sumWeights += weightForCuts;
           if(::requireAll(truthSignal, *cv)) sumSignal += weightForCuts;
@@ -330,6 +338,9 @@ int main(const int argc, const char** argv)
           #ifndef NDEBUG
             if((entry % printFreq) == 0) std::cout << "Done with truth entry " << entry << "\n";
           #endif
+
+          cv->SetEntry(entry);
+          weights.SetEntry(*cv);
 
           for(const auto& compat: groupedUnivs)
           {
