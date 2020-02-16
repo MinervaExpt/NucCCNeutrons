@@ -50,6 +50,9 @@ namespace reco
       double fSignalPassed = 0; //Sum of event weights for which operator() returned true
       double fTotalPassed = 0; //Number of times an event passed this Cut
   };
+
+  template <class DERIVED>
+  using Registrar = plgn::Registrar<reco::Cut, DERIVED, std::string&>;
 }
 
 #endif //RECO_CUT_H

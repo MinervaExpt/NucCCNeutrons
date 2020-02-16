@@ -52,9 +52,10 @@ message("Included PlotUtils from ${PlotUtils_INCLUDE_DIR}")
 #Set up OBJECT libraries for plugins first
 add_subdirectory(analyses)
 add_subdirectory(cuts)
+add_subdirectory(models)
 
 #Build main executables
-add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets>)
+add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets> $<TARGET_OBJECTS:model>)
 #This TARGET_OBJECTS song and dance solves the problem of the compiler
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library

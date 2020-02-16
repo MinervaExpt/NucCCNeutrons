@@ -15,6 +15,9 @@
 //evt includes
 #include "evt/CVUniverse.h"
 
+//utilities includes
+#include "util/Factory.cpp"
+
 namespace truth
 {
   //TODO: This could easily be a class template on CVUniverse
@@ -36,6 +39,9 @@ namespace truth
       //Your concrete Cut class must override these methods.
       virtual bool passesCut(const evt::CVUniverse& event) const = 0;
   };
+
+  template <class DERIVED>
+  using Registrar = plgn::Registrar<truth::Cut, DERIVED>;
 }
 
 #endif //TRUTH_CUT_H

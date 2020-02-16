@@ -10,6 +10,7 @@
 
 //utilities includes
 #include "util/Directory.h"
+#include "util/Factory.cpp"
 
 //yaml-cpp include for configuration
 #include "yaml-cpp/yaml.h"
@@ -74,6 +75,11 @@ namespace ana
       //Optional Cuts to define sideband samples.
       cuts_t fPasses;
   };
+
+  template <class DERIVED>
+  using Registrar =  plgn::Registrar<ana::Study, DERIVED, util::Directory&,
+                                     typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
+                                     std::map<std::string, std::vector<evt::CVUniverse*>>&>;
 }
 
 #endif //SIG_SIGNAL_CPP
