@@ -26,9 +26,8 @@ namespace model
 //Register some models from PlotUtils that I want to compose at runtime
 namespace
 {
-  //static model::Registrar<model::WithNoArgs<&evt::CVUniverse::GetFluxAndCVWeight>> reg_flux("FluxAndCV"); //This one has default parameters
-  static model::Registrar<model::WithNoArgs<&evt::CVUniverse::GetMinosEfficiencyWeight>> reg_MINOS("MINOSEfficiency");
-  static model::Registrar<model::WithNoArgs<&evt::CVUniverse::GetGenieWeight>> reg_GENIE("Genie");
-  static model::Registrar<model::WithNoArgs<&evt::CVUniverse::GetRPAWeight>> reg_RPA("RPA");
-  static model::Registrar<model::WithNoArgs<&evt::CVUniverse::Get2p2hWeight>> reg_2p2h("2p2h");
+  static model::WithNoArgs<&evt::CVUniverse::GetMinosEfficiencyWeight>::Registrar reg_MINOS("MINOSEfficiency");
+  static model::WithNoArgs<&evt::CVUniverse::GetGenieWeight>::Registrar reg_GENIE("Genie");
+  static model::WithNoArgs<&evt::CVUniverse::GetRPAWeight>::Registrar reg_RPA("RPA");
+  static model::WithNoArgs<&evt::CVUniverse::Get2p2hWeight>::Registrar reg_2p2h("2p2h");
 }

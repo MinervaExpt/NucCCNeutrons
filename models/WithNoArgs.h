@@ -19,6 +19,8 @@ namespace model
       virtual ~WithNoArgs() = default;
 
       virtual events GetWeight(const evt::CVUniverse& univ) const override;
+
+      using Registrar = Model::Registrar<WithNoArgs<reweight>>;
   };
 }
 

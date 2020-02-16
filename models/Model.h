@@ -27,10 +27,10 @@ namespace model
       virtual ~Model() = default;
 
       virtual events GetWeight(const evt::CVUniverse& univ) const = 0;
-  };
 
-  template <class DERIVED>
-  using Registrar = plgn::Registrar<Model, DERIVED>;
+    template <class DERIVED>
+    using Registrar = plgn::Registrar<Model, DERIVED>;
+  };
 }
 
 #endif //MODEL_MODEL_H
