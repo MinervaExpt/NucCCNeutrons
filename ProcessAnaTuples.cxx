@@ -285,7 +285,11 @@ int main(const int argc, const char** argv)
               for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
               {
                 const auto& cut = sidebandCuts[whichCut];
-                if(!(*cut)(event, weightForCuts, isTruthSignal)) passedReco.set(whichCut, false);
+                if(!(*cut)(event, weightForCuts, isTruthSignal))
+                {
+                  passedReco.set(whichCut, false);
+                  weightForCuts = 0; //Cuts after this one wouldn't normally be called since we're in a sideband now
+                }
               }
 
               //Look up the sideband, if any, by which reco cuts failed.
@@ -452,7 +456,13 @@ int main(const int argc, const char** argv)
     int prevTotal = nEntriesTotal;
     for(const auto& cut: recoCuts)
     {
-      //TODO: purity is (signal at this point) / (total sample at this point).  I'm only keeping (signal at this point)
+      truthSummary.appendRow(cut->name(), cut->signalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
+      prevSignal = cut->signalPassed();
+      prevTotal = cut->totalPassed();
+    }
+
+    for(const auto& cut: sidebandCuts)
+    {
       truthSummary.appendRow(cut->name(), cut->signalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
       prevSignal = cut->signalPassed();
       prevTotal = cut->totalPassed();
@@ -468,6 +478,12 @@ int main(const int argc, const char** argv)
 
     int prevSampleLeft = nEntriesTotal;
     for(const auto& cut: recoCuts)
+    {
+      recoSummary.appendRow(cut->name(), cut->totalPassed(), (double)cut->totalPassed() / prevSampleLeft * 100.);
+      prevSampleLeft = cut->totalPassed();
+    }
+
+    for(const auto& cut: sidebandCuts)
     {
       recoSummary.appendRow(cut->name(), cut->totalPassed(), (double)cut->totalPassed() / prevSampleLeft * 100.);
       prevSampleLeft = cut->totalPassed();
