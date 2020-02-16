@@ -127,10 +127,14 @@ namespace evt
         return fWeightCache->GENIE;
       }
 
+      #pragma GCC diagnostic push //Learned to use these GCC-specific preprocessor macros from 
+                            //https://stackoverflow.com/questions/6321839/how-to-disable-warnings-for-particular-include-files 
+      #pragma GCC diagnostic ignored "-Wunused-parameter"
       virtual double GetFluxAndCVWeight(double Enu = -99. /*GeV*/, int nu_pdg = -99) const override
       {
         return fWeightCache->fluxAndCV;
       }
+      #pragma GCC diagnostic pop
 
       virtual double Get2p2hWeight() const override
       {
