@@ -14,7 +14,7 @@
 //Register Water for user selection
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::OneSectionTarget<1, 8>> MainAnalysis_reg("Water");
+  static truth::Cut::Registrar<truth::OneSectionTarget<1, 8>> Water_reg("Water");
 }
 
 #endif //TRUTH_WATER_H

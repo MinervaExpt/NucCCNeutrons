@@ -14,7 +14,7 @@
 //Register Target3Lead for user selection
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::ThreeSectionTarget<82>> MainAnalysis_reg("Target3Lead");
+  static truth::Cut::Registrar<truth::ThreeSectionTarget<82>> Target3Lead_reg("Target3Lead");
 }
 
 #endif //TRUTH_TARGET3LEAD_H

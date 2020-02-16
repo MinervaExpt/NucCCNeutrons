@@ -26,14 +26,14 @@ namespace ana
       virtual ~NeutronDetection() = default;
 
       //Do this study only for MC signal events.
-      virtual void mcSignal(const evt::CVUniverse& event) override;
+      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override;
 
       //Normalize fPDGToObservables and syncCVHistos()
       virtual void afterAllFiles() override;
 
       //Do nothing for backgrounds, the Truth tree, and data
-      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/) override {};
-      virtual void truth(const evt::CVUniverse& /*event*/) override {};
+      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
+      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
       virtual void data(const evt::CVUniverse& /*event*/) override {}; //TODO: Do I want to plot candidate observables in data?
 
     private:

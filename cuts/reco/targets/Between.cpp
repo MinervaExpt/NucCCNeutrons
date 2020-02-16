@@ -23,5 +23,5 @@ namespace reco
 //Register Between as a kind of Cut
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::Between, std::string&> RecoBetween_reg("Between");
+  static reco::Cut::Registrar<reco::Between> RecoBetween_reg("Between");
 }

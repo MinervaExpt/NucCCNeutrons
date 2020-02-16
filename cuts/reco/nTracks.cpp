@@ -21,5 +21,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::nTracks, std::string&> MainAnalysis_reg("nTracks");
+  static reco::Cut::Registrar<reco::nTracks> nTracks_reg("nTracks");
 }

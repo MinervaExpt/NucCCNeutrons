@@ -19,5 +19,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::Q3Range, std::string&> MainAnalysis_reg("Q3Range");
+  static reco::Cut::Registrar<reco::Q3Range> Q3Range_reg("Q3Range");
 }

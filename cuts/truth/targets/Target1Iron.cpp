@@ -14,7 +14,7 @@
 //Register Target1Iron for user selection
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::TwoSectionTarget<26>> MainAnalysis_reg("Target1Iron");
+  static truth::Cut::Registrar<truth::TwoSectionTarget<26>> Target1Iron_reg("Target1Iron");
 }
 
 #endif //TRUTH_TARGET1IRON_H

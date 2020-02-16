@@ -26,5 +26,5 @@ namespace truth
 //Register Between as a kind of Cut
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::Between> TruthBetween_reg("Between");
+  static truth::Cut::Registrar<truth::Between> Between_reg("Between");
 }

@@ -14,7 +14,7 @@
 //Register Target3Carbon for user selection
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::ThreeSectionTarget<6>> MainAnalysis_reg("Target3Carbon");
+  static truth::Cut::Registrar<truth::ThreeSectionTarget<6>> Target3Carbon_reg("Target3Carbon");
 }
 
 #endif //TRUTH_TARGET3CARBON_H

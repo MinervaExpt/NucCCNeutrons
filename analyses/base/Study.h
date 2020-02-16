@@ -11,6 +11,7 @@
 //utilities includes
 #include "util/Directory.h"
 #include "util/Factory.cpp"
+#include "util/units.h"
 
 //yaml-cpp include for configuration
 #include "yaml-cpp/yaml.h"
@@ -50,13 +51,13 @@ namespace ana
 
       //MC AnaTuple with reco and truth information.  Passes reco selection and phase space.
       //mcSignal() passed truth signal selection too.
-      virtual void mcSignal(const evt::CVUniverse& event) = 0;
+      virtual void mcSignal(const evt::CVUniverse& event, const events weight) = 0;
       
       //mcBackground failed the truth signal selection.
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) = 0;
+      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight) = 0;
 
       //Truth tree with truth information.  Passes truth signal definition and phase space.
-      virtual void truth(const evt::CVUniverse& event) = 0;
+      virtual void truth(const evt::CVUniverse& event, const events weight) = 0;
 
       //Data AnaTuple with only reco information.  These events passed all reco Cuts. 
       //Truth branches may be in an undefined state here, so be very careful not to use them.

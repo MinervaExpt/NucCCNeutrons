@@ -12,6 +12,9 @@
 #include "cuts/reco/Cut.h"
 #include "cuts/truth/Cut.h"
 
+//models includes
+#include "models/Model.h"
+
 //evt includes
 #include "evt/CVUniverse.h"
 
@@ -217,5 +220,35 @@ namespace app
     }
                                                                                                                                         
     return groupedUnivs;
+  }
+
+  std::vector<std::unique_ptr<model::Model>> setupModels(const YAML::Node& config)
+  {
+    if(config.as<std::map<std::string, YAML::Node>>().empty())
+    {
+      std::cerr << "You didn't set up any models!  There's one non-physical"
+                << "case where you might want to do this: if you are "
+                << "migrating from a macro that didn't do reweighting.  "
+                << "I'm going to assume that's what you're doing and keep "
+                << "going with a weight of 1 for every event.\n"
+                << "YOU HAVE BEEN WARNED!\n";
+    }
+
+    std::vector<std::unique_ptr<model::Model>> models;
+    auto& modelFactory = plgn::Factory<model::Model>::instance();
+
+    for(const auto& model: config)
+    {
+      try
+      {
+        models.emplace_back(modelFactory.Get(model.second));
+      }
+      catch(const std::runtime_error& e)
+      {
+        throw std::runtime_error(std::string("Failed to set up a Model named " + model.first.as<std::string>() + ":\n") + e.what());
+      }
+    }
+
+    return models;
   }
 }

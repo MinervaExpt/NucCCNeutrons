@@ -26,5 +26,5 @@ namespace truth
 
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::Apothem> Apothem_reg("Apothem");
+  static truth::Cut::Registrar<truth::Apothem> Apothem_reg("Apothem");
 }

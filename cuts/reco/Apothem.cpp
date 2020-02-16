@@ -23,5 +23,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::Apothem, std::string&> Apothem_reg("Apothem");
+  static reco::Cut::Registrar<reco::Apothem> Apothem_reg("Apothem");
 }

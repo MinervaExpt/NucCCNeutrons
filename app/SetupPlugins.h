@@ -27,6 +27,11 @@ namespace PlotUtils
   class ChainWrapper;
 }
 
+namespace model
+{
+  class Model;
+}
+
 namespace app
 {
   class CmdLine;
@@ -58,6 +63,9 @@ namespace app
   //Group together systematic universes that always pass the same set of Cuts.  For now, that
   //just means IsVerticalOnly() universes grouped with the CV.
   std::vector<std::vector<evt::CVUniverse*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::CVUniverse*>> bands);
+
+  //Set up models to modify the weight of each CV event.
+  std::vector<std::unique_ptr<model::Model>> setupModels(const YAML::Node& config);
 }
 
 #endif //APP_SETUPPLUGINS_H

@@ -11,7 +11,7 @@
 //Register Target1Iron for user selection
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::TwoSectionTarget<false, -1>, std::string&> MainAnalysis_reg("Target1Iron");
+  static reco::Cut::Registrar<reco::TwoSectionTarget<false, -1>> Target1Iron_reg("Target1Iron");
 }
 
 #endif //RECO_TARGET1IRON_H

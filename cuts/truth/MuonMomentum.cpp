@@ -22,5 +22,5 @@ namespace truth
 
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::MuonMomentum> MainAnalysis_reg("MuonMomentum");
+  static truth::Cut::Registrar<truth::MuonMomentum> MuonMomentum_reg("MuonMomentum");
 }

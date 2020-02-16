@@ -67,18 +67,18 @@ namespace ana
         fData->Fill(&event, fVar.reco(event)); //No weight applied to data
       }
 
-      virtual void mcSignal(const evt::CVUniverse& event) override
+      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
       {
-        fSignal->Fill(&event, fVar.reco(event), event.GetWeight());
+        fSignal->Fill(&event, fVar.reco(event), weight);
       }
 
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) override
+      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight) override
       {
-        fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
+        fBackgrounds[background].Fill(&event, fVar.reco(event), weight);
       }
 
       //Sidebands aren't defined in the truth tree, so do nothing
-      virtual void truth(const evt::CVUniverse& /*event*/) override
+      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override
       {
       }
 

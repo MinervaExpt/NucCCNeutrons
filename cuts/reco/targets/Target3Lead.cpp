@@ -11,7 +11,7 @@
 //Register Target3Lead for user selection
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::ThreeSectionTarget<82>, std::string&> MainAnalysis_reg("Target3Lead");
+  static reco::Cut::Registrar<reco::ThreeSectionTarget<82>> Target3Lead_reg("Target3Lead");
 }
 
 #endif //RECO_TARGET3LEAD_H

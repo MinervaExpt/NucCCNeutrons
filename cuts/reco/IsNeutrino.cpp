@@ -10,7 +10,7 @@
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::Helicity<1>, std::string&> MainAnalysis_reg("IsNeutrino");
+  static reco::Cut::Registrar<reco::Helicity<1>> Neutrino_reg("IsNeutrino");
 }
 
 

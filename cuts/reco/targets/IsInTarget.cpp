@@ -23,5 +23,5 @@ namespace reco
 //Register IsInTarget as a kind of Cut
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::IsInTarget, std::string&> MainAnalysis_reg("IsInTarget");
+  static reco::Cut::Registrar<reco::IsInTarget> IsInTarget_reg("IsInTarget");
 }

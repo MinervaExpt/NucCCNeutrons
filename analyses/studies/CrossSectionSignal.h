@@ -73,18 +73,17 @@ namespace ana
 
       virtual ~CrossSectionSignal() = default;
 
-      virtual void mcSignal(const evt::CVUniverse& event) override
+      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
       {
         const auto reco = fVar.reco(event), truth = fVar.truth(event);
-        const auto weight = event.GetWeight();
 
         fEfficiencyNum->Fill(&event, truth, weight);
         fMigration->Fill(&event, reco, truth, weight);
       }
 
-      virtual void truth(const evt::CVUniverse& event) override
+      virtual void truth(const evt::CVUniverse& event, const events weight) override
       {
-        fEfficiencyDenom->Fill(&event, fVar.truth(event), event.GetWeight());
+        fEfficiencyDenom->Fill(&event, fVar.truth(event), weight);
       }
 
       virtual void data(const evt::CVUniverse& event) override
@@ -92,9 +91,9 @@ namespace ana
         fSignalEvents->Fill(&event, fVar.reco(event)); //No weight applied to data
       }
 
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background) override
+      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight) override
       {
-        fBackgrounds[background].Fill(&event, fVar.reco(event), event.GetWeight());
+        fBackgrounds[background].Fill(&event, fVar.reco(event), weight);
       }
 
       virtual void afterAllFiles() override

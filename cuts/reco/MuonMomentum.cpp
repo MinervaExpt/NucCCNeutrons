@@ -19,5 +19,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::MuonMomentum, std::string&> MainAnalysis_reg("MuonMomentum");
+  static reco::Cut::Registrar<reco::MuonMomentum> MuonMomentum_reg("MuonMomentum");
 }

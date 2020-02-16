@@ -14,7 +14,7 @@
 //Register Target5Lead for user selection
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::TwoSectionTarget<82>> MainAnalysis_reg("Target5Lead");
+  static truth::Cut::Registrar<truth::TwoSectionTarget<82>> Target5Lead_reg("Target5Lead");
 }
 
 #endif //TRUTH_TARGET5LEAD_H

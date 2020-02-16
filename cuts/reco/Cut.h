@@ -39,6 +39,9 @@ namespace reco
       inline size_t totalPassed() const { return fTotalPassed; }
       inline const std::string& name() const { return fName; }
 
+      template <class DERIVED>
+      using Registrar = plgn::Registrar<reco::Cut, DERIVED, std::string&>;
+
     protected:
       //Your concrete Cut class must override these methods.
       virtual bool passesCut(const evt::CVUniverse& event) const = 0;
@@ -50,9 +53,6 @@ namespace reco
       double fSignalPassed = 0; //Sum of event weights for which operator() returned true
       double fTotalPassed = 0; //Number of times an event passed this Cut
   };
-
-  template <class DERIVED>
-  using Registrar = plgn::Registrar<reco::Cut, DERIVED, std::string&>;
 }
 
 #endif //RECO_CUT_H

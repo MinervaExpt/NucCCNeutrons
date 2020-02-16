@@ -56,14 +56,14 @@ namespace ana
     fEffDenominator = dir.make<Efficiency>("EfficiencyDenominator", "Truth", univs, energyBins, angleBins, betaBins);
   }
 
-  void NeutronDetection::mcSignal(const evt::CVUniverse& event)
+  void NeutronDetection::mcSignal(const evt::CVUniverse& event, const events weight)
   {
     //Cache weight for each universe
-    const neutrons weight = event.GetWeight().in<events>();
+    const neutrons weightPerNeutron = weight.in<events>();
 
     //Even if there are no neutron candidates in this event, it's an event
     //that passed the cuts to get here.
-    fEventsSeen += weight.in<neutrons>();
+    fEventsSeen += weightPerNeutron.in<neutrons>();
 
     //Physics objects I'll need
     const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_FS_index());
@@ -83,15 +83,15 @@ namespace ana
           if(fCuts.countAsTruth(fs[cand.FS_index])) FSWithCands.insert(cand.FS_index);
         }
 
-        fPDGToObservables[pdg].Fill(event, weight, cand, vertex);
+        fPDGToObservables[pdg].Fill(event, weightPerNeutron, cand, vertex);
       }
     }
 
-    for(const auto& withCands: FSWithCands) fEffNumerator->Fill(event, weight, fs[withCands]);
+    for(const auto& withCands: FSWithCands) fEffNumerator->Fill(event, weightPerNeutron, fs[withCands]);
 
     for(const auto& part: fs)
     {
-      if(fCuts.countAsTruth(part)) fEffDenominator->Fill(event, weight, part);
+      if(fCuts.countAsTruth(part)) fEffDenominator->Fill(event, weightPerNeutron, part);
     }
   }
 
@@ -116,17 +116,17 @@ namespace ana
   {
   }
 
-  void NeutronDetection::Observables::Fill(const evt::CVUniverse& event, neutrons weight, const MCCandidate& cand, const units::LorentzVector<mm>& vertex)
+  void NeutronDetection::Observables::Fill(const evt::CVUniverse& event, neutrons weightPerNeutron, const MCCandidate& cand, const units::LorentzVector<mm>& vertex)
   {
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
     const double dist = std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
     const double angle = deltaZ.in<mm>() / std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
     const double beta = dist / cand.time.in<ns>() / 300.; //Speed of light is 300mm/ns
 
-    fEDeps.Fill(&event, cand.edep, weight);
-    fAngles.FillUniverse(&event, angle, weight.in<neutrons>());
-    fBeta.FillUniverse(&event, beta, weight.in<neutrons>());
-    fZDistFromVertex.Fill(&event, cand.z - vertex.z(), weight);
+    fEDeps.Fill(&event, cand.edep, weightPerNeutron);
+    fAngles.FillUniverse(&event, angle, weightPerNeutron.in<neutrons>());
+    fBeta.FillUniverse(&event, beta, weightPerNeutron.in<neutrons>());
+    fZDistFromVertex.Fill(&event, cand.z - vertex.z(), weightPerNeutron);
   }
 
   void NeutronDetection::Observables::SetDirectory(TDirectory* dir)
@@ -162,14 +162,14 @@ namespace ana
   {
   }
 
-  void NeutronDetection::Efficiency::Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs)
+  void NeutronDetection::Efficiency::Fill(const evt::CVUniverse& event, const neutrons weightPerNeutron, const FSPart& fs)
   {
     const auto neutronMass = 939.6_MeV;
     const double beta = std::sqrt(1. - pow<2>(neutronMass.in<MeV>()/fs.energy.in<MeV>())); //939.6 MeV is neutron mass
 
-    fEnergies.Fill(&event, fs.energy - neutronMass, weight);
-    fAngles.FillUniverse(&event, fs.angle_wrt_z, weight.in<neutrons>());
-    fBeta.FillUniverse(&event, beta, weight.in<neutrons>());
+    fEnergies.Fill(&event, fs.energy - neutronMass, weightPerNeutron);
+    fAngles.FillUniverse(&event, fs.angle_wrt_z, weightPerNeutron.in<neutrons>());
+    fBeta.FillUniverse(&event, beta, weightPerNeutron.in<neutrons>());
   }
 
   void NeutronDetection::Efficiency::SetDirectory(TDirectory* dir)

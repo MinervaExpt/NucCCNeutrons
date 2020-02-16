@@ -11,7 +11,7 @@
 //Register Target3Iron for user selection
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::ThreeSectionTarget<26>, std::string&> MainAnalysis_reg("Target3Iron");
+  static reco::Cut::Registrar<reco::ThreeSectionTarget<26>> Target3Iron_reg("Target3Iron");
 }
 
 #endif //RECO_TARGET3IRON_H

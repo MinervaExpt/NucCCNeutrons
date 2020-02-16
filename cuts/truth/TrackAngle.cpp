@@ -23,5 +23,5 @@ namespace truth
 
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::TrackAngle> MainAnalysis_reg("TrackAngle");
+  static truth::Cut::Registrar<truth::TrackAngle> TrackAngle_reg("TrackAngle");
 }

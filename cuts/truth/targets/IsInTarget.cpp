@@ -25,5 +25,5 @@ namespace truth
 //Register IsInTarget as a kind of Cut
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::IsInTarget> MainAnalysis_reg("IsInTarget");
+  static truth::Cut::Registrar<truth::IsInTarget> IsInTarget_reg("IsInTarget");
 }

@@ -10,7 +10,7 @@
 
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::Helicity<14>> MainAnalysis_reg("IsNeutrino");
+  static truth::Cut::Registrar<truth::Helicity<14>> Neutrino_reg("IsNeutrino");
 }
 
 

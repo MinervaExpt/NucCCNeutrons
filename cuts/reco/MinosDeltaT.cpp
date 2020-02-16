@@ -22,5 +22,5 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::MinosDeltaT, std::string&> MainAnalysis_reg("MinosDeltaT");
+  static reco::Cut::Registrar<reco::MinosDeltaT> MinosDeltaT_reg("MinosDeltaT");
 }

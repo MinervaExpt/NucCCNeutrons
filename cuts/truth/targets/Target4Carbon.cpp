@@ -14,7 +14,7 @@
 //Register Target4Carbon for user selection
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::OneSectionTarget<6>> MainAnalysis_reg("Target4Carbon");
+  static truth::Cut::Registrar<truth::OneSectionTarget<6>> Target4Carbon_reg("Target4Carbon");
 }
 
 #endif //TRUTH_TARGET4CARBON_H

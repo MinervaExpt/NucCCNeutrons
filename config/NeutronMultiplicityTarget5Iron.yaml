@@ -1,20 +1,8 @@
 #!/usr/bin/env ProcessAnaTuples
-#File: Targets.yaml
-#Brief: Z ranges of MINERvA's nuclear targets in truth and reconstruction.
-#       Reco cuts taken from Jeffrey's analysis in the Fall of 2019.
-#       See here for Jeffrey's reco cuts: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/AnalysisFramework/Ana/NukeCCQE/scripts/code_templates/target_cuts.cpp
-#       Truth cuts taken from Jeffrey's analysis in January 2020.
-#       See here for Jeffrey's truth cuts: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/AnalysisFramework/Ana/NukeCCQE/scripts/code_templates/true_target_cuts.cpp
-#       
-#Author: Andrew Olivier aolivier@ur.rochester.edu
+#Example of how to do an analysis in target 5 using my own analysis.
 
 #TODO: Put this combination of models in its' own header and call it MnvGENIEv1
-model:
-  Flux: !FluxAndCV
-  GENIE: !GENIE
-  MINOSEfficiency: !MINOSEfficiency
-  RPASuppression: !RPA
-  Valencia2p2h: !2p2h
+model: *MnvGENIEv1 #From CommonModels.yam
 
 app:
   #TODO: candidate algorithm and other such options
@@ -45,7 +33,8 @@ cuts:
         max: !GeV 0.4
       Apothem: &ApothemCut !Apothem
         apothem: !mm 850
-      Tracker: *OneTrackTracker
+      Target5: *OneTrackTarget5
+      Iron: !Target5Iron
   reco:
     OneTrack: !nTracks
       max: 1
@@ -60,12 +49,40 @@ cuts:
       min: !GeV 2
     Antineutrino: !IsAntineutrino
     Apothem: *ApothemCut
-    Tracker: *OneTrackTracker
+    Target5: *OneTrackTarget5
+    Iron: !Target5Iron
 
 #Names in sidebands' "fails" blocks refer to truth cuts by block name.
 sidebands:
+  UpstreamPlastic: !NeutronMultiplicitySideband
+    variable: *Variable
+    binning: *bins
+    fails: [Target5]
+    passes:
+      Upstream: &USPlastic !Between
+        us: *OneTrackTarget5
+        ds: *OneTrackTracker
+  DownstreamPlastic: !NeutronMultiplicitySideband
+    variable: *Variable
+    binning: *bins
+    fails: [Target5]
+    passes:
+      Downstream: &DSPlastic !Between
+        us: *OneTrackTarget4
+        ds: *OneTrackTarget5
+  WrongMaterial: !NeutronMultiplicitySideband
+    variable: *Variable
+    binning: *bins
+    fails: [Iron]
+    #And implicitly passes the Target5 truth cut
 
 #Backgrounds are defined by the truth::Cuts they pass in addition to
 #failing some regular truth cut.  So, these cuts had better be mutually
 #exclusive with regular truth::Cuts.
 backgrounds:
+  UpstreamPlastic:
+    Upstream: *USPlastic
+  DownstreamPlastic:
+    Downstream: *DSPlastic
+  Lead:
+    IsInLead: !Target5Lead

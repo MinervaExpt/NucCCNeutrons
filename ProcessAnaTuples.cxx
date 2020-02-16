@@ -26,6 +26,9 @@
 #include "cuts/truth/Cut.h"
 #include "cuts/reco/Cut.h"
 
+//models includes
+#include "models/Model.h"
+
 //app includes
 #include "app/CmdLine.h"
 #include "app/IsMC.h"
@@ -89,6 +92,11 @@ namespace
                          return (*cut)(event, args...);
                        });
   }
+
+  events getWeight(const std::vector<std::unique_ptr<model::Model>>& models, const evt::CVUniverse& event)
+  {
+    return std::accumulate(models.begin(), models.end(), 1., [&event](const double product, const auto& model) { return product * model->GetWeight(event).template in<events>(); });
+  }
 }
 
 int main(const int argc, const char** argv)
@@ -109,6 +117,8 @@ int main(const int argc, const char** argv)
   std::vector<std::unique_ptr<reco::Cut>> recoCuts;
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands;
   decltype(recoCuts) sidebandCuts;
+  std::vector<std::unique_ptr<model::Model>> reweighters;
+
   double sumWeights = 0;
   double sumSignal = 0;
   size_t nEntriesTotal = 0;
@@ -144,10 +154,11 @@ int main(const int argc, const char** argv)
     sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
     cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
+    reweighters = app::setupModels(options->ConfigFile()["model"]);
   }
   catch(const std::runtime_error& e)
   {
-    std::cerr << e.what();
+    std::cerr << e.what() << "\n";
     return app::CmdLine::YAMLError;
   }
 
@@ -252,7 +263,7 @@ int main(const int argc, const char** argv)
           //anything besides the CV.
           cv->SetEntry(entry);
           weights.SetEntry(*cv);
-          double weightForCuts = cv->GetWeight().in<events>();
+          double weightForCuts = ::getWeight(reweighters, *cv).in<events>();
           sumWeights += weightForCuts;
           if(::requireAll(truthSignal, *cv)) sumSignal += weightForCuts;
 
@@ -296,11 +307,11 @@ int main(const int argc, const char** argv)
               {
                 if(passedReco.all())
                 {
-                  for(const auto univ: compat) signal->mcSignal(*univ);
+                  for(const auto univ: compat) signal->mcSignal(*univ, ::getWeight(reweighters, *univ));
                 }
                 else if(sideband) //If this is a sideband I'm interested in
                 {
-                  for(const auto univ: compat) sideband->mcSignal(*univ);
+                  for(const auto univ: compat) sideband->mcSignal(*univ, ::getWeight(reweighters, *univ));
                 }
               }
               else //If not truthSignal
@@ -311,11 +322,11 @@ int main(const int argc, const char** argv)
 
                 if(passedReco.all())
                 {
-                  for(const auto univ: compat) signal->mcBackground(*univ, ::derefOrNull(foundBackground, backgrounds.end()));
+                  for(const auto univ: compat) signal->mcBackground(*univ, ::derefOrNull(foundBackground, backgrounds.end()), ::getWeight(reweighters, *univ));
                 }
                 else if(sideband)
                 {
-                  for(const auto univ: compat) sideband->mcBackground(*univ, ::derefOrNull(foundBackground, backgrounds.end()));
+                  for(const auto univ: compat) sideband->mcBackground(*univ, ::derefOrNull(foundBackground, backgrounds.end()), ::getWeight(reweighters, *univ));
                 }
               }
             } //If passed all non-sideband-related cuts
@@ -349,7 +360,7 @@ int main(const int argc, const char** argv)
 
             if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
             {
-              for(const auto univ: compat) signal->truth(*univ);
+              for(const auto univ: compat) signal->truth(*univ, ::getWeight(reweighters, *univ));
             } //If event passes all truth cuts
           } //For each error band
         } //For each entry in Truth tree

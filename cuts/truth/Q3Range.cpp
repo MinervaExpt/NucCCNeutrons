@@ -22,5 +22,5 @@ namespace truth
 
 namespace
 {
-  static plgn::Registrar<truth::Cut, truth::Q3Range> MainAnalysis_reg("Q3Range");
+  static truth::Cut::Registrar<truth::Q3Range> Q3Range_reg("Q3Range");
 }

@@ -35,13 +35,13 @@ namespace truth
       //statistics for a cut table later.
       bool operator ()(const evt::CVUniverse& event);
 
+      template <class DERIVED>
+      using Registrar = plgn::Registrar<truth::Cut, DERIVED>;
+
     protected:
       //Your concrete Cut class must override these methods.
       virtual bool passesCut(const evt::CVUniverse& event) const = 0;
   };
-
-  template <class DERIVED>
-  using Registrar = plgn::Registrar<truth::Cut, DERIVED>;
 }
 
 #endif //TRUTH_CUT_H
