@@ -190,7 +190,5 @@ namespace ana
 //Register with Factory
 namespace
 {
-  static plgn::Registrar<ana::Study, ana::NeutronDetection, util::Directory&,
-                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
-                         std::map<std::string, std::vector<evt::CVUniverse*>>&> NeutronDetection_reg("NeutronDetection");
+  static ana::Study::Registrar<ana::NeutronDetection> NeutronDetection_reg("NeutronDetection");
 }

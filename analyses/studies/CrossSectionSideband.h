@@ -89,6 +89,8 @@ namespace ana
         fBackgrounds.visit([](auto& hist) { hist.SyncCVHistos();});
       }
 
+      using Registrar = Study::Registrar<CrossSectionSideband<VARIABLE>>;
+
     private:
       VARIABLE fVar;
 

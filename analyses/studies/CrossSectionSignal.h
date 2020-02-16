@@ -105,6 +105,8 @@ namespace ana
         fBackgrounds.visit([](auto& hist) { hist.SyncCVHistos(); });
       }
 
+      using Registrar = Study::Registrar<CrossSectionSignal<VARIABLE>>;
+
     private:
       VARIABLE fVar;  //VARIABLE in which a differential cross section will be extracted
 

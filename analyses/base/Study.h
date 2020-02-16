@@ -70,16 +70,19 @@ namespace ana
       //Function for implementing the event loop.  Do not use in derived classes.
       bool passesCuts(const evt::CVUniverse& event);
 
+      //Create a static instance of an ana::Study::Registrar<> for your Study in the
+      //"anonymous namespace" at the bottom of your .cpp file to make it discoverable
+      //at runtime.
+      template <class DERIVED>
+      using Registrar =  plgn::Registrar<ana::Study, DERIVED, util::Directory&,
+                                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
+                                         std::map<std::string, std::vector<evt::CVUniverse*>>&>;
+
     private:
       //Interface for the event loop.  Behavior not guaranteed for derived plugin use!
       //Optional Cuts to define sideband samples.
       cuts_t fPasses;
   };
-
-  template <class DERIVED>
-  using Registrar =  plgn::Registrar<ana::Study, DERIVED, util::Directory&,
-                                     typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
-                                     std::map<std::string, std::vector<evt::CVUniverse*>>&>;
 }
 
 #endif //SIG_SIGNAL_CPP

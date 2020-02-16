@@ -85,12 +85,8 @@ namespace ana
 
 namespace
 {
-  static plgn::Registrar<ana::Study, ana::CrossSectionSignal<ana::NeutronMultiplicity>, util::Directory&,
-                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
-                         std::map<std::string, std::vector<evt::CVUniverse*>>&> NeutronMultiplicitySignal_reg("NeutronMultiplicitySignal");
-  static plgn::Registrar<ana::Study, ana::CrossSectionSideband<ana::NeutronMultiplicity>, util::Directory&,
-                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
-                         std::map<std::string, std::vector<evt::CVUniverse*>>&> NeutronMultiplicitySideband_reg("NeutronMultiplicitySideband");
+  static ana::CrossSectionSignal<ana::NeutronMultiplicity>::Registrar NeutronMultiplicitySignal_reg("NeutronMultiplicitySignal");
+  static ana::CrossSectionSideband<ana::NeutronMultiplicity>::Registrar NeutronMultiplicitySideband_reg("NeutronMultiplicitySideband");
 }
 
 #endif //ANA_NEUTRONMULTIPLICITY_CPP

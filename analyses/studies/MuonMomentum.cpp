@@ -41,12 +41,8 @@ namespace ana
 
 namespace
 {
-  static plgn::Registrar<ana::Study, ana::CrossSectionSignal<ana::MuonMomentum>, util::Directory&,
-                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
-                         std::map<std::string, std::vector<evt::CVUniverse*>>&> MuonMomentumSignal_reg("MuonMomentumSignal");
-  static plgn::Registrar<ana::Study, ana::CrossSectionSideband<ana::MuonMomentum>, util::Directory&,
-                         typename ana::Study::cuts_t&&, std::vector<typename ana::Study::background_t>&,
-                         std::map<std::string, std::vector<evt::CVUniverse*>>&> MuonMomentumSideband_reg("MuonMomentumSideband");
+  static ana::CrossSectionSignal<ana::MuonMomentum>::Registrar MuonMomentumSignal_reg("MuonMomentumSignal");
+  static ana::CrossSectionSideband<ana::MuonMomentum>::Registrar MuonMomentumSideband_reg("MuonMomentumSideband");
 }
 
 #endif //ANA_MUONMOMENTUM_CPP
