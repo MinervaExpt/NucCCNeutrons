@@ -41,11 +41,36 @@
 
 namespace evt
 {
+  struct weightCache
+  {
+    void SetEntry(PlotUtils::DefaultCVUniverse& cv)
+    {
+      //Make sure I don't call any universes' overrides by mistake
+      minosEff = cv.DefaultCVUniverse::GetMinosEfficiencyWeight();
+      GENIE = cv.DefaultCVUniverse::GetGenieWeight();
+      fluxAndCV = cv.DefaultCVUniverse::GetFluxAndCVWeight();
+      mec = cv.DefaultCVUniverse::Get2p2hWeight(); //Yes, I know 2p2h and MEC aren't exactly the same.  2p2h isn't a valid identifier though.
+      rpa = cv.DefaultCVUniverse::GetRPAWeight();
+    }
+
+    double minosEff = 0;
+    double GENIE = 0;
+    double fluxAndCV = 0;
+    double mec = 0;
+    double rpa = 0;
+  };
+
   class CVUniverse: public PlotUtils::DefaultCVUniverse
   {
     public:
       CVUniverse(/*const std::string& blobAlg,*/ PlotUtils::ChainWrapper* chw, const double nsigma = 0); //TODO: Get away from ChainWrapper?
       virtual ~CVUniverse() = default;
+
+      //Too bad this can't be a constructor argument...
+      void setWeightCache(weightCache& cache)
+      {
+        fWeightCache = &cache;
+      }
 
       //DefaultCVUniverse interfaces
       //This is really used as "hypothesis name" for NeutrinoInt-based branches.
@@ -88,6 +113,33 @@ namespace evt
       {
         //Rob told me that this is MnvGENIE v1.1 on 2/11/2020
         return GetMinosEfficiencyWeight() * GetGenieWeight() * GetFluxAndCVWeight() * Get2p2hWeight() * GetRPAWeight();
+      }
+
+      //Override DefaultCVUniverse weight functions to used cached values as starting point.
+      //This way, systematic universes only redo calculations they shift.
+      virtual double GetMinosEfficiencyWeight() const override
+      {
+        return fWeightCache->minosEff;
+      }
+
+      virtual double GetGenieWeight() const override
+      {
+        return fWeightCache->GENIE;
+      }
+
+      virtual double GetFluxAndCVWeight(double Enu = -99. /*GeV*/, int nu_pdg = -99) const override
+      {
+        return fWeightCache->fluxAndCV;
+      }
+
+      virtual double Get2p2hWeight() const override
+      {
+        return fWeightCache->mec;
+      }
+
+      virtual double GetRPAWeight() const override
+      {
+        return fWeightCache->rpa;
       }
 
       //TODO: Turn neutron candidates back on when I'm ready to try my multiplicity analysis
@@ -138,6 +190,8 @@ namespace evt
 
     //Implementation details that not even my custom universes should ever see.
     private:
+      weightCache* fWeightCache; //Central reference point for CV's weights
+
       //"Abandon all hope ye who enter here."
       template <class CAND, class TUPLE, size_t ...INDICES>
       std::vector<CAND> Get_impl(const TUPLE tuple, std::index_sequence<INDICES...> /*indices*/) const
