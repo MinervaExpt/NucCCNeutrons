@@ -424,7 +424,7 @@ int main(const int argc, const char** argv)
 
   if(options->isMC())
   {
-    util::Table<6> truthSummary({"Cut Name", "Total Weight", "Overall \% Efficiency", "Overall \% Purity", "Relative \% Efficiency", "Relative \% Sample Left"});
+    util::Table<6> truthSummary({"Cut Name", "Total Weight", "\% Eff", "\% Purity", "Relative \% Eff", "Relative \% All"});
 
     double prevSignal = sumSignal;
     int prevTotal = nEntriesTotal;
@@ -438,7 +438,7 @@ int main(const int argc, const char** argv)
 
     std::ofstream tableFile(tableName);
     truthSummary.print(tableFile);
-    truthSummary.print(std::cout);
+    truthSummary.print(std::cout) << "\n";
   }
   else
   {
@@ -453,7 +453,7 @@ int main(const int argc, const char** argv)
 
     std::ofstream tableFile(tableName);
     recoSummary.print(tableFile);
-    recoSummary.print(std::cout);
+    recoSummary.print(std::cout) << "\n";
   }
 
   //Final Write()s to output file
