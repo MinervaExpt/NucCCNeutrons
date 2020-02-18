@@ -61,7 +61,7 @@ namespace ana
     const neutrons weightPerNeutron = weight.in<events>();
 
     //Physics objects I'll need
-    const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_FS_index());
+    const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron());
     const auto fs = event.Get<FSPart>(event.GetFSPDG_code(), event.GetFSenergy(), event.GetFSangle_wrt_z());
     const auto vertex = event.GetVtx();
 
@@ -71,10 +71,13 @@ namespace ana
     {
       if(fCuts.countAsReco(cand, vertex))
       {
-        int pdg = std::numeric_limits<int>::max();
+        int pdg = -1; //-1 represents "Other".  Thsi happens when I couldn't find a parent PDG code.
+                      //I think that means either overlay or cross-talk.
         if(cand.FS_index >= 0)
         {
           pdg = fs[cand.FS_index].PDGCode;
+          //Check for "GEANT neutron"s: FS particles that weren't neutrons but produced neutrons that I detected.
+          if(pdg != 2112 && cand.dist_to_edep_as_neutron > 0_mm) pdg = std::numeric_limits<int>::max();
           if(fCuts.countAsTruth(fs[cand.FS_index])) FSWithCands.insert(cand.FS_index);
         }
 

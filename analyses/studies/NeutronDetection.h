@@ -48,6 +48,7 @@ namespace ana
         mm transverse; //Transverse distance from the z axis of the detector
         ns time; //Time of earliest Cluster in this candidate
         int FS_index; //Mapping from a Candidate to an FSPart by index in the array of FSParts
+        mm dist_to_edep_as_neutron; //Distance parent and ancestors travelled that were neutrons
       };
 
       //Format for FS particle information.
