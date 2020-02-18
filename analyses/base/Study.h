@@ -66,7 +66,7 @@ namespace ana
       //Optional function called once per job after the last file in the event loop.
       //This is a good place to call syncCVHistos() or Scale() by numbers besides POT.
       //POT processed should be in the output histogram file.
-      virtual void afterAllFiles();
+      virtual void afterAllFiles(const events /*passedSelection*/);
 
       //Function for implementing the event loop.  Do not use in derived classes.
       bool passesCuts(const evt::CVUniverse& event);

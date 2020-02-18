@@ -96,7 +96,7 @@ namespace ana
         fBackgrounds[background].Fill(&event, fVar.reco(event), weight);
       }
 
-      virtual void afterAllFiles() override
+      virtual void afterAllFiles(const events /*passedSelection*/) override
       {
         fMigration->SyncCVHistos();
         fEfficiencyNum->SyncCVHistos();

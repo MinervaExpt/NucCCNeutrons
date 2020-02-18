@@ -447,10 +447,11 @@ int main(const int argc, const char** argv)
   }
 
   //Give Studies a chance to syncCVHistos()
-  signal->afterAllFiles();
+  const events totalPassedCuts = (sidebandCuts.empty()?recoCuts:sidebandCuts).back()->totalPassed();
+  signal->afterAllFiles(totalPassedCuts);
   for(auto& cutGroup: sidebands)
   {
-    for(auto& sideband: cutGroup.second) sideband->afterAllFiles();
+    for(auto& sideband: cutGroup.second) sideband->afterAllFiles(totalPassedCuts);
   }
 
   //Print the cut table to STDOUT

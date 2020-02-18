@@ -29,7 +29,7 @@ namespace ana
       virtual void mcSignal(const evt::CVUniverse& event, const events weight) override;
 
       //Normalize fPDGToObservables and syncCVHistos()
-      virtual void afterAllFiles() override;
+      virtual void afterAllFiles(const events passedSelection) override;
 
       //Do nothing for backgrounds, the Truth tree, and data
       virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
@@ -37,9 +37,6 @@ namespace ana
       virtual void data(const evt::CVUniverse& /*event*/) override {}; //TODO: Do I want to plot candidate observables in data?
 
     private:
-      //Total number of events seen in mcSignal().  Used to normalize fPDGToObservables.
-      double fEventsSeen;
-
       //Cuts that decide whether a Candidate or FSPart should be counted
       ana::NeutronMultiplicity fCuts;
 

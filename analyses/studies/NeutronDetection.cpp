@@ -40,7 +40,6 @@ namespace ana
 {
   NeutronDetection::NeutronDetection(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
                                      std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
-                                                                                                   fEventsSeen(0),
                                                                                                    fCuts(config["variable"]),
                                                                                                    fPDGToObservables(pdgCategories, dir, "", "Reco", univs,
                                                                                                                      config["binning"]["edep"].as<std::vector<double>>(),
@@ -60,10 +59,6 @@ namespace ana
   {
     //Cache weight for each universe
     const neutrons weightPerNeutron = weight.in<events>();
-
-    //Even if there are no neutron candidates in this event, it's an event
-    //that passed the cuts to get here.
-    fEventsSeen += weightPerNeutron.in<neutrons>();
 
     //Physics objects I'll need
     const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_FS_index());
@@ -95,11 +90,11 @@ namespace ana
     }
   }
 
-  void NeutronDetection::afterAllFiles()
+  void NeutronDetection::afterAllFiles(const events passedSelection)
   {
-    fPDGToObservables.visit([this](auto& hist)
+    fPDGToObservables.visit([passedSelection](auto& hist)
                             {
-                              hist.Scale(1./(double)fEventsSeen);
+                              hist.Scale(1./passedSelection.in<events>());
                               hist.SyncCVHistos();
                             });
 

@@ -32,7 +32,7 @@ namespace ana
     return std::all_of(fPasses.begin(), fPasses.end(), [&event](auto& cut) { return (*cut)(event); });
   }
 
-  void Study::afterAllFiles()
+  void Study::afterAllFiles(const events /*passedSelection*/)
   {
   }
 }

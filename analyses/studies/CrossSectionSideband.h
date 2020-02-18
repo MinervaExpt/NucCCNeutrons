@@ -82,7 +82,7 @@ namespace ana
       {
       }
 
-      virtual void afterAllFiles() override
+      virtual void afterAllFiles(const events /*passedSelection*/) override
       {
         fData->SyncCVHistos();
         fSignal->SyncCVHistos();
