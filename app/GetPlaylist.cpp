@@ -124,7 +124,7 @@ namespace app
                                + " in a file named" + fileName + " to check its playlist.");
     }
 
-    const int run = PlotUtils::TreeWrapper(tree).GetValue((isMC?"ev":"mc") + std::string("_run"), 0);
+    const int run = PlotUtils::TreeWrapper(tree).GetValue((isMC?"mc":"ev") + std::string("_run"), 0);
 
     const auto found = ::runNumberToPlaylist.lower_bound(run);
     if(found != ::runNumberToPlaylist.end()) return found->second;

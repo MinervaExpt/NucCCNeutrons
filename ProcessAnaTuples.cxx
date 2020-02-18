@@ -122,6 +122,8 @@ int main(const int argc, const char** argv)
   double sumWeights = 0;
   double sumSignal = 0;
   size_t nEntriesTotal = 0;
+  double anaToolSignal = 0;
+  double truthTotal = 0;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
   constexpr auto anaTupleName = "NucCCNeutron";
@@ -244,7 +246,6 @@ int main(const int argc, const char** argv)
 
         //MC loop
         const size_t nMCEntries = anaTuple.GetEntries();
-        nEntriesTotal += nMCEntries;
         for(auto& compat: groupedUnivs)
         {
           for(auto& univ: compat) univ->SetTree(&anaTuple);
@@ -265,7 +266,7 @@ int main(const int argc, const char** argv)
           weights.SetEntry(*cv);
           double weightForCuts = ::getWeight(reweighters, *cv).in<events>();
           sumWeights += weightForCuts;
-          if(::requireAll(truthSignal, *cv)) sumSignal += weightForCuts;
+          if(::requireAll(truthSignal, *cv)) anaToolSignal += weightForCuts;
 
           for(const auto& compat: groupedUnivs)
           {
@@ -356,6 +357,15 @@ int main(const int argc, const char** argv)
 
           cv->SetEntry(entry);
           weights.SetEntry(*cv);
+
+          const double truthWeight = ::getWeight(reweighters, *cv).in<events>();
+          truthTotal += truthWeight;
+
+          //Use number of events in efficiency denominator for efficiencies in Cut table.
+          if(::requireAll(truthPhaseSpace, *cv) && ::requireAll(truthSignal, *cv))
+          {
+            sumSignal += truthWeight;
+          }
 
           for(const auto& compat: groupedUnivs)
           {
@@ -450,20 +460,22 @@ int main(const int argc, const char** argv)
 
   if(options->isMC())
   {
-    util::Table<6> truthSummary({"Cut Name", "Total Weight", "\% Eff", "\% Purity", "Relative \% Eff", "Relative \% All"});
+    util::Table<6> truthSummary({"Cut Name", "Events", "\% Eff", "\% Purity", "Relative \% Eff", "Relative \% All"});
 
-    double prevSignal = sumSignal;
-    int prevTotal = nEntriesTotal;
+    truthSummary.appendRow("AnaTool", sumWeights, anaToolSignal / sumSignal * 100., anaToolSignal / (truthTotal - sumSignal) * 100., anaToolSignal / sumSignal * 100., sumWeights / truthTotal * 100.);
+
+    double prevSignal = anaToolSignal;
+    double prevTotal = sumWeights;
     for(const auto& cut: recoCuts)
     {
-      truthSummary.appendRow(cut->name(), cut->signalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
+      truthSummary.appendRow(cut->name(), cut->totalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
       prevSignal = cut->signalPassed();
       prevTotal = cut->totalPassed();
     }
 
     for(const auto& cut: sidebandCuts)
     {
-      truthSummary.appendRow(cut->name(), cut->signalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
+      truthSummary.appendRow(cut->name(), cut->totalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
       prevSignal = cut->signalPassed();
       prevTotal = cut->totalPassed();
     }
@@ -475,6 +487,8 @@ int main(const int argc, const char** argv)
   else
   {
     util::Table<3> recoSummary({"Cut Name", "Total Entries", "Relative \% Sample Left"});
+
+    recoSummary.appendRow("AnaTool", nEntriesTotal, 100.);
 
     int prevSampleLeft = nEntriesTotal;
     for(const auto& cut: recoCuts)

@@ -224,7 +224,7 @@ namespace app
 
   std::vector<std::unique_ptr<model::Model>> setupModels(const YAML::Node& config)
   {
-    if(config.as<std::map<std::string, YAML::Node>>().empty())
+    if(config.size() == 0)
     {
       std::cerr << "You didn't set up any models!  There's one non-physical"
                 << "case where you might want to do this: if you are "

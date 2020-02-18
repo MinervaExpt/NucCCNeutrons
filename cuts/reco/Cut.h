@@ -36,7 +36,7 @@ namespace reco
 
       //Access to Cut performance statistics
       inline double signalPassed() const { return fSignalPassed; }
-      inline size_t totalPassed() const { return fTotalPassed; }
+      inline double totalPassed() const { return fTotalPassed; }
       inline const std::string& name() const { return fName; }
 
       template <class DERIVED>

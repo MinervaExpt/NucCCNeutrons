@@ -97,12 +97,13 @@ namespace evt
       //Truth branches
       virtual MeV GetTruthQ3() const 
       {
-        const auto fsP = Get<units::LorentzVector<MeV>>(GetVec<double>("mc_FSPartPx"), GetVec<double>("mc_FSPartPy"), GetVec<double>("mc_FSPartPz"), GetVec<double>("mc_FSPartE"));
+        /*const auto fsP = Get<units::LorentzVector<MeV>>(GetVec<double>("mc_FSPartPx"), GetVec<double>("mc_FSPartPy"), GetVec<double>("mc_FSPartPz"), GetVec<double>("mc_FSPartE"));
 
         const units::LorentzVector<MeV> nuP = GetVec<double>("mc_incomingPartVec");
         const auto sumFSP = std::accumulate(fsP.begin(), fsP.end(), units::LorentzVector<MeV>{0, 0, 0, 0});
         const auto q3 = (nuP - sumFSP).p().mag();
-        return q3;
+        return q3;*/
+        return Getq3True();
       }
       virtual vertex_t GetTruthVtx() const { return vertex_t(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
