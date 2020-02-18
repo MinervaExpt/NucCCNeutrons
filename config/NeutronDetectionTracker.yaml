@@ -8,6 +8,8 @@
 #       
 #Author: Andrew Olivier aolivier@ur.rochester.edu
 
+model: *MnvGENIEv1
+
 app:
   #TODO: candidate algorithm and other such options
 

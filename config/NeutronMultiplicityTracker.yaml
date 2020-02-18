@@ -8,13 +8,7 @@
 #       
 #Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#TODO: Put this combination of models in its' own header and call it MnvGENIEv1
-model:
-  Flux: !FluxAndCV
-  GENIE: !GENIE
-  MINOSEfficiency: !MINOSEfficiency
-  RPASuppression: !RPA
-  Valencia2p2h: !2p2h
+model: *MnvGENIEv1
 
 app:
   #TODO: candidate algorithm and other such options
