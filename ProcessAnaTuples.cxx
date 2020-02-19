@@ -136,10 +136,6 @@ int main(const int argc, const char** argv)
                                             //list of files to process, prepares a file for histograms, and puts the configuration
                                             //file together.  See CmdLine.h for more details.
 
-    //Set up other application options
-    const auto& appOptions = options->ConfigFile()["app"];
-    const auto blobAlg = appOptions["BlobAlg"].as<std::string>("proximity");
-
     //The file where I will put histrograms I produce.
     //TODO: I learned when helping Christian that I can't use TFile::Write() to write
     //      MnvH1Ds' plots because MnvH1D insists on deleteing its own TH1Ds.  I've got
@@ -156,7 +152,7 @@ int main(const int argc, const char** argv)
     sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
     cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
-    reweighters = app::setupModels(options->ConfigFile()["model"]);
+    reweighters = app::setupModels(options->ConfigFile()["model"]); //This MUST come after setting up universes because of the static variables that DefaultCVUniverse relies on
   }
   catch(const std::runtime_error& e)
   {

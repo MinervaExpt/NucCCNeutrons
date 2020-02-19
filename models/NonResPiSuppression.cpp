@@ -13,7 +13,7 @@ namespace model
 {
   NonResPiSuppression::NonResPiSuppression(const YAML::Node& config): Model(config)
   {
-    PlotUtils::DefaultCVUniverse::UseNonResPiReweight();
+    PlotUtils::DefaultCVUniverse::SetNonResPiReweight(true);
   }
 
   events NonResPiSuppression::GetWeight(const evt::CVUniverse& /*univ*/) const

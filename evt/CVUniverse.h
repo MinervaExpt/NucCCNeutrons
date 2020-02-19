@@ -24,13 +24,13 @@
 #define blobReco(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    return GetVec<TYPE>((m_blobAlg + "_" #BRANCH).c_str());\
+    return GetVec<TYPE>((blobAlg + "_" #BRANCH).c_str());\
   }
 
 #define blobTruth(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    return GetVec<TYPE>(("truth_" + m_blobAlg + "_" #BRANCH).c_str());\
+    return GetVec<TYPE>(("truth_" + blobAlg + "_" #BRANCH).c_str());\
   }
 
 #define fs(BRANCH, TYPE)\
@@ -65,6 +65,10 @@ namespace evt
     public:
       CVUniverse(/*const std::string& blobAlg,*/ PlotUtils::ChainWrapper* chw, const double nsigma = 0); //TODO: Get away from ChainWrapper?
       virtual ~CVUniverse() = default;
+
+      //Configuration interfaces.  The design of the NSF prevents me from
+      //doing all configuration in the constructor.
+      inline static void SetBlobAlg(const std::string& newAlg) { blobAlg = newAlg; }
 
       //Too bad this can't be a constructor argument...
       void setWeightCache(weightCache& cache)
@@ -223,7 +227,7 @@ namespace evt
 
     protected:
       //Name of the blob algorithm to use
-      const std::string m_blobAlg;
+      static std::string blobAlg;
   };
 }
 
