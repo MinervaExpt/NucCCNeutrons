@@ -7,6 +7,7 @@ MnvGENIEv1: &MnvGENIEv1
   MINOSEfficiency: !MINOSEfficiency
   RPASuppression: !RPA
   Valencia2p2h: !2p2h
+  NonResPiSuppression: !NonResPiSuppression
 
 ForgotToReweight: &ForgotToReweight
 

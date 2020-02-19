@@ -179,7 +179,6 @@ namespace app
     DefaultCVUniverse::SetPlaylist(options.playlist());
     DefaultCVUniverse::SetAnalysisNuPDG(-14); //TODO: Get this from the user somehow
     DefaultCVUniverse::SetNuEConstraint(false); //No nu-e constraint for antineutrino mode yet
-    DefaultCVUniverse::SetNonResPiReweight(false);
 
     if(isMC)
     {
