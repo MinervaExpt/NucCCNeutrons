@@ -107,10 +107,10 @@ namespace ana
 
   NeutronDetection::Observables::Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
                                              const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& zBins,
-                                             const std::vector<double>& betaBins): fEDeps((name + "EDeps").c_str(), (title + ";Energy Deposit;candidates per event").c_str(), edepBins, univs),
-                                                                                   fAngles((name + "Angles").c_str(), (title + ";Angle w.r.t. Z Axis [radians];candidates per event").c_str(), angleBins, univs),
-                                                                                   fBeta((name + "#beta").c_str(), (title + ";#beta;candidates per event").c_str(), betaBins, univs),
-                                                                                   fZDistFromVertex((name + "ZDistFromVertex").c_str(), (title + ";Z Distance;candidates per event").c_str(), zBins, univs)
+                                             const std::vector<double>& betaBins): fEDeps((name + "EDeps").c_str(), (title + " Energy Deposit;candidates / event;").c_str(), edepBins, univs),
+                                                                                   fAngles((name + "Angles").c_str(), (title + " Angle w.r.t. Z Axis [radians];candidates / event;").c_str(), angleBins, univs),
+                                                                                   fBeta((name + "#beta").c_str(), (title + " #beta;candidates / event;").c_str(), betaBins, univs),
+                                                                                   fZDistFromVertex((name + "ZDistFromVertex").c_str(), (title + " Z Distance;candidates / event;").c_str(), zBins, univs)
   {
   }
 
