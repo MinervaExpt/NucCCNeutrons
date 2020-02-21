@@ -27,7 +27,6 @@ namespace model
 namespace
 {
   static model::WithNoArgs<&evt::CVUniverse::GetMinosEfficiencyWeight>::Registrar reg_MINOS("MINOSEfficiency");
-  static model::WithNoArgs<&evt::CVUniverse::GetGenieWeight>::Registrar reg_GENIE("GENIE");
   static model::WithNoArgs<&evt::CVUniverse::GetRPAWeight>::Registrar reg_RPA("RPA");
   static model::WithNoArgs<&evt::CVUniverse::Get2p2hWeight>::Registrar reg_2p2h("2p2h");
 }
