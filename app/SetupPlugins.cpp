@@ -179,7 +179,6 @@ namespace app
     DefaultCVUniverse::SetPlaylist(options.playlist());
     DefaultCVUniverse::SetAnalysisNuPDG(-14); //TODO: Get this from the user somehow
     DefaultCVUniverse::SetNuEConstraint(false); //No nu-e constraint for antineutrino mode yet
-    DefaultCVUniverse::SetNonResPiReweight(false); //This may be overridden by a reweighter.  It just needs a default value here. 
 
     //"global" configuration for algorithms specific to my analysis
     evt::CVUniverse::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));
@@ -235,6 +234,7 @@ namespace app
                 << "I'm going to assume that's what you're doing and keep "
                 << "going with a weight of 1 for every event.\n"
                 << "YOU HAVE BEEN WARNED!\n";
+      DefaultCVUniverse::SetNonResPiReweight(false); //I have to give this a default value if the GENIE reweight isn't set up.  It's an error to run without setting up either a GENIE reweight or no reweights at all.
     }
 
     std::vector<std::unique_ptr<model::Model>> models;
