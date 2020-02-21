@@ -79,6 +79,7 @@ namespace evt
       //DefaultCVUniverse interfaces
       //This is really used as "hypothesis name" for NeutrinoInt-based branches.
       virtual std::string GetAnaToolName() const override { return "CCNeutrons"; }
+      virtual double GetRecoilEnergy() const override { return GetDouble("CCNeutrons_recoilE"); }
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
       //The user is responsible for deleting m_chw as in its normal usage.
@@ -91,7 +92,8 @@ namespace evt
       //TODO: Fix branches that come from derived values.  I need to calculate them from the most
       //      basic values I can find instead for the NS Framework.
       //Reco branches
-      virtual MeV GetQ3() const { return GetDouble("CCNeutrons_q3"); }
+      virtual MeV GetQ3() const { return GetDouble("CCNeutrons_q3"); } //TODO: I think this branch is derived from recoilE and Q^2
+      virtual MeV GetRecoilE() const { return GetRecoilEnergy(); } //Put units on the NS Framework
       virtual vertex_t GetVtx() const { return vertex_t(GetVec<double>("vtx")); }
       virtual ns GetMINOSTrackDeltaT() const { return GetDouble("minos_minerva_track_deltaT"); }
       virtual int GetNTracks() const { return GetInt("n_tracks"); }
@@ -99,24 +101,18 @@ namespace evt
       virtual units::LorentzVector<MeV> GetMuonP() const { return GetMuon4V(); }
 
       //Truth branches
-      virtual MeV GetTruthQ3() const 
-      {
-        /*const auto fsP = Get<units::LorentzVector<MeV>>(GetVec<double>("mc_FSPartPx"), GetVec<double>("mc_FSPartPy"), GetVec<double>("mc_FSPartPz"), GetVec<double>("mc_FSPartE"));
-
-        const units::LorentzVector<MeV> nuP = GetVec<double>("mc_incomingPartVec");
-        const auto sumFSP = std::accumulate(fsP.begin(), fsP.end(), units::LorentzVector<MeV>{0, 0, 0, 0});
-        const auto q3 = (nuP - sumFSP).p().mag();
-        return q3;*/
-        return Getq3True();
-      }
+      virtual MeV GetTruthQ3() const { return Getq3True(); }
+      virtual MeV GetTruthQ0() const { return Getq0True(); }
       virtual vertex_t GetTruthVtx() const { return vertex_t(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
       virtual units::LorentzVector<GeV> GetTruthPmu() const { return momentum_t(GetVec<double>("mc_primFSLepton")); }
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
 
+      //TODO: Deprecate this function with reweighter feature?
       virtual events GetWeight() const
       {
         //Rob told me that this is MnvGENIE v1.1 on 2/11/2020
+        //TODO: I also need the non-resonant pion reweight for MnvGENIEv1
         return GetMinosEfficiencyWeight() * GetGenieWeight() * GetFluxAndCVWeight() * Get2p2hWeight() * GetRPAWeight();
       }
 
