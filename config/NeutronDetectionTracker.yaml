@@ -37,7 +37,7 @@ cuts:
       MuonMomentum: !MuonMomentum
         min: !GeV 2
       TrackAngle: !TrackAngle
-        max: 20 #degrees; stricter constraint for the targets
+        max: !degress 20 #stricter constraint for the targets
     signal:
       Antineutrino: !IsAntineutrino
       LowQ3: &Q3Range !Q3Range
@@ -54,7 +54,7 @@ cuts:
       min: !ns -40
       max: !ns 110
     TrackAngle: !TrackAngle
-      max: 20 #degrees; stricter constraint for the targets
+      max: !degrees 20 #stricter constraint for the targets
     MuonMomentum: !MuonMomentum
       min: !GeV 2
     Antineutrino: !IsAntineutrino
