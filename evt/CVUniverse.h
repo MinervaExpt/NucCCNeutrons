@@ -103,6 +103,7 @@ namespace evt
       //Truth branches
       virtual MeV GetTruthQ3() const { return Getq3True(); }
       virtual MeV GetTruthQ0() const { return Getq0True(); }
+      virtual GeV GetTruthEAvailable() const;
       virtual units::LorentzVector<mm> GetTruthVtx() const { return units::LorentzVector<mm>(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
       virtual units::LorentzVector<GeV> GetTruthPmu() const { return units::LorentzVector<GeV>(GetVec<double>("mc_primFSLepton")); }
