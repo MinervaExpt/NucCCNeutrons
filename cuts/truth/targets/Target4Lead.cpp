@@ -14,7 +14,7 @@
 //Register Target4Carbon for user selection
 namespace
 {
-  static truth::Cut::Registrar<truth::OneSectionTarget<6>> Target4Carbon_reg("Target4Carbon");
+  static truth::Cut::Registrar<truth::OneSectionTarget<82>> Target4Carbon_reg("Target4Lead");
 }
 
 #endif //TRUTH_TARGET4CARBON_H

@@ -26,7 +26,7 @@ namespace reco
 
 namespace
 {
-  static plgn::Registrar<reco::Cut, reco::OneSectionTarget, std::string&> Target4Reco_reg("Target4Carbon");
+  static plgn::Registrar<reco::Cut, reco::OneSectionTarget, std::string&> Target4Reco_reg("Target4Lead");
 
   static plgn::Registrar<reco::Cut, reco::OneSectionTarget, std::string&> WaterReco_reg("Water");
 }
