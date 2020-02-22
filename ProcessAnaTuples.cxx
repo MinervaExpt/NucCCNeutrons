@@ -262,7 +262,7 @@ int main(const int argc, const char** argv)
           weights.SetEntry(*cv);
           double weightForCuts = ::getWeight(reweighters, *cv).in<events>();
           sumWeights += weightForCuts;
-          if(::requireAll(truthSignal, *cv)) anaToolSignal += weightForCuts;
+          if(::requireAll(truthSignal, *cv) && ::requireAll(truthPhaseSpace, *cv)) anaToolSignal += weightForCuts;
 
           for(const auto& compat: groupedUnivs)
           {
@@ -271,8 +271,9 @@ int main(const int argc, const char** argv)
 
             //MC loop
             const bool isTruthSignal = ::requireAll(truthSignal, event);
+            const bool isTruthForCuts = isTruthSignal && ::requireAll(truthPhaseSpace, event);
 
-            if(::requireAll(recoCuts, event, weightForCuts, isTruthSignal))
+            if(::requireAll(recoCuts, event, weightForCuts, isTruthForCuts))
             {
               //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
               //for sidebands defined by multiple cuts.
@@ -282,7 +283,7 @@ int main(const int argc, const char** argv)
               for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
               {
                 const auto& cut = sidebandCuts[whichCut];
-                if(!(*cut)(event, weightForCuts, isTruthSignal))
+                if(!(*cut)(event, weightForCuts, isTruthForCuts))
                 {
                   passedReco.set(whichCut, false);
                   weightForCuts = 0; //Cuts after this one wouldn't normally be called since we're in a sideband now
