@@ -4,11 +4,10 @@
 MnvGENIEv1: &MnvGENIEv1
   Flux: !FluxAndCV
   GENIE: !GENIE
-    UseNonResPion: true
+    UseNonResonantPion: true
   MINOSEfficiency: !MINOSEfficiency
   RPASuppression: !RPA
   Valencia2p2h: !2p2h
-  NonResPiSuppression: !NonResPiSuppression
 
 ForgotToReweight: &ForgotToReweight
 
@@ -16,5 +15,5 @@ ForgotToReweight: &ForgotToReweight
 DefaultGENIE: &DefaultGENIE
   Flux: !FluxAndCV
   GENIE: !GENIE
-    UseNonResPion: false
+    UseNonResonantPion: false
   MINOSEfficiency: !MINOSEfficiency
