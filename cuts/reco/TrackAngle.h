@@ -28,7 +28,7 @@ namespace reco
       virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
-      double fMax;
+      degrees fMax;
   };
 }
 

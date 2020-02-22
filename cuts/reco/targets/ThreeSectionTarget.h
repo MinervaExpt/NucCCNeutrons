@@ -30,7 +30,7 @@ namespace reco
     template <int Z>
     struct impl
     {
-      inline static bool check(const vertex_t& vertex, const ROOT::Math::AxisAngle& /*rot*/, const mm /*mmToDivide*/)
+      inline static bool check(const units::LorentzVector<mm>& vertex, const ROOT::Math::AxisAngle& /*rot*/, const mm /*mmToDivide*/)
       {
         return vertex.x() < 0_mm;
       }
@@ -40,7 +40,7 @@ namespace reco
     template <>
     struct impl<6>
     {
-      inline static bool check(const vertex_t& vertex, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
+      inline static bool check(const units::LorentzVector<mm>& vertex, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
       {
         const mm local = (rot * (vertex.p().in<mm>())).y();
         return (local - mmToDivide) > 0_mm;
@@ -51,7 +51,7 @@ namespace reco
     template <>
     struct impl<82>
     {
-      inline static bool check(const vertex_t& vertex, const ROOT::Math::AxisAngle& /*rot*/, const mm /*mmToDivide*/)
+      inline static bool check(const units::LorentzVector<mm>& vertex, const ROOT::Math::AxisAngle& /*rot*/, const mm /*mmToDivide*/)
       {
         return vertex.x() > 0_mm;
       }

@@ -7,6 +7,9 @@
 #ifndef UNITS_VECTOR_H
 #define UNITS_VECTOR_H
 
+//util includes
+#include "util/units.h"
+
 //BaseUnits includes
 #include "units/units.h"
 
@@ -164,12 +167,12 @@ namespace units
       }
 
       //Trignonometry
-      unitless theta() const
+      radians theta() const
       {
         return acos(fZ.template in<SCALAR>() / mag().template in<SCALAR>());
       }
 
-      unitless phi() const
+      radians phi() const
       {
         return atan2(fX, fY);
       }

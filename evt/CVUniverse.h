@@ -94,7 +94,7 @@ namespace evt
       //Reco branches
       virtual MeV GetQ3() const { return GetDouble("CCNeutrons_q3"); } //TODO: I think this branch is derived from recoilE and Q^2
       virtual MeV GetRecoilE() const { return GetRecoilEnergy(); } //Put units on the NS Framework
-      virtual vertex_t GetVtx() const { return vertex_t(GetVec<double>("vtx")); }
+      virtual units::LorentzVector<mm> GetVtx() const { return units::LorentzVector<mm>(GetVec<double>("vtx")); }
       virtual ns GetMINOSTrackDeltaT() const { return GetDouble("minos_minerva_track_deltaT"); }
       virtual int GetNTracks() const { return GetInt("n_tracks"); }
       virtual int GetHelicity() const { return GetInt("CCNeutrons_nuHelicity"); }
@@ -103,9 +103,9 @@ namespace evt
       //Truth branches
       virtual MeV GetTruthQ3() const { return Getq3True(); }
       virtual MeV GetTruthQ0() const { return Getq0True(); }
-      virtual vertex_t GetTruthVtx() const { return vertex_t(GetVec<double>("mc_vtx")); }
+      virtual units::LorentzVector<mm> GetTruthVtx() const { return units::LorentzVector<mm>(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
-      virtual units::LorentzVector<GeV> GetTruthPmu() const { return momentum_t(GetVec<double>("mc_primFSLepton")); }
+      virtual units::LorentzVector<GeV> GetTruthPmu() const { return units::LorentzVector<GeV>(GetVec<double>("mc_primFSLepton")); }
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
 
       //TODO: Deprecate this function with reweighter feature?

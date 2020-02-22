@@ -28,7 +28,7 @@ namespace truth
       virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
-      double fMax;
+      degrees fMax;
   };
 }
 

@@ -71,18 +71,11 @@ DELCARE_RELATED_UNIT_WITH_YAML(cm, mm, 10, 1)
 
 DECLARE_UNIT_WITH_YAML(ns)
 
-DECLARE_UNIT_WITH_YAML(degrees)
+DECLARE_UNIT_WITH_YAML(radians)
+DELCARE_RELATED_UNIT_WITH_YAML(degrees, radians, 1800000000000000000, 31415926535897932)
 
 DECLARE_UNIT_WITH_YAML(events) //Base events on double so I can reweight
 
 DECLARE_UNIT_WITH_YAML(neutrons)
-
-//TODO: ROOT::Math::LorentzVector::mass2() returns just SCALAR which does not work with my unit library.
-//      Write some wrapper over LorentzVector?  For now, I'm providing my own bare-bones Lorentz vector class.
-//using vertex_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<mm>>;
-//using momentum_t = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<MeV>>;  //Dan's pretty sure truth lepton momentum is in MeV.  This matches the NS Framework.
-
-using vertex_t = units::LorentzVector<mm>;
-using momentum_t = units::LorentzVector<MeV>;
 
 #endif //NEUTRON_UNITS_H
