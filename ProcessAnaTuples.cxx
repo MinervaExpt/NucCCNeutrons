@@ -145,7 +145,16 @@ int main(const int argc, const char** argv)
 
     auto universes = app::getSystematics(nullptr, *options, options->isMC());
     backgrounds = app::setupBackgrounds(options->ConfigFile()["backgrounds"]);
-    signal = app::setupSignal(options->ConfigFile()["signal"], histDir, backgrounds, universes);
+
+    try
+    {
+      signal = app::setupSignal(options->ConfigFile()["signal"], histDir, backgrounds, universes);
+    }
+    catch(const std::runtime_error& e)
+    {
+      throw std::runtime_error(std::string("Failed to set up the signal Study:\n") + e.what());
+    }
+
     truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"]); //TODO: Tell the user which Cut failed
     truthSignal = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"]); //TODO: Tell the user which Cut failed
     recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
