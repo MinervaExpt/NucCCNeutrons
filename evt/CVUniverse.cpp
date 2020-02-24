@@ -8,6 +8,9 @@
 #include "evt/CVUniverse.h"
 #include "evt/EventID.h"
 
+//TODO: Remove me
+#include "evt/arachne.h"
+
 namespace evt
 {
   std::string CVUniverse::blobAlg = "mergedTejinBlobs";
@@ -36,14 +39,15 @@ namespace evt
     }
 
     //TODO: Remove me
-    /*if(ShortName() == "cv" && E_avail < 0.05_GeV && GetRecoilE() > 0.2_GeV)
+    if(ShortName() == "cv" && E_avail < 0.05_GeV && GetRecoilE() > 0.2_GeV)
     {
       std::cout << "Got a very small truth E_avail of " << E_avail << " while recoil energy reco is " << GetRecoilE() << ".  I used these particles:\n";
       for(const auto& fs: allFS) std::cout << "A " << fs.pdgCode << " with energy = " << fs.energy << "\n";
 
       const auto edeps = Getblob_edep();
-      std::cout << "Total neutron candidate energy deposit is " << std::accumulate(edeps.begin(), edeps.end(), 0_MeV);
-    }*/
+      std::cout << "Total neutron candidate energy deposit is " << std::accumulate(edeps.begin(), edeps.end(), 0_MeV) << "\n";
+      std::cout << "See this event at " << util::arachne(GetEventID(false), false) << "\n";
+    }
 
     return E_avail;
   }
