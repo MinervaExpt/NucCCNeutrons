@@ -19,7 +19,7 @@ namespace ana
   {
     using UNITS = decltype(std::declval<VARIABLE>().reco(std::declval<evt::CVUniverse>()));
 
-    using HIST = units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, UNITS, events>;
+    using HIST = PlotUtils::HistWrapper<evt::CVUniverse>;
     using HIST2D = units::WithUnits<PlotUtils::Hist2DWrapper<evt::CVUniverse>, UNITS, UNITS, events>;
 
     public:
@@ -30,14 +30,15 @@ namespace ana
       {
         fRecoVersusTrue = dir.make<HIST2D>("Reco" + fVar.name() + "VersusTrue", "Reco " + fVar.name() + " versus True;True " + fVar.name() + ";Reco " + fVar.name(),
                                            config["binning"].as<std::vector<double>>(), config["binning"].as<std::vector<double>>(), universes);
-        fResolution = dir.make<HIST>(fVar.name() + "Resolution", fVar.name() + " Resolution;(Reco " + fVar.name() + " - True " + fVar.name() + ")",
+        fResolution = dir.make<HIST>(fVar.name() + "Resolution", fVar.name() + " Resolution;#frac{Reco " + fVar.name() + " - True " + fVar.name() + "}{True " + fVar.name() + "};events",
                                      config["binning"].as<std::vector<double>>(), universes);
       }
 
       virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
       {
-        fRecoVersusTrue->Fill(&event, fVar.truth(event), fVar.reco(event), weight);
-        fResolution->Fill(&event, fVar.reco(event) - fVar.truth(event), weight);
+        const UNITS reco = fVar.reco(event), truth = fVar.truth(event);
+        fRecoVersusTrue->Fill(&event, truth, reco, weight);
+        if(truth.template in<UNITS>() > 0) fResolution->FillUniverse(&event, (reco - truth).template in<UNITS>()/truth.template in<UNITS>(), weight.in<events>());
       }
 
       //mcBackground failed the truth signal selection.
