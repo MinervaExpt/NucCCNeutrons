@@ -41,6 +41,8 @@
 
 namespace evt
 {
+  struct SliceID;
+
   struct weightCache
   {
     void SetEntry(PlotUtils::DefaultCVUniverse& cv)
@@ -87,6 +89,9 @@ namespace evt
 
       //TODO: Some of these branches could be moved to a .cpp file.  Then, changing branch names would
       //      only force this file's unit to recompile.
+
+      //Information about this event
+      SliceID GetEventID(const bool isData) const;
 
       //Hypothesis branches ported mostly from MECAnaTool
       //TODO: Fix branches that come from derived values.  I need to calculate them from the most
