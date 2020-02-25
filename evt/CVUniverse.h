@@ -157,6 +157,7 @@ namespace evt
       //Functions to retrieve per-candidate values in vector<>s.  Put them back together with get<>() in each Analysis.
       //Example: const auto cands = Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_earliest_time());
       blobReco(blob_edep, MeV)
+      blobReco(blob_calo_edep, MeV)
       blobReco(blob_transverse_dist_from_vertex, mm)
       blobReco(blob_first_muon_transverse, mm)
       blobReco(blob_zPos, mm)

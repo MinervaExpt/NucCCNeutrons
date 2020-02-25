@@ -19,7 +19,7 @@ namespace evt
   //PlotUtils interface in MeV
   double CVUniverse::GetRecoilEnergy() const
   {
-    const auto edeps = Getblob_edep();
+    const auto edeps = Getblob_calo_edep();
     return GetDouble("CCNeutrons_recoilE") - std::accumulate(edeps.begin(), edeps.end(), 0_MeV).in<MeV>();
   }
 
