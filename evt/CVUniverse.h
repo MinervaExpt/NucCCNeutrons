@@ -81,7 +81,7 @@ namespace evt
       //DefaultCVUniverse interfaces
       //This is really used as "hypothesis name" for NeutrinoInt-based branches.
       virtual std::string GetAnaToolName() const override { return "CCNeutrons"; }
-      virtual double GetRecoilEnergy() const override { return GetDouble("CCNeutrons_recoilE"); }
+      virtual double GetRecoilEnergy() const override;
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
       //The user is responsible for deleting m_chw as in its normal usage.

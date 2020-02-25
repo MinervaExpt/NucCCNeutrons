@@ -19,6 +19,13 @@ namespace evt
   {
   }
 
+  //PlotUtils interface in MeV
+  double CVUniverse::GetRecoilEnergy() const
+  {
+    const auto edeps = Getblob_edep();
+    return GetDouble("CCNeutrons_recoilE") - std::accumulate(edeps.begin(), edeps.end(), 0_MeV).in<MeV>();
+  }
+
   GeV CVUniverse::GetTruthEAvailable() const
   {
     //Information I'm going to need about an FS particle
@@ -46,7 +53,7 @@ namespace evt
 
       const auto edeps = Getblob_edep();
       std::cout << "Total neutron candidate energy deposit is " << std::accumulate(edeps.begin(), edeps.end(), 0_MeV) << "\n";
-      std::cout << "See this event at " << util::arachne(GetEventID(false), false) << "\n";
+      std::cout << "See this event at " << util::arachne(GetEventID(false), false) << "\n\n";
     }
 
     return E_avail;
@@ -55,8 +62,8 @@ namespace evt
   SliceID CVUniverse::GetEventID(const bool isData) const
   {
     SliceID id;
-    id.run = GetInt(((isData?"ev":"mv") + std::string("_run")).c_str());
-    id.subrun = GetInt(((isData?"ev":"mv") + std::string("_subrun")).c_str());
+    id.run = GetInt(((isData?"ev":"mc") + std::string("_run")).c_str());
+    id.subrun = GetInt(((isData?"ev":"mc") + std::string("_subrun")).c_str());
     id.gate = GetInt(isData?"ev_gate":"mc_nthEvtInFile");
     //TODO: Return a vector of SliceIDs instead?  A PhysicsEvent can be a combination of slices, but I've only ever seen 1 slice at a time in practice.
     id.slice = GetVecElemInt("slice_numbers", 0);
