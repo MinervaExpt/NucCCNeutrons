@@ -8,9 +8,6 @@
 #include "evt/CVUniverse.h"
 #include "evt/EventID.h"
 
-//TODO: Remove me
-#include "evt/arachne.h"
-
 namespace evt
 {
   std::string CVUniverse::blobAlg = "mergedTejinBlobs";
@@ -43,17 +40,6 @@ namespace evt
       if(abs(fs.pdgCode) == 211) E_avail += fs.energy - 139.57_MeV;
       else if(fs.pdgCode == 2212) E_avail += fs.energy - 938.3_MeV;
       else if(fs.pdgCode != 2112 && abs(fs.pdgCode) != 13) E_avail += fs.energy; //Don't count energy for an FS neutron.  It isn't availble for reconstruction.  Marvin doesn't seem to count the muon either.
-    }
-
-    //TODO: Remove me
-    if(ShortName() == "cv" && E_avail < 0.05_GeV && GetRecoilE() > 0.2_GeV)
-    {
-      std::cout << "Got a very small truth E_avail of " << E_avail << " while recoil energy reco is " << GetRecoilE() << ".  I used these particles:\n";
-      for(const auto& fs: allFS) std::cout << "A " << fs.pdgCode << " with energy = " << fs.energy << "\n";
-
-      const auto edeps = Getblob_edep();
-      std::cout << "Total neutron candidate energy deposit is " << std::accumulate(edeps.begin(), edeps.end(), 0_MeV) << "\n";
-      std::cout << "See this event at " << util::arachne(GetEventID(false), false) << "\n\n";
     }
 
     return E_avail;
