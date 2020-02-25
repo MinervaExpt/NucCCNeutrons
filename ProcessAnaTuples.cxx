@@ -488,7 +488,9 @@ int main(const int argc, const char** argv)
     }
 
     std::ofstream tableFile(tableName);
+    tableFile << "#" << pot_used << " POT\n";
     truthSummary.print(tableFile);
+    std::cout << "#" << pot_used << " POT\n";
     truthSummary.print(std::cout) << "\n";
   }
   else
@@ -511,7 +513,9 @@ int main(const int argc, const char** argv)
     }
 
     std::ofstream tableFile(tableName);
+    tableFile << "#" << pot_used << " POT\n";
     recoSummary.print(tableFile);
+    std::cout << "#" << pot_used << " POT\n";
     recoSummary.print(std::cout) << "\n";
   }
 
