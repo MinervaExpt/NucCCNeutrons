@@ -29,6 +29,7 @@
 #include "PlotUtils/ChainWrapper.h"
 #include "PlotUtils/GenieSystematics.h"
 #include "PlotUtils/FluxSystematics.h"
+#include "PlotUtils/MnvTuneSystematics.h"
 
 //c++ includes
 #include <algorithm>
@@ -193,6 +194,15 @@ namespace app
 
       auto genieSyst = PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chw);
       result.insert(genieSyst.begin(), genieSyst.end());
+
+      auto mecSyst = PlotUtils::Get2p2hSystematicsMap<evt::CVUniverse>(chw);
+      result.insert(mecSyst.begin(), mecSyst.end());
+
+      auto rpaSyst = PlotUtils::GetRPASystematicsMap<evt::CVUniverse>(chw);
+      result.insert(rpaSyst.begin(), rpaSyst.end());
+
+      /*auto lowQ2Syst = PlotUtils::GetLowQ2PiSystematicsMap<evt::CVUniverse>(chw);
+      result.insert(lowQ2Syst.begin(), lowQ2Syst.end());*/ //TODO: Is this systematic broken?
     }
 
     return result;
