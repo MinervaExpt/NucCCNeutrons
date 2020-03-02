@@ -69,6 +69,8 @@ namespace ana
                                         binning, universes);
         fEfficiencyDenom = dir.make<HIST>("EfficiencyDenominator", ("Efficiency Denominator;Truth " + fVar.name() + ";entries").c_str(),
                                           binning, universes);
+        fSelectedMCEvents = dir.make<HIST>("SelectedMCEvents", ("Selected Signal Events;Reco " + fVar.name() + ";entries").c_str(),
+                                           binning, universes);
       }
 
       virtual ~CrossSectionSignal() = default;
@@ -79,6 +81,7 @@ namespace ana
 
         fEfficiencyNum->Fill(&event, truth, weight);
         fMigration->Fill(&event, reco, truth, weight);
+        fSelectedMCEvents->Fill(&event, reco, weight);
       }
 
       virtual void truth(const evt::CVUniverse& event, const events weight) override
@@ -102,6 +105,7 @@ namespace ana
         fEfficiencyNum->SyncCVHistos();
         fEfficiencyDenom->SyncCVHistos();
         fBackgrounds.visit([](auto& hist) { hist.SyncCVHistos(); });
+        fSelectedMCEvents->SyncCVHistos();
       }
 
       using Registrar = Study::Registrar<CrossSectionSignal<VARIABLE>>;
@@ -116,6 +120,9 @@ namespace ana
       HIST* fEfficiencyDenom;
 
       util::Categorized<HIST, background_t> fBackgrounds; //Background event distributions in the reco signal region
+
+      //Not needed for a cross section.  Add() to fBackgrounds to get total reco event selection breakdown.
+      HIST* fSelectedMCEvents;
   };
 }
 
