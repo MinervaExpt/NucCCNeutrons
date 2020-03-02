@@ -119,8 +119,8 @@ int main(const int argc, const char** argv)
   decltype(recoCuts) sidebandCuts;
   std::vector<std::unique_ptr<model::Model>> reweighters;
 
-  double sumWeights = 0;
-  double sumSignal = 0;
+  double anaToolTotal = 0;
+  double truthSumSignal = 0;
   size_t nEntriesTotal = 0;
   double anaToolSignal = 0;
   double truthTotal = 0;
@@ -270,7 +270,7 @@ int main(const int argc, const char** argv)
           cv->SetEntry(entry);
           weights.SetEntry(*cv);
           double weightForCuts = ::getWeight(reweighters, *cv).in<events>();
-          sumWeights += weightForCuts;
+          anaToolTotal += weightForCuts;
           if(::requireAll(truthSignal, *cv) && ::requireAll(truthPhaseSpace, *cv)) anaToolSignal += weightForCuts;
 
           for(const auto& compat: groupedUnivs)
@@ -370,7 +370,7 @@ int main(const int argc, const char** argv)
           //Use number of events in efficiency denominator for efficiencies in Cut table.
           if(::requireAll(truthPhaseSpace, *cv) && ::requireAll(truthSignal, *cv))
           {
-            sumSignal += truthWeight;
+            truthSumSignal += truthWeight;
           }
 
           for(const auto& compat: groupedUnivs)
@@ -469,20 +469,20 @@ int main(const int argc, const char** argv)
   {
     util::Table<6> truthSummary({"Cut Name", "Events", "\% Eff", "\% Purity", "Relative \% Eff", "Relative \% All"});
 
-    truthSummary.appendRow("AnaTool", sumWeights, anaToolSignal / sumSignal * 100., anaToolSignal / truthTotal * 100., anaToolSignal / sumSignal * 100., sumWeights / truthTotal * 100.);
+    truthSummary.appendRow("AnaTool", anaToolTotal, anaToolSignal / truthSumSignal * 100., anaToolSignal / anaToolTotal * 100., anaToolSignal / truthSumSignal * 100., anaToolTotal / truthTotal * 100.);
 
     double prevSignal = anaToolSignal;
-    double prevTotal = sumWeights;
+    double prevTotal = anaToolTotal;
     for(const auto& cut: recoCuts)
     {
-      truthSummary.appendRow(cut->name(), cut->totalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
+      truthSummary.appendRow(cut->name(), cut->totalPassed(), cut->signalPassed() / truthSumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
       prevSignal = cut->signalPassed();
       prevTotal = cut->totalPassed();
     }
 
     for(const auto& cut: sidebandCuts)
     {
-      truthSummary.appendRow(cut->name(), cut->totalPassed(), cut->signalPassed() / sumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
+      truthSummary.appendRow(cut->name(), cut->totalPassed(), cut->signalPassed() / truthSumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
       prevSignal = cut->signalPassed();
       prevTotal = cut->totalPassed();
     }
