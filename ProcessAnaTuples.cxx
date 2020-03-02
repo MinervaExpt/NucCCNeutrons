@@ -469,7 +469,7 @@ int main(const int argc, const char** argv)
   {
     util::Table<6> truthSummary({"Cut Name", "Events", "\% Eff", "\% Purity", "Relative \% Eff", "Relative \% All"});
 
-    truthSummary.appendRow("AnaTool", sumWeights, anaToolSignal / sumSignal * 100., anaToolSignal / (truthTotal - sumSignal) * 100., anaToolSignal / sumSignal * 100., sumWeights / truthTotal * 100.);
+    truthSummary.appendRow("AnaTool", sumWeights, anaToolSignal / sumSignal * 100., anaToolSignal / truthTotal * 100., anaToolSignal / sumSignal * 100., sumWeights / truthTotal * 100.);
 
     double prevSignal = anaToolSignal;
     double prevTotal = sumWeights;
