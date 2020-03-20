@@ -187,36 +187,50 @@ int main(const int argc, const char** argv)
     {
       LOG_DEBUG("Loading " << fName)
       //Sanity checks on AnaTuple files
-      std::unique_ptr<TFile> tupleFile(TFile::Open(fName.c_str()));
-      if(tupleFile == nullptr)
+      double thisFilesPOT = 0;
+      try
       {
-        std::cerr << fName << ": No such file or directory.  Skipping this "
-                  << "file name.\n";
-        continue; //TODO: Don't use break if I can help it
-      }
+        std::unique_ptr<TFile> tupleFile(TFile::Open(fName.c_str()));
+        if(tupleFile == nullptr)
+        {
+          std::cerr << fName << ": No such file or directory.  Skipping this "
+                    << "file name.\n";
+          continue; //TODO: Don't use break if I can help it
+        }
+  
+        //TODO: Doesn't my ROOT error checking function throw an exception here?
+        if(app::IsMC(fName) != options->isMC())
+        {
+          std::cerr << "This job " << (options->isMC()?"is":"is not")
+                    << " processing MC files, but " << fName << " is a "
+                    << (app::IsMC(fName)?"MC":"data")
+                    << "file.  Skipping this file!\n";
+          continue; //TODO: Don't use break if I can help it
+        }
+  
+        auto metaTree = dynamic_cast<TTree*>(tupleFile->Get("Meta"));
+        if(!metaTree)
+        {
+          std::cerr << fName << " does not contain POT information!  This might be a merging failure.  Skipping this file.\n";
+          continue; //TODO: Don't use break if I can help it
+        }
 
-      //TODO: Doesn't my ROOT error checking function throw an exception here?
-      if(app::IsMC(fName) != options->isMC())
+        //Get POT for this file, but don't accumulate it until I've found the
+        //other trees I need.
+        PlotUtils::TreeWrapper meta(metaTree);
+        thisFilesPOT = meta.GetValue("POT_Used", 0);
+      }
+      catch(const ROOT::warning& e)
       {
-        std::cerr << "This job " << (options->isMC()?"is":"is not")
-                  << " processing MC files, but " << fName << " is a "
-                  << (app::IsMC(fName)?"MC":"data")
-                  << "file.  Skipping this file!\n";
-        continue; //TODO: Don't use break if I can help it
+        std::cerr << e.what() << "\nInterrupting loading a file in the event loop, so you probably got incomplete results!\n";
+        return app::CmdLine::ExitCode::IOError;
       }
-
-      auto metaTree = dynamic_cast<TTree*>(tupleFile->Get("Meta"));
-      if(!metaTree)
+      catch(const ROOT::error& e)
       {
-        std::cerr << fName << " does not contain POT information!  This might be a merging failure.  Skipping this file.\n";
-        continue; //TODO: Don't use break if I can help it
+        std::cerr << e.what() << "\nInterrupting loading a file in the event loop, so you probably got incomplete results!\n";
+        return app::CmdLine::ExitCode::IOError;
       }
-
-      //Get POT for this file, but don't accumulate it until I've found the
-      //other trees I need.
-      PlotUtils::TreeWrapper meta(metaTree);
-      const double thisFilesPOT = meta.GetValue("POT_Used", 0);
-
+  
       //TODO: Make this a TreeWrapper to avoid opening fName twice
       PlotUtils::ChainWrapper anaTuple(anaTupleName);
 
@@ -437,12 +451,12 @@ int main(const int argc, const char** argv)
   //the place to implement that behavior.
   catch(const ROOT::warning& e)
   {
-    std::cerr << e.what() << "\nExiting immediately, so you probably got incomplete results!\n";
+    std::cerr << e.what() << "\nInterrupting the event loop, so you probably got incomplete results!\n";
     return app::CmdLine::ExitCode::IOError;
   }
   catch(const ROOT::error& e)
   {
-    std::cerr << e.what() << "\nExiting immediately, so you probably got incomplete results!\n";
+    std::cerr << e.what() << "\nInterrupting the event loop, so you probably got incomplete results!\n";
     return app::CmdLine::ExitCode::IOError;
   }
   catch(const std::runtime_error& e)
@@ -453,11 +467,34 @@ int main(const int argc, const char** argv)
   }
 
   //Give Studies a chance to syncCVHistos()
-  const events totalPassedCuts = (sidebandCuts.empty()?recoCuts:sidebandCuts).back()->totalPassed();
-  signal->afterAllFiles(totalPassedCuts);
-  for(auto& cutGroup: sidebands)
+  try
   {
-    for(auto& sideband: cutGroup.second) sideband->afterAllFiles(totalPassedCuts);
+    events totalPassedCuts;
+    if(!sidebandCuts.empty()) totalPassedCuts = sidebandCuts.back()->totalPassed();
+    else if(!recoCuts.empty()) totalPassedCuts = recoCuts.back()->totalPassed();
+    else totalPassedCuts = anaToolTotal;
+
+    signal->afterAllFiles(totalPassedCuts);
+    for(auto& cutGroup: sidebands)
+    {
+      for(auto& sideband: cutGroup.second) sideband->afterAllFiles(totalPassedCuts);
+    }
+  }
+  catch(const ROOT::warning& e)
+  {
+    std::cerr << e.what() << "\nInterrupting afterAllFiles(), so you probably got incomplete results!\n";
+    return app::CmdLine::ExitCode::IOError;
+  }
+  catch(const ROOT::error& e)
+  {
+    std::cerr << e.what() << "\nInterrupting afterAllFiles(), so you probably got incomplete results!\n";
+    return app::CmdLine::ExitCode::IOError;
+  }
+  catch(const std::runtime_error& e)
+  {
+    std::cerr << "Got a fatal std::runtime_error while running afterAllFiles():\n"
+              << e.what() << "\nExiting immediately, so you probably got incomplete results!\n";
+    return app::CmdLine::ExitCode::AnalysisError;
   }
 
   //Print the cut table to STDOUT
