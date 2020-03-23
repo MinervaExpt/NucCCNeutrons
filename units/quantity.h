@@ -133,11 +133,17 @@ namespace units
       {
         return quantity<typename buildProduct<BASE_TAG, RHS_UNIT>::result, std::ratio_multiply<PREFIX, OTHER_PREFIX>, FLOATING_POINT>(fValue * rhs.template in<quantity<RHS_UNIT, OTHER_PREFIX, FLOATING_POINT>>());
       }
-  
+
       template <class RHS_UNIT, class OTHER_PREFIX>
       quantity<typename buildRatio<BASE_TAG, RHS_UNIT>::result, std::ratio_divide<PREFIX, OTHER_PREFIX>, FLOATING_POINT> operator /(const quantity<RHS_UNIT, OTHER_PREFIX, FLOATING_POINT> rhs) const
       {
         return quantity<typename buildRatio<BASE_TAG, RHS_UNIT>::result, std::ratio_divide<PREFIX, OTHER_PREFIX>, FLOATING_POINT>(fValue / rhs.template in<quantity<RHS_UNIT, OTHER_PREFIX, FLOATING_POINT>>());
+      }
+
+      //Multiply by a unitless quantity
+      quantity<BASE_TAG, PREFIX, FLOATING_POINT> operator *(const FLOATING_POINT unitless) const
+      {
+        return quantity(fValue * unitless);
       }
   
       //Comparison operators

@@ -74,11 +74,10 @@ namespace units
   template <class SCALAR>
   class XYZVector
   {
-    private:
-      using mag2_t = decltype(std::declval<SCALAR>()*std::declval<SCALAR>());
-      using unitless = typename detail::floatingPoint<SCALAR>::type; //decltype(sin(std::declval<SCALAR>()));
-
     public:
+      using mag2_t = decltype(std::declval<SCALAR>()*std::declval<SCALAR>());
+      using unitless = typename detail::floatingPoint<SCALAR>::type;
+
       XYZVector(const SCALAR x, const SCALAR y, const SCALAR z): fX(x), fY(y), fZ(z) {}
 
       template <class VECTOR>
@@ -114,6 +113,7 @@ namespace units
 
       XYZVector<SCALAR> operator*(const unitless scalar) const
       {
+        //TODO: Calling in<> doesn't work if SCALAR is a double
         const SCALAR newX = scalar * fX.template in<SCALAR>(), newY = scalar * fY.template in<SCALAR>(), newZ = scalar * fZ.template in<SCALAR>();
         return { newX, newY, newZ };
       }
@@ -156,14 +156,15 @@ namespace units
         return sqrt(mag2());
       }
 
-      XYZVector<mag2_t> cross(const XYZVector<SCALAR>& rhs) const
+      template <class OTHERSCALAR>
+      auto cross(const XYZVector<OTHERSCALAR>& rhs) const -> XYZVector<decltype(std::declval<SCALAR>() * rhs.x())>
       {
-        return {y * rhs.fZ - rhs.fY * fZ, fZ * rhs.fX - rhs.z * fX, fX * rhs.y - rhs.x * fY};
+        return {fY * rhs.z() - fZ * rhs.y(), fZ * rhs.x() - fX * rhs.z(), fX * rhs.y() - fY * rhs.x()};
       }
 
-      XYZVector<SCALAR> unit() const
+      XYZVector<unitless> unit() const
       {
-        return *this * 1./mag().template in<SCALAR>();
+        return (*this * (1./mag().template in<SCALAR>())).template in<SCALAR>();
       }
 
       //Trignonometry
