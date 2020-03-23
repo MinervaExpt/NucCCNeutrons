@@ -1,0 +1,55 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: InclusivePzPT.yaml
+#Brief: Reproduces Dan's Medium Energy port of Amy's Low Energy 2D
+#       inclusive cross section in muon momentum components.  If I get
+#       roughly the same answers, my event loop can't be too bad, right?
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+model: *MnvGENIEv1
+
+app:
+
+signal: !MuonPzPTSignal
+  name: "MuonPzPT"
+  variable: &Variable
+    x:
+      truth:
+      reco:
+    y:
+      truth:
+      reco:
+  binning:
+    x: &xBins [ 0, 1, 2, 4, 10]
+    y: &yBins [ 0, 1, 2, 4, 10]
+
+cuts:
+  truth:
+    phaseSpace:
+      TrackAngle: !TrackAngle
+        max: !degrees 20
+    signal:
+      Tracker: *OneTrackTracker
+      Neutrino: !IsNeutrino
+      Apothem: &ApothemCut !Apothem
+        apothem: !mm 850
+  reco:
+    Tracker: *OneTrackTracker
+    TrackAngle: !TrackAngle
+      max: !degrees 20
+    Neutrino: !IsNeutrino
+    Apothem: *ApothemCut
+
+#Names in sidebands' "fails" blocks refer to truth cuts by block name.
+#Backgrounds are well-constrained in the original (LE) inclusive 2D
+#analysis.
+sidebands:
+
+#Backgrounds are defined by the truth::Cuts they pass in addition to
+#failing some regular truth cut.  So, these cuts had better be mutually
+#exclusive with regular truth::Cuts.
+backgrounds:
+  #TODO: Neutral current.  Just check FS PDG codes for a muon?  Fails
+  #      truthIsPlausible() in my AnaTool (NucCCNeutronTool).  For now,
+  #      these are just in Other.
+  WrongSignMuon:
+    Antineutrino: !IsAntineutrino
