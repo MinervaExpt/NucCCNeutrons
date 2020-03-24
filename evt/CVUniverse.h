@@ -80,7 +80,7 @@ namespace evt
 
       //DefaultCVUniverse interfaces
       //This is really used as "hypothesis name" for NeutrinoInt-based branches.
-      virtual std::string GetAnaToolName() const override { return "CCNeutrons"; }
+      virtual std::string GetAnaToolName() const override { return "CCQENu"; }
       virtual double GetRecoilEnergy() const override;
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
@@ -97,12 +97,12 @@ namespace evt
       //TODO: Fix branches that come from derived values.  I need to calculate them from the most
       //      basic values I can find instead for the NS Framework.
       //Reco branches
-      virtual MeV GetQ3() const { return GetDouble("CCNeutrons_q3"); } //TODO: I think this branch is derived from recoilE and Q^2
+      virtual MeV GetQ3() const { return GetDouble("CCQENu_q3"); } //TODO: I think this branch is derived from recoilE and Q^2
       virtual MeV GetRecoilE() const { return GetRecoilEnergy(); } //Put units on the NS Framework
       virtual units::LorentzVector<mm> GetVtx() const { return units::LorentzVector<mm>(GetVec<double>("vtx")); }
       virtual ns GetMINOSTrackDeltaT() const { return GetDouble("minos_minerva_track_deltaT"); }
       virtual int GetNTracks() const { return GetInt("n_tracks"); }
-      virtual int GetHelicity() const { return GetInt("CCNeutrons_nuHelicity"); }
+      virtual int GetHelicity() const { return GetInt("CCQENu_nuHelicity"); }
       virtual units::LorentzVector<MeV> GetMuonP() const { return GetMuon4V(); }
 
       //Truth branches

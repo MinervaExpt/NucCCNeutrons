@@ -8,6 +8,7 @@
 model: *MnvGENIEv1
 
 app:
+  skipSystematics:
 
 signal: !MuonPzPTSignal
   name: "MuonPzPT"

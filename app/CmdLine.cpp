@@ -118,11 +118,11 @@ namespace app
 
     if(fTupleFileNames.empty())
     {
-      throw exception(binName, "No *.root NucCCNeutron NTuple files found on the command line.\n", ExitCode::BadCommandLine);
+      throw exception(binName, "No *.root CCQENu NTuple files found on the command line.\n", ExitCode::BadCommandLine);
     }
 
     fIsMC = app::IsMC(fTupleFileNames.front());
-    fPlaylist = app::GetPlaylist(fTupleFileNames.front(), "NucCCNeutron", fIsMC); //TODO: Generalize hard-coded AnaTuple name
+    fPlaylist = app::GetPlaylist(fTupleFileNames.front(), "CCQENu", fIsMC); //TODO: Generalize hard-coded AnaTuple name
     #ifndef NDEBUG
       //std::cout << "Am I processing MC?  " << std::boolalpha << fIsMC << "\n";
     #endif

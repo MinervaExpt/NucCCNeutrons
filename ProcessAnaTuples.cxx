@@ -126,7 +126,7 @@ int main(const int argc, const char** argv)
   double truthTotal = 0;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
-  constexpr auto anaTupleName = "NucCCNeutron";
+  constexpr auto anaTupleName = "CCQENu";
   std::unique_ptr<app::CmdLine> options;
 
   try
