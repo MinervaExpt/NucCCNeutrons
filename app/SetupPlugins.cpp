@@ -184,7 +184,7 @@ namespace app
     //"global" configuration for algorithms specific to my analysis
     evt::CVUniverse::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));
 
-    if(isMC)
+    if(isMC && !options.ConfigFile()["app"]["skipSystematics"])
     {
       //TODO: Turn this universes back on when I'm ready to deal with weights in a reasonable way
       const int nFluxUniverses = 50; //TODO: Get this number from the user and tune it
