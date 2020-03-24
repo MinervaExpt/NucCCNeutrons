@@ -4,9 +4,16 @@
 //       to serve as my entry point into the New Systematics Framework.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+//PlotUtils includes
+#include "PlotUtils/PlotUtilsPhysicalConstants.h"
+
 //Event model includes
 #include "evt/CVUniverse.h"
 #include "evt/EventID.h"
+
+//ROOT GenVector includes
+#include "Math/AxisAngle.h"
+#include "Math/Vector3D.h"
 
 namespace evt
 {
@@ -21,6 +28,14 @@ namespace evt
   {
     const auto edeps = Getblob_edep();
     return GetDouble("CCNeutrons_recoilE") - std::accumulate(edeps.begin(), edeps.end(), 0_MeV).in<MeV>();
+  }
+
+  units::LorentzVector<MeV> CVUniverse::GetTruthPmu() const
+  {
+    ROOT::Math::AxisAngle toBeamFrame(ROOT::Math::XYZVector(1., 0., 0.), MinervaUnits::numi_beam_angle_rad);
+    units::LorentzVector<MeV> detectorFrame(GetVec<double>("mc_primFSLepton"));
+    const auto beamFrame = toBeamFrame * detectorFrame.p().in<MeV>();
+    return {beamFrame.x(), beamFrame.y(), beamFrame.z(), detectorFrame.E().in<MeV>()};
   }
 
   GeV CVUniverse::GetTruthEAvailable() const

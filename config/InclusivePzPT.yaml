@@ -33,12 +33,14 @@ cuts:
       Neutrino: !IsNeutrino
       Apothem: &ApothemCut !Apothem
         apothem: !mm 850
+      CC: !IsCC
   reco:
     Tracker: *OneTrackTracker
     TrackAngle: !TrackAngle
       max: !degrees 20
     Neutrino: !IsNeutrino
     Apothem: *ApothemCut
+    HasMuon: !HasInteractionVertex
 
 #Names in sidebands' "fails" blocks refer to truth cuts by block name.
 #Backgrounds are well-constrained in the original (LE) inclusive 2D
@@ -49,8 +51,7 @@ sidebands:
 #failing some regular truth cut.  So, these cuts had better be mutually
 #exclusive with regular truth::Cuts.
 backgrounds:
-  #TODO: Neutral current.  Just check FS PDG codes for a muon?  Fails
-  #      truthIsPlausible() in my AnaTool (NucCCNeutronTool).  For now,
-  #      these are just in Other.
+  NeutralCurrent:
+    NC: !IsNC
   WrongSignMuon:
     Antineutrino: !IsAntineutrino

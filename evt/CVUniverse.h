@@ -105,14 +105,18 @@ namespace evt
       virtual int GetHelicity() const { return GetInt("CCQENu_nuHelicity"); }
       virtual units::LorentzVector<MeV> GetMuonP() const { return GetMuon4V(); }
 
+      //Reco branches from CCQENu
+      virtual bool hasInteractionVertex() const { return GetInt("has_interaction_vertex"); }
+
       //Truth branches
       virtual MeV GetTruthQ3() const { return Getq3True(); }
       virtual MeV GetTruthQ0() const { return Getq0True(); }
       virtual GeV GetTruthEAvailable() const;
       virtual units::LorentzVector<mm> GetTruthVtx() const { return units::LorentzVector<mm>(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
-      virtual units::LorentzVector<MeV> GetTruthPmu() const { return units::LorentzVector<MeV>(GetVec<double>("mc_primFSLepton")); }
+      virtual units::LorentzVector<MeV> GetTruthPmu() const;
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
+      virtual int GetCurrent() const { return GetInt("mc_current"); }
 
       //TODO: Deprecate this function with reweighter feature?
       virtual events GetWeight() const
