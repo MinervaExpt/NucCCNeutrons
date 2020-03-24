@@ -56,7 +56,7 @@ namespace app
     {
       //The shell can't expand regular expressions in xrootd URLs,
       //so use a PlotUtils function to handle them for me.
-      if(arg.find_first_of("^$.[]*+?") != std::string::npos)
+      if(arg.find("root:") != std::string::npos)
       {
         const auto found = PlotUtils::glob(arg, *gSystem);
         fTupleFileNames.insert(fTupleFileNames.end(), found.begin(), found.end());
