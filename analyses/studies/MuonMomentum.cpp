@@ -48,12 +48,12 @@ namespace ana
 
     GeV truth(const evt::CVUniverse& event)
     {
-      return event.GetTruthPmu().p().z();
+      return event.GetTruthPmu().z();
     }
 
     GeV reco(const evt::CVUniverse& event)
     {
-      return event.GetMuonP().p().z();
+      return event.GetMuonP().z();
     }
   };
 
@@ -66,14 +66,14 @@ namespace ana
 
     GeV truth(const evt::CVUniverse& event)
     {
-      const units::XYZVector<GeV> pz = {0_GeV, 0_GeV, event.GetTruthPmu().p().z()};
-      return event.GetTruthPmu().p().cross(pz.unit()).mag(); //TODO: does unit() return the wrong units?
+      const units::XYZVector<double> zHat{0, 0, 1};
+      return event.GetTruthPmu().p().cross(zHat).mag();
     }
     
     GeV reco(const evt::CVUniverse& event)
     {
-      const units::XYZVector<GeV> pz = {0_GeV, 0_GeV, event.GetMuonP().p().z()};
-      return event.GetMuonP().p().cross(pz.unit()).mag();
+      const units::XYZVector<double> zHat{0, 0, 1};
+      return event.GetMuonP().p().cross(zHat).mag();
     }
   };
 }

@@ -164,7 +164,9 @@ namespace units
 
       XYZVector<unitless> unit() const
       {
-        return (*this * (1./mag().template in<SCALAR>())).template in<SCALAR>();
+        const auto length = mag().template in<SCALAR>();
+        if(length = 0) return {0, 0, 0};
+        return (*this * (1./length)).template in<SCALAR>();
       }
 
       //Trignonometry

@@ -111,7 +111,7 @@ namespace evt
       virtual GeV GetTruthEAvailable() const;
       virtual units::LorentzVector<mm> GetTruthVtx() const { return units::LorentzVector<mm>(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
-      virtual units::LorentzVector<GeV> GetTruthPmu() const { return units::LorentzVector<GeV>(GetVec<double>("mc_primFSLepton")); }
+      virtual units::LorentzVector<MeV> GetTruthPmu() const { return units::LorentzVector<MeV>(GetVec<double>("mc_primFSLepton")); }
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
 
       //TODO: Deprecate this function with reweighter feature?
