@@ -26,18 +26,23 @@ signal: !MuonPzPTSignal
 cuts:
   truth:
     phaseSpace:
-      TrackAngle: !TrackAngle
+      TrackAngle: &AngleCut !TrackAngle
         max: !degrees 20
+      PZMu: !MuonZMomentum
+        min: !GeV 1.5
     signal:
-      Tracker: *OneTrackTracker
+      Tracker: &Fiducial !IsInTarget
+        truth: &TruthFiducial
+          min: !mm 5980
+          max: !mm 8422
+        reco: *TruthFiducial
       Neutrino: !IsNeutrino
       Apothem: &ApothemCut !Apothem
         apothem: !mm 850
       CC: !IsCC
   reco:
-    Tracker: *OneTrackTracker
-    TrackAngle: !TrackAngle
-      max: !degrees 20
+    Tracker: *Fiducial
+    TrackAngle: *AngleCut
     Neutrino: !IsNeutrino
     Apothem: *ApothemCut
     HasMuon: !HasInteractionVertex
