@@ -16,7 +16,7 @@ namespace truth
 
   bool MuonZMomentum::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetTruthPmu().p().z() > fMin;
+    return event.GetTruthPmu().p().z() >= fMin;
   }
 }
 

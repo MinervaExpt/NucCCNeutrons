@@ -120,7 +120,7 @@ namespace evt
       //Truth information from GENIE
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
       virtual int GetCurrent() const { return GetInt("mc_current"); }
-      virtual int GetInteractionType() const { return GetInt("mc_IntType"); }
+      virtual int GetInteractionType() const { return GetInt("mc_intType"); }
 
       //TODO: Deprecate this function with reweighter feature?
       virtual events GetWeight() const

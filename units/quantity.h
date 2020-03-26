@@ -152,11 +152,23 @@ namespace units
       {
         return fValue < other.template in<quantity<BASE_TAG, PREFIX, FLOATING_POINT>>();
       }
+
+      template <class OTHER_PREFIX>
+      bool operator <=(const quantity<BASE_TAG, OTHER_PREFIX, FLOATING_POINT> other) const
+      {
+        return fValue <= other.template in<quantity<BASE_TAG, PREFIX, FLOATING_POINT>>();
+      }
   
       template <class OTHER_PREFIX>
       bool operator >(const quantity<BASE_TAG, OTHER_PREFIX, FLOATING_POINT> other) const
       {
         return fValue > other.template in<quantity<BASE_TAG, PREFIX, FLOATING_POINT>>();
+      }
+
+      template <class OTHER_PREFIX>
+      bool operator >=(const quantity<BASE_TAG, OTHER_PREFIX, FLOATING_POINT> other) const
+      {
+        return fValue >= other.template in<quantity<BASE_TAG, PREFIX, FLOATING_POINT>>();
       }
   
       template <class OTHER_PREFIX>
