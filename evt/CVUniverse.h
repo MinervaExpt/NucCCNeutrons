@@ -116,8 +116,11 @@ namespace evt
       virtual units::LorentzVector<mm> GetTruthVtx() const { return units::LorentzVector<mm>(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
       virtual units::LorentzVector<MeV> GetTruthPmu() const;
+
+      //Truth information from GENIE
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
       virtual int GetCurrent() const { return GetInt("mc_current"); }
+      virtual int GetInteractionType() const { return GetInt("mc_IntType"); }
 
       //TODO: Deprecate this function with reweighter feature?
       virtual events GetWeight() const
