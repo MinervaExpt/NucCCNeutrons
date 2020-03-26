@@ -178,8 +178,8 @@ namespace app
 
     //"global" configuration for all DefaultCVUniverses
     DefaultCVUniverse::SetPlaylist(options.playlist());
-    DefaultCVUniverse::SetAnalysisNuPDG(-14); //TODO: Get this from the user somehow
-    DefaultCVUniverse::SetNuEConstraint(false); //No nu-e constraint for antineutrino mode yet
+    DefaultCVUniverse::SetAnalysisNuPDG(options.ConfigFile()["app"]["nuPDG"].as<int>(-14));
+    DefaultCVUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>(false)); //No nu-e constraint for antineutrino mode yet
 
     //"global" configuration for algorithms specific to my analysis
     evt::CVUniverse::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));
