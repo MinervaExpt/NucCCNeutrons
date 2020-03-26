@@ -126,7 +126,6 @@ int main(const int argc, const char** argv)
   double truthTotal = 0;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
-  constexpr auto anaTupleName = "CCQENu";
   std::unique_ptr<app::CmdLine> options;
 
   try
@@ -168,6 +167,9 @@ int main(const int argc, const char** argv)
     std::cerr << e.what() << "\n";
     return app::CmdLine::YAMLError;
   }
+
+  //Name of the AnaTuple to read
+  const auto anaTupleName = options->ConfigFile()["app"]["AnaTupleName"].as<std::string>("NucCCNeutrons");
 
   //Accumulate POT from each good file
   double pot_used = 0;
@@ -232,7 +234,7 @@ int main(const int argc, const char** argv)
       }
   
       //TODO: Make this a TreeWrapper to avoid opening fName twice
-      PlotUtils::ChainWrapper anaTuple(anaTupleName);
+      PlotUtils::ChainWrapper anaTuple(anaTupleName.c_str());
 
       try
       {

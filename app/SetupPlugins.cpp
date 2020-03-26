@@ -205,6 +205,13 @@ namespace app
       result.insert(lowQ2Syst.begin(), lowQ2Syst.end());*/ //TODO: Is this systematic broken?
     }
 
+    //Name of the NeutrinoInt from which to extract kinematic quantities
+    const auto hypothesisName = options.ConfigFile()["app"]["HypothesisName"].as<std::string>("CCNeutrons");
+    for(auto& band: result)
+    {
+      for(auto& univ: band.second) univ->SetHypothesisName(hypothesisName);
+    }
+
     return result;
   }
 

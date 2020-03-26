@@ -10,7 +10,7 @@
 
 namespace app
 {
-  std::string GetPlaylist(const std::string& fileName, const std::string& anaTupleName, const bool isMC);
+  std::string GetPlaylist(const std::string& fileName, const bool isMC);
 }
 
 #endif //APP_GETPLAYLIST_H

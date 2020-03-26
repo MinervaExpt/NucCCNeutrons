@@ -108,13 +108,28 @@ namespace
 
 namespace app
 {
-  std::string GetPlaylist(const std::string& fileName, const std::string& anaTupleName, const bool isMC)
+  std::string GetPlaylist(const std::string& fileName, const bool isMC)
   {
     std::unique_ptr<TFile> file(TFile::Open(fileName.c_str(), "READ"));
     if(!file)
     {
       throw std::runtime_error("Failed to open file named " + fileName
                                + " to check its playlist.");
+    }
+
+    //Infer AnaTuple name
+    const auto keys = file->GetListOfKeys();
+    TIter next(keys);
+    TObject* entry;
+    std::string anaTupleName;
+    while((entry = next()))
+    {
+      const std::string name = entry->GetName();
+      if(name != "Truth" && name != "Meta")
+      {
+        anaTupleName = name;
+        break;
+      } 
     }
 
     auto tree = static_cast<TTree*>(file->Get(anaTupleName.c_str()));

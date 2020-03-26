@@ -9,6 +9,8 @@ model: *MnvGENIEv1
 
 app:
   skipSystematics:
+  AnaTupleName: &TupleName "CCQENu"
+  HypothesisName: *AnaTupleName
 
 signal: !MuonPzPTSignal
   name: "MuonPzPT"
