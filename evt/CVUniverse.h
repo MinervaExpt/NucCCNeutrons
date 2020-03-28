@@ -108,6 +108,7 @@ namespace evt
 
       //Reco branches from CCQENu
       virtual bool hasInteractionVertex() const { return GetInt("has_interaction_vertex"); }
+      virtual int GetNDeadDiscriminatorsUpstreamMuon() const { return GetInt("phys_n_dead_discr_pair_upstream_prim_track_proj"); }
 
       //Truth branches
       virtual MeV GetTruthQ3() const { return Getq3True(); }

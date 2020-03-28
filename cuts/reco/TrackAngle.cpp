@@ -14,7 +14,7 @@ namespace reco
 
   bool TrackAngle::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetMuonP().p().theta() < fMax;
+    return event.GetMuonP().p().theta() <= fMax;
   }
 }
 

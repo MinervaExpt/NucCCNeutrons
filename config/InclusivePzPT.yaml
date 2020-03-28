@@ -10,7 +10,9 @@ model: *MnvGENIEv1
 app:
   skipSystematics:
   AnaTupleName: &TupleName "CCQENu"
-  HypothesisName: *AnaTupleName
+  HypothesisName: *TupleName
+  nuPDG: 14
+  useNuEConstraint: true
 
 signal: !MuonPzPTSignal
   name: "MuonPzPT"
@@ -43,9 +45,12 @@ cuts:
         apothem: !mm 850
       CC: !IsCC
   reco:
-    Tracker: *Fiducial
-    TrackAngle: *AngleCut
+    #Tracker: *Fiducial
+    TrackAngle: !TrackAngle
+      max: !degrees 19.996227
     Neutrino: !IsNeutrino
+    DeadTime: !DeadDiscriminators
+      max: 1
     Apothem: *ApothemCut
     HasMuon: !HasInteractionVertex
 
