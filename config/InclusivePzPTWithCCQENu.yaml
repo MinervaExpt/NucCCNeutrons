@@ -9,6 +9,8 @@ model: *MnvGENIEv1
 
 app:
   skipSystematics:
+  AnaTupleName: &TupleName "CCQENu"
+  HypothesisName: *TupleName
   useNuEConstraint: true
 
 signal: !MuonPzPTSignal
@@ -49,6 +51,7 @@ cuts:
     DeadTime: !DeadDiscriminators
       max: 1
     Apothem: *ApothemCut
+    HasMuon: !HasInteractionVertex
 
 #Names in sidebands' "fails" blocks refer to truth cuts by block name.
 #Backgrounds are well-constrained in the original (LE) inclusive 2D

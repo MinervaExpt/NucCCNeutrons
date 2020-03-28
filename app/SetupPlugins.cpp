@@ -180,7 +180,6 @@ namespace app
     DefaultCVUniverse::SetPlaylist(options.playlist());
     DefaultCVUniverse::SetAnalysisNuPDG(DefaultCVUniverse::isFHC()?14:-14);
     DefaultCVUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>(false)); //No nu-e constraint for antineutrino mode yet
-    std::cout << "Is this FHC?  " << std::boolalpha << DefaultCVUniverse::isFHC() << "\nI'm loading the flux for this PDG code: " <<  DefaultCVUniverse::GetAnalysisNuPDG() << "\nAm I using the nu-e constraint?  " << std::boolalpha << DefaultCVUniverse::UseNuEConstraint() << "\n";
 
     //"global" configuration for algorithms specific to my analysis
     evt::CVUniverse::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));

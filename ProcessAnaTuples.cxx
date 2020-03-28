@@ -169,7 +169,7 @@ int main(const int argc, const char** argv)
   }
 
   //Name of the AnaTuple to read
-  const auto anaTupleName = options->ConfigFile()["app"]["AnaTupleName"].as<std::string>("NucCCNeutrons");
+  const auto anaTupleName = options->ConfigFile()["app"]["AnaTupleName"].as<std::string>("NucCCNeutron");
 
   //Accumulate POT from each good file
   double pot_used = 0;

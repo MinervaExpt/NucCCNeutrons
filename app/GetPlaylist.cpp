@@ -125,7 +125,7 @@ namespace app
     while((entry = next()))
     {
       const std::string name = entry->GetName();
-      if(name != "Truth" && name != "Meta")
+      if(name != "Truth" && name != "Meta" && name != "Header")
       {
         anaTupleName = name;
         break;
