@@ -178,7 +178,7 @@ namespace app
 
     //"global" configuration for all DefaultCVUniverses
     DefaultCVUniverse::SetPlaylist(options.playlist());
-    DefaultCVUniverse::SetAnalysisNuPDG(options.ConfigFile()["app"]["nuPDG"].as<int>(-14));
+    DefaultCVUniverse::SetAnalysisNuPDG(DefaultCVUniverse::isFHC()?14:-14);
     DefaultCVUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>(false)); //No nu-e constraint for antineutrino mode yet
 
     //"global" configuration for algorithms specific to my analysis
