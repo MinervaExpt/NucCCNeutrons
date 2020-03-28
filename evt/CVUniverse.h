@@ -123,8 +123,14 @@ namespace evt
       virtual int GetCurrent() const { return GetInt("mc_current"); }
       virtual int GetInteractionType() const { return GetInt("mc_intType"); }
 
+      //TODO: Remove this hack
+      [[deprecated("TODO: Separate weights that aren't applied to the Truth tree into another concept.")]] std::string GetTreeName() const
+      {
+        return m_chw->GetChain()->GetName();
+      }
+
       //TODO: Deprecate this function with reweighter feature?
-      virtual events GetWeight() const
+      [[deprecated("Use models interface instead")]] virtual events GetWeight() const
       {
         //Rob told me that this is MnvGENIE v1.1 on 2/11/2020
         //TODO: I also need the non-resonant pion reweight for MnvGENIEv1
