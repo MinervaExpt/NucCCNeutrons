@@ -29,22 +29,22 @@ signal: !MuonPzPTSignal
 cuts:
   truth:
     phaseSpace:
-      TrackAngle: &AngleCut !TrackAngle
+      TrackAngle: !TrackAngle
         max: !degrees 20
       PZMu: !MuonZMomentum
         min: !GeV 1.5
-    signal:
       Tracker: &Fiducial !IsInTarget
         truth: &TruthFiducial
           min: !mm 5980
           max: !mm 8422
         reco: *TruthFiducial
-      Neutrino: !IsNeutrino
       Apothem: &ApothemCut !Apothem
         apothem: !mm 850
+    signal:
+      Neutrino: !IsNeutrino
       CC: !IsCC
   reco:
-    #Tracker: *Fiducial
+    #Tracker: *Fiducial #This cut is made before the CCQENu AnaTuples are produced
     TrackAngle: !TrackAngle
       max: !degrees 19.996227
     Neutrino: !IsNeutrino

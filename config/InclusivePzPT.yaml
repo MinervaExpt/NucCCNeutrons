@@ -31,6 +31,13 @@ cuts:
         max: !degrees 20
       PZMu: !MuonZMomentum
         min: !GeV 1.5
+      Tracker: &Fiducial !IsInTarget
+        truth: &TruthFiducial
+          min: !mm 5980
+          max: !mm 8422
+        reco: *TruthFiducial
+      Apothem: &ApothemCut !Apothem
+        apothem: !mm 850
     signal:
       Tracker: &Fiducial !IsInTarget
         truth: &TruthFiducial
@@ -38,11 +45,9 @@ cuts:
           max: !mm 8422
         reco: *TruthFiducial
       Neutrino: !IsNeutrino
-      Apothem: &ApothemCut !Apothem
-        apothem: !mm 850
       CC: !IsCC
   reco:
-    #Tracker: *Fiducial
+    Tracker: *Fiducial
     TrackAngle: !TrackAngle
       max: !degrees 19.996227
     Neutrino: !IsNeutrino
