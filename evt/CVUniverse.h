@@ -105,6 +105,7 @@ namespace evt
       virtual int GetNTracks() const { return GetInt("n_tracks"); }
       virtual int GetHelicity() const { return GetInt((GetAnaToolName() + "_nuHelicity").c_str()); }
       virtual units::LorentzVector<MeV> GetMuonP() const { return GetMuon4V(); }
+      virtual radians GetMuonTheta() const { return GetThetamu(); }
 
       //Reco branches from CCQENu
       virtual bool hasInteractionVertex() const { return GetInt("has_interaction_vertex"); }
