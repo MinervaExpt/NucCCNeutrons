@@ -30,6 +30,11 @@
 #include "PlotUtils/GenieSystematics.h"
 #include "PlotUtils/FluxSystematics.h"
 #include "PlotUtils/MnvTuneSystematics.h"
+#include "PlotUtils/AngleSystematics.h"
+#include "PlotUtils/MinosEfficiencySystematics.h"
+#include "PlotUtils/MuonResolutionSystematics.h"
+#include "PlotUtils/MuonSystematics.h"
+#include "PlotUtils/ResponseSystematics.h"
 
 //c++ includes
 #include <algorithm>
@@ -64,6 +69,60 @@ namespace
       } //If not in allCuts
     } //For each cut name
                                                                                                                                                                               
+    return result;
+  }
+
+  //An exhaustive list of all error bands in the NSF
+  std::map<std::string, std::vector<evt::CVUniverse*>> getStandardSystematics(PlotUtils::ChainWrapper* chain)
+  {
+    //TODO: Keep this list up to date
+    auto allErrorBands  = PlotUtils::GetAngleSystematicsMap<evt::CVUniverse>(chain); //TODO: What if I want to change beam angle uncertainties?
+    auto toAdd = PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chain, PlotUtils::DefaultCVUniverse::GetNFluxUniverses());
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chain);
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::GetMinosEfficiencySystematicsMap<evt::CVUniverse>(chain);
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::Get2p2hSystematicsMap<evt::CVUniverse>(chain);
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::GetRPASystematicsMap<evt::CVUniverse>(chain);
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::GetLowQ2PiSystematicsMap<evt::CVUniverse>(chain);
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::GetMuonResolutionSystematicsMap<evt::CVUniverse>(chain);
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::GetMinervaMuonSystematicsMap<evt::CVUniverse>(chain);
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::GetMinosMuonSystematicsMap<evt::CVUniverse>(chain);
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    toAdd = PlotUtils::GetResponseSystematicsMap<evt::CVUniverse>(chain, true); //TODO: flag to turn off neutron response?
+    allErrorBands.insert(toAdd.begin(), toAdd.end());
+
+    return allErrorBands;
+  }
+
+  //Pick systematic universes based on a vector<string>.  A curated list of
+  //all systematic universes in the NSF.
+  std::map<std::string, std::vector<evt::CVUniverse*>> chooseSystematics(const std::vector<std::string>& bandsToChoose, PlotUtils::ChainWrapper* chain)
+  {
+    //First, make an exhaustive list of standard error bands in the NSF
+    //TODO: Keep this list up to date
+    auto allErrorBands  = getStandardSystematics(chain); //TODO: 
+
+    decltype(allErrorBands) result;
+    for(const auto& band: bandsToChoose)
+    {
+      try
+      {
+        result[band] = allErrorBands.at(band);
+        assert(result[band] != nullptr && "Found an error band, but it was a nullptr!");
+      }
+      catch(const std::out_of_range& err)
+      {
+        throw std::runtime_error(std::string("When selecting systematic universes to use:\n") + band + ": no such universe.\n");
+      }
+    }
+
     return result;
   }
 }
@@ -177,6 +236,7 @@ namespace app
     result["cv"].push_back(new evt::CVUniverse(chw));
 
     //"global" configuration for all DefaultCVUniverses
+    //TODO: Maybe rename the "app" YAML block "physics"?  But everything in the YAML file is physics!  It still needs a better name.
     DefaultCVUniverse::SetPlaylist(options.playlist());
     DefaultCVUniverse::SetAnalysisNuPDG(DefaultCVUniverse::isFHC()?14:-14);
     DefaultCVUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>(false)); //No nu-e constraint for antineutrino mode yet
@@ -184,25 +244,11 @@ namespace app
     //"global" configuration for algorithms specific to my analysis
     evt::CVUniverse::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));
 
-    if(isMC && !options.ConfigFile()["app"]["skipSystematics"])
+    if(isMC && !options.ConfigFile()["app"]["skipSystematics"]) //TODO: Remove this legacy option.  Just leave the systematics block blank.
     {
-      //TODO: Turn this universes back on when I'm ready to deal with weights in a reasonable way
-      const int nFluxUniverses = 50; //TODO: Get this number from the user and tune it
-      DefaultCVUniverse::SetNFluxUniverses(nFluxUniverses);
-      auto fluxSys = PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chw, nFluxUniverses);
-      result.insert(fluxSys.begin(), fluxSys.end());
+      DefaultCVUniverse::SetNFluxUniverses(options.ConfigFile()["app"]["nFluxUniverses"].as<int>(50));
 
-      auto genieSyst = PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chw);
-      result.insert(genieSyst.begin(), genieSyst.end());
-
-      auto mecSyst = PlotUtils::Get2p2hSystematicsMap<evt::CVUniverse>(chw);
-      result.insert(mecSyst.begin(), mecSyst.end());
-
-      auto rpaSyst = PlotUtils::GetRPASystematicsMap<evt::CVUniverse>(chw);
-      result.insert(rpaSyst.begin(), rpaSyst.end());
-
-      /*auto lowQ2Syst = PlotUtils::GetLowQ2PiSystematicsMap<evt::CVUniverse>(chw);
-      result.insert(lowQ2Syst.begin(), lowQ2Syst.end());*/ //TODO: Is this systematic broken?
+      const auto errorBands = ::chooseSystematics(options.ConfigFile()["systematics"].as<std::vector<std::string>>(), chw);
     }
 
     //Name of the NeutrinoInt from which to extract kinematic quantities
