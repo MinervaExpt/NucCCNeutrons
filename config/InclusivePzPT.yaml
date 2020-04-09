@@ -39,11 +39,6 @@ cuts:
       Apothem: &ApothemCut !Apothem
         apothem: !mm 850
     signal:
-      Tracker: &Fiducial !IsInTarget
-        truth: &TruthFiducial
-          min: !mm 5980
-          max: !mm 8422
-        reco: *TruthFiducial
       Neutrino: !IsNeutrino
       CC: !IsCC
   reco:
