@@ -8,8 +8,9 @@
 model: *MnvGENIEv1
 
 app:
-  skipSystematics:
   useNuEConstraint: true
+
+systematics:
 
 signal: !MuonPzPTSignal
   name: "MuonPzPT"
