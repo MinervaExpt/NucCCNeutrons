@@ -45,6 +45,7 @@
 //ROOT includes
 #include "TFile.h"
 #include "TTree.h"
+#include "TParameter.h"
 
 //Cintex is only needed for older ROOT versions like the GPVMs.
 //Let CMake decide whether it's needed.
@@ -559,7 +560,9 @@ int main(const int argc, const char** argv)
   }
 
   //Final Write()s to output file
-  //TODO: Put POT in a TParameter<double>
+  options->HistFile->cd();
+  auto pot = new TParameter<double>("POTUsed", pot_used);
+  pot->Write();
 
   return app::CmdLine::ExitCode::Success;
 }
