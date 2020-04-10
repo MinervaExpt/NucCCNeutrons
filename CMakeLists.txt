@@ -14,17 +14,8 @@ set( CMAKE_CXX_FLAGS_RELEASE "-O2" )
 #Tell this package where it is installed and version control status
 add_definitions(-DINSTALL_DIR="${CMAKE_INSTALL_PREFIX}/")
 
-#What was the last git commit hash?  I can "git checkout" this string to figure out what my repository looked like when a build happened.
-#TODO: Get GIT_COMMIT_HASH and git status --porcelain into gitVersion.cpp every time any file changes.
-#execute_process(COMMAND git rev-parse --verify HEAD WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GIT_COMMIT_HASH)
-
-#execute_process(COMMAND git status --porcelain WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GIT_UNCOMMITTED_CHANGES)
-
-#configure_file(gitVersion.cpp.in gitVersion.cpp @ONLY)
-#add_library(gitVersion ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.cpp)
-#target_link_libraries(gitVersion)
-
-add_custom_command(OUTPUT gitVersion.cpp COMMAND ${CMAKE_COMMAND} -P generateGitVersion.cmake WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_custom_command(OUTPUT gitVersion.h COMMAND ${CMAKE_COMMAND} -DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/generateGitVersion.cmake DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gitVersion.h.in WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMENT "Pulling together git version information...")
+add_custom_target(generateGitVersion ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.h)
 
 #Let directories in this package see each other
 include_directories( "${PROJECT_SOURCE_DIR}" )
@@ -67,7 +58,7 @@ add_subdirectory(cuts)
 add_subdirectory(models)
 
 #Build main executables
-add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets> $<TARGET_OBJECTS:models> ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.cpp)
+add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets> $<TARGET_OBJECTS:models>)
 #This TARGET_OBJECTS song and dance solves the problem of the compiler
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library
@@ -79,6 +70,8 @@ add_subdirectory(evt)
 add_subdirectory(config)
 add_subdirectory(app)
 
+add_dependencies(ProcessAnaTuples generateGitVersion)
+target_include_directories(ProcessAnaTuples PRIVATE ${CMAKE_CURRENT_BINARY_DIR}) #for gitVersion.h
 target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
