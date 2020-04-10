@@ -4,6 +4,7 @@ project( NucCCNeutrons )
 
 #Add extra "modules" to CMake
 include(CTest)
+include(AddFileDependencies)
 
 #Compiler flags
 set( GCC_Flags_For_CXX "-std=c++1y -Wall" )
@@ -14,8 +15,9 @@ set( CMAKE_CXX_FLAGS_RELEASE "-O2" )
 #Tell this package where it is installed and version control status
 add_definitions(-DINSTALL_DIR="${CMAKE_INSTALL_PREFIX}/")
 
-add_custom_command(OUTPUT gitVersion.h COMMAND ${CMAKE_COMMAND} -P generateGitVersion.cmake DEPENDS gitVersion.h.in WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COMMENT "Pulling together git version information...")
-add_custom_target(generateGitVersion ALL DEPENDS gitVersion.h)
+#add_custom_command(OUTPUT gitVersion.h COMMAND ${CMAKE_COMMAND} -P generateGitVersion.cmake DEPENDS gitVersion.h.in WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COMMENT "Pulling together git version information...")
+add_custom_target(generateGitVersion COMMAND ${CMAKE_COMMAND} -P generateGitVersion.cmake DEPENDS gitVersion.h.in WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COMMENT "Pulling together git version information...")
+add_file_dependencies(ProcessAnaTuples.cxx ${CMAKE_CURRENT_SOURCE_DIR}/gitVersion.h)
 
 #Let directories in this package see each other
 include_directories( "${PROJECT_SOURCE_DIR}" )

@@ -3,6 +3,7 @@
 #       It's a cmake script so that it doesn't depend on platform.
 #Author: Andrew Olivier aolivier@ur.rochester.edu
 
-execute_process(COMMAND git rev-parse --verify HEAD WORKING_DIRECTORY OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GIT_COMMIT_HASH)
-execute_process(COMMAND git status --porcelain WORKING_DIRECTORY OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GIT_UNCOMMITTED_CHANGES)
+execute_process(COMMAND git rev-parse --verify HEAD OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GIT_COMMIT_HASH)
+execute_process(COMMAND git status --porcelain OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GIT_UNCOMMITTED_CHANGES)
+message("git hash appears to be ${GIT_COMMIT_HASH}")
 configure_file(gitVersion.h.in gitVersion.h @ONLY)
