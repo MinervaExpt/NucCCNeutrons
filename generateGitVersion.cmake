@@ -5,5 +5,4 @@
 
 execute_process(COMMAND git rev-parse --verify HEAD OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GIT_COMMIT_HASH)
 execute_process(COMMAND git status --porcelain OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE GIT_UNCOMMITTED_CHANGES)
-message("git hash appears to be ${GIT_COMMIT_HASH}")
 configure_file(gitVersion.h.in gitVersion.h @ONLY)
