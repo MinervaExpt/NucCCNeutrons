@@ -14,8 +14,8 @@ set( CMAKE_CXX_FLAGS_RELEASE "-O2" )
 #Tell this package where it is installed and version control status
 add_definitions(-DINSTALL_DIR="${CMAKE_INSTALL_PREFIX}/")
 
-add_custom_command(OUTPUT gitVersion.h COMMAND ${CMAKE_COMMAND} -DREPO_DIR=${CMAKE_CURRENT_SOURCE_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/generateGitVersion.cmake DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gitVersion.h.in WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMENT "Pulling together git version information...")
-add_custom_target(generateGitVersion ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.h)
+add_custom_command(OUTPUT gitVersion.h COMMAND ${CMAKE_COMMAND} -P generateGitVersion.cmake DEPENDS gitVersion.h.in WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COMMENT "Pulling together git version information...")
+add_custom_target(generateGitVersion ALL DEPENDS gitVersion.h)
 
 #Let directories in this package see each other
 include_directories( "${PROJECT_SOURCE_DIR}" )
@@ -71,7 +71,7 @@ add_subdirectory(config)
 add_subdirectory(app)
 
 add_dependencies(ProcessAnaTuples generateGitVersion)
-target_include_directories(ProcessAnaTuples PRIVATE ${CMAKE_CURRENT_BINARY_DIR}) #for gitVersion.h
+#target_include_directories(ProcessAnaTuples PRIVATE ${CMAKE_CURRENT_BINARY_DIR}) #for gitVersion.h
 target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
