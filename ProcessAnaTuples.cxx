@@ -11,6 +11,9 @@
 
 #define PLOTUTILS_THROW_EXCEPTIONS
 
+//local includes
+#include "gitVersion.h"
+
 //evt includes
 #include "evt/CVUniverse.h"
 
@@ -530,10 +533,10 @@ int main(const int argc, const char** argv)
     std::ofstream tableFile(tableName);
     tableFile << "#" << pot_used << " POT\n";
     truthSummary.print(tableFile);
-    tableFile << "Git commit hash: " << GIT_COMMIT_HASH << "\n";
+    tableFile << "Git commit hash: " << git::commitHash() << "\n";
     std::cout << "#" << pot_used << " POT\n";
     truthSummary.print(std::cout) << "\n";
-    std::cout << "Git commit hash: " << GIT_COMMIT_HASH << "\n";
+    std::cout << "Git commit hash: " << git::commitHash() << "\n";
   }
   else
   {
@@ -557,10 +560,10 @@ int main(const int argc, const char** argv)
     std::ofstream tableFile(tableName);
     tableFile << "#" << pot_used << " POT\n";
     recoSummary.print(tableFile);
-    tableFile << "Git commit hash: " << GIT_COMMIT_HASH << "\n";
+    tableFile << "Git commit hash: " << git::commitHash() << "\n";
     std::cout << "#" << pot_used << " POT\n";
     recoSummary.print(std::cout) << "\n";
-    std::cout << "Git commit hash: " << GIT_COMMIT_HASH << "\n";
+    std::cout << "Git commit hash: " << git::commitHash() << "\n";
   }
 
   //Final Write()s to output file

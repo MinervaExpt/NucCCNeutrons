@@ -1,0 +1,13 @@
+//File: gitVersion.cpp.in
+//Brief: Template for access to git version control information.  Filled in to create a .cpp file by CMake.
+//Author: Andrew Olivier aolivier@ur.rochester.edu
+
+#include "gitVersion.h"
+
+namespace git
+{
+  std::string commitHash()
+  {
+    return "@GIT_COMMIT_HASH@";
+  }
+}

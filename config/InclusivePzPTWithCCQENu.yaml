@@ -12,7 +12,7 @@ app:
   HypothesisName: *TupleName
   useNuEConstraint: true
 
-systematics:
+systematics: []
 
 signal: !MuonPzPTSignal
   name: "MuonPzPT"
