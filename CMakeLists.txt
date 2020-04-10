@@ -11,8 +11,11 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_Flags_For_CXX}" )
 set( CMAKE_CXX_FLAGS_DEBUG "-ggdb" )
 set( CMAKE_CXX_FLAGS_RELEASE "-O2" )
 
-#Tell this package where it is installed
+#Tell this package where it is installed and the latest commit hash
 add_definitions(-DINSTALL_DIR="${CMAKE_INSTALL_PREFIX}/")
+execute_process(COMMAND "git rev-parse --verify HEAD" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" OUTPUT_VARIABLE GIT_COMMIT_HASH)
+add_definitions(-DGIT_COMMIT_HASH="${GIT_COMMIT_HASH}")
+#TODO: Check for local changes?
 
 #Let directories in this package see each other
 include_directories( "${PROJECT_SOURCE_DIR}" )

@@ -530,8 +530,10 @@ int main(const int argc, const char** argv)
     std::ofstream tableFile(tableName);
     tableFile << "#" << pot_used << " POT\n";
     truthSummary.print(tableFile);
+    tableFile << "Git commit hash: " << GIT_COMMIT_HASH << "\n";
     std::cout << "#" << pot_used << " POT\n";
     truthSummary.print(std::cout) << "\n";
+    std::cout << "Git commit hash: " << GIT_COMMIT_HASH << "\n";
   }
   else
   {
@@ -555,8 +557,10 @@ int main(const int argc, const char** argv)
     std::ofstream tableFile(tableName);
     tableFile << "#" << pot_used << " POT\n";
     recoSummary.print(tableFile);
+    tableFile << "Git commit hash: " << GIT_COMMIT_HASH << "\n";
     std::cout << "#" << pot_used << " POT\n";
     recoSummary.print(std::cout) << "\n";
+    std::cout << "Git commit hash: " << GIT_COMMIT_HASH << "\n";
   }
 
   //Final Write()s to output file
