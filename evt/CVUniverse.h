@@ -51,7 +51,7 @@ namespace evt
       minosEff = cv.DefaultCVUniverse::GetMinosEfficiencyWeight();
       GENIE = cv.DefaultCVUniverse::GetGenieWeight();
       fluxAndCV = cv.DefaultCVUniverse::GetFluxAndCVWeight();
-      mec = cv.DefaultCVUniverse::Get2p2hWeight(); //Yes, I know 2p2h and MEC aren't exactly the same.  2p2h isn't a valid identifier though.
+      mec = cv.DefaultCVUniverse::GetLowRecoil2p2hWeight(); //Yes, I know 2p2h and MEC aren't exactly the same.  2p2h isn't a valid identifier though.
       rpa = cv.DefaultCVUniverse::GetRPAWeight();
     }
 
@@ -135,7 +135,7 @@ namespace evt
       {
         //Rob told me that this is MnvGENIE v1.1 on 2/11/2020
         //TODO: I also need the non-resonant pion reweight for MnvGENIEv1
-        return GetMinosEfficiencyWeight() * GetGenieWeight() * GetFluxAndCVWeight() * Get2p2hWeight() * GetRPAWeight();
+        return GetMinosEfficiencyWeight() * GetGenieWeight() * GetFluxAndCVWeight() * GetLowRecoil2p2hWeight() * GetRPAWeight();
       }
 
       //Override DefaultCVUniverse weight functions to used cached values as starting point.
@@ -159,7 +159,7 @@ namespace evt
       }
       #pragma GCC diagnostic pop
 
-      virtual double Get2p2hWeight() const override
+      virtual double GetLowRecoil2p2hWeight() const override
       {
         return fWeightCache->mec;
       }
