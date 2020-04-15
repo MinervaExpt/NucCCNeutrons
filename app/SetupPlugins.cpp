@@ -115,7 +115,9 @@ namespace
       try
       {
         result[band] = allErrorBands.at(band);
-        for(const auto& univ: result[band]) assert(univ != nullptr && "Found an error band, but it was a nullptr!");
+        #ifndef NDEBUG
+          for(const auto& univ: result[band]) assert(univ != nullptr && "Found an error band, but it was a nullptr!");
+        #endif //NDEBUG
       }
       catch(const std::out_of_range& err)
       {
