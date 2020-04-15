@@ -24,6 +24,8 @@ namespace
   //TODO: Some kind of check on whether a run is in the range of a playlist.
   std::map<int, std::string> runNumberToPlaylist = {
                                                      //MC from https://cdcvs.fnal.gov/redmine/projects/minerva-sw/wiki/Inextinguishable_Monte_Carlo_Production_Run_Numbers
+                                                     //TODO: Deepika says I should get run ranges from here instead: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/wiki/Inextinguishable_Production
+                                                     //I've already commented out me1Y and me1Z, so hopefully that's the only major change.
                                                      {110000, "minervame1A"}, //tracker
                                                      {114000, "minervame1A"}, //nuke
                                                      {111000, "minervame1B"}, //tracker
