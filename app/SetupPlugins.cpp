@@ -115,7 +115,7 @@ namespace
       try
       {
         result[band] = allErrorBands.at(band);
-        assert(result[band] != nullptr && "Found an error band, but it was a nullptr!");
+        for(const auto& univ: result[band]) assert(univ != nullptr && "Found an error band, but it was a nullptr!");
       }
       catch(const std::out_of_range& err)
       {
@@ -267,11 +267,9 @@ namespace app
   //evaluating cuts and physics variables.
   std::vector<std::vector<evt::CVUniverse*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::CVUniverse*>> bands)
   {
-    std::vector<std::vector<evt::CVUniverse*>> groupedUnivs(1);
-                                                                                                                                        
-    auto& vertical = groupedUnivs[0]; //By convention, put vertical universes at the beginning of this vector<>.
-                                      //This is an implementation detail that may change at any time.
-                                                                                                                                        
+    std::vector<std::vector<evt::CVUniverse*>> groupedUnivs;
+    std::vector<evt::CVUniverse*> vertical;
+
     for(const auto& band: bands)
     {
       if(band.first == "cv") vertical.insert(vertical.end(), band.second.begin(), band.second.end());
@@ -280,11 +278,13 @@ namespace app
         for(const auto univ: band.second)
         {
           if(univ->IsVerticalOnly()) vertical.push_back(univ);
-          else groupedUnivs.emplace_back(std::vector<evt::CVUniverse*>{univ});
+          else groupedUnivs.push_back(std::vector<evt::CVUniverse*>{univ});
         }
       }
     }
-                                                                                                                                        
+
+    groupedUnivs.insert(groupedUnivs.begin(), vertical);
+
     return groupedUnivs;
   }
 

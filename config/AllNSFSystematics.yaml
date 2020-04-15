@@ -1,0 +1,63 @@
+#File: NucCCNeutronsSystematics.yaml
+#Brief: The list of error bands used for the NucCCNeutrons neutron multiplicity analysis.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+systematics:
+  #Beam angle
+  - BeamAngleX
+  - BeamAngleY
+  #Flux
+  - Flux
+  #Genie knobs
+  - AGKYxF1pi
+  - AhtBY
+  - BhtBY
+  - CCQEPauliSupViaKF
+  - CV1uBY
+  - CV2uBY
+  - EtaNCEL
+  - FrAbs_N
+  - FrAbs_pi
+  - FrCEx_N
+  - FrCEx_pi
+  - FrElas_N
+  - FrElas_pi
+  - FrInel_N
+  - FrPiProd_N
+  - FrPiProd_pi
+  - MFP_N
+  - MFP_pi
+  - MaCCQEshape
+  - MaNCEL
+  - MaRES
+  - MvRES
+  - NormCCQE
+  - NormCCRES
+  - NormDISCC
+  - NormNCRES
+  - RDecBR1gamma
+  - Rvn1pi
+  - Rvp1pi
+  - Rvn2pi
+  - Rvp2pi
+  - Theta_Delta2Npi
+  - VecFFCCQEshape
+  #Minos Reconstruction
+  - MinosEfficiency
+  #MINERvA tune systematics.  You might be able to turn some of these off
+  #depending on your model block.
+  - 2p2h
+  - HighQ2
+  - LowQ2
+  - LowQ2Pi #TODO: Broken?
+  #Muon reconstruction
+  - MuonResolution
+  - Muon #Muon energy specifically
+  #Particle response (from Test Beam?)
+  - proton
+  - meson
+  - em
+  - other
+  - low_neutron #TODO: Replace this with something more complicated?
+  - mid_neutron #TODO: Replace this with something more complicated?
+  - high_neutron #TODO: Replace this with something more complicated?
