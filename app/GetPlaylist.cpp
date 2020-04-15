@@ -13,6 +13,7 @@
 
 //c++ includes
 #include <memory>
+#include <iostream>
 
 namespace
 {
@@ -65,10 +66,10 @@ namespace
                                                      {127100, "minervame6G"}, //nuke
                                                      {131000, "minervame3A"}, //tracker
                                                      {135000, "minervame3A"}, //nuke
-                                                     {113020, "minervame1Y"}, //tracker
+                                                     /*{113020, "minervame1Y"}, //tracker
                                                      {117020, "minervame1Y"}, //nuke
                                                      {113055, "minervame1Z"}, //tracker
-                                                     {117055, "minervame1Z"}, //nuke
+                                                     {117055, "minervame1Z"}, //nuke*/
                                                      //Data from https://cdcvs.fnal.gov/redmine/projects/minerva-sw/wiki/Data_Run_Periods
                                                      {6038, "minervame1A"},
                                                      {7000, "minervame2"},
@@ -141,9 +142,14 @@ namespace app
 
     const int run = PlotUtils::TreeWrapper(tree).GetValue((isMC?"mc":"ev") + std::string("_run"), 0);
 
-    const auto found = ::runNumberToPlaylist.lower_bound(run);
-    if(found != ::runNumberToPlaylist.end()) return found->second;
+    std::string playlist = "NoSuchPlaylist";
+    const auto found = ::runNumberToPlaylist.upper_bound(run);
+    if(found != ::runNumberToPlaylist.begin()) playlist = std::prev(found)->second;
 
-    return "NoSuchPlaylist";
+    #ifndef NDEBUG
+      std::cout << "Inferring playlist " << playlist << " from run number " << run << ".\n";
+    #endif //NDEBUG
+
+    return playlist;
   }
 }
