@@ -9,6 +9,7 @@ app:
   AnaTupleName: &TupleName "CCQENu"
   HypothesisName: *TupleName
   useNuEConstraint: true
+  nFluxUniverses: 100 #To match Rob
 
 signal: !NSFValidation
   name: "NSF Validation"

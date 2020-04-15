@@ -241,14 +241,14 @@ namespace app
     //TODO: Maybe rename the "app" YAML block "physics"?  But everything in the YAML file is physics!  It still needs a better name.
     DefaultCVUniverse::SetPlaylist(options.playlist());
     DefaultCVUniverse::SetAnalysisNuPDG(DefaultCVUniverse::isFHC()?14:-14);
-    DefaultCVUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>(false)); //No nu-e constraint for antineutrino mode yet
+    DefaultCVUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>()); //No nu-e constraint for antineutrino mode yet
 
     //"global" configuration for algorithms specific to my analysis
     evt::CVUniverse::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));
 
     if(isMC)
     {
-      DefaultCVUniverse::SetNFluxUniverses(options.ConfigFile()["app"]["nFluxUniverses"].as<int>(50));
+      DefaultCVUniverse::SetNFluxUniverses(options.ConfigFile()["app"]["nFluxUniverses"].as<int>());
 
       const auto errorBands = ::chooseSystematics(options.ConfigFile()["systematics"].as<std::vector<std::string>>(), chw);
       result.insert(errorBands.begin(), errorBands.end());
