@@ -82,6 +82,7 @@ namespace evt
       //DefaultCVUniverse interfaces
       //This is really used as "hypothesis name" for NeutrinoInt-based branches.
       virtual std::string GetAnaToolName() const override { return fHypothesisName; }
+      [[deprecated("TODO: Go back to old recoil definition instead of using a branch from CCQENu.")]]
       virtual double GetRecoilEnergy() const override;
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
@@ -106,6 +107,7 @@ namespace evt
       virtual int GetHelicity() const { return GetInt((GetAnaToolName() + "_nuHelicity").c_str()); }
       virtual units::LorentzVector<MeV> GetMuonP() const { return GetMuon4V(); }
       virtual radians GetMuonTheta() const { return GetThetamu(); }
+      virtual MeV GetEAvailable() const; //Recoil energy - neutron candidate energy
 
       //Reco branches from CCQENu
       virtual bool hasInteractionVertex() const { return GetInt("has_interaction_vertex"); }

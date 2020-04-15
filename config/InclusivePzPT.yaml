@@ -10,7 +10,7 @@ model: *MnvGENIEv1
 app:
   useNuEConstraint: true
 
-systematics:
+systematics: []
 
 signal: !MuonPzPTSignal
   name: "MuonPzPT"

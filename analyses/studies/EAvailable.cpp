@@ -35,7 +35,7 @@ namespace ana
 
     GeV reco(const evt::CVUniverse& event)
     {
-      return event.GetRecoilE();
+      return event.GetEAvailable();
     }
   };
 }

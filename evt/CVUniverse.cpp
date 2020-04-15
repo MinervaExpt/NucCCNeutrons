@@ -23,11 +23,15 @@ namespace evt
   {
   }
 
-  //PlotUtils interface in MeV
   double CVUniverse::GetRecoilEnergy() const
   {
+    return GetVecElem("recoil_summed_energy", 0);
+  }
+
+  MeV CVUniverse::GetEAvailable() const
+  {
     const auto edeps = Getblob_edep();
-    return GetDouble("CCNeutrons_recoilE") - std::accumulate(edeps.begin(), edeps.end(), 0_MeV).in<MeV>();
+    return GetRecoilE() - std::accumulate(edeps.begin(), edeps.end(), 0_MeV);
   }
 
   units::LorentzVector<MeV> CVUniverse::GetTruthPmu() const
