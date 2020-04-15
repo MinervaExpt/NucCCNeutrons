@@ -1,3 +1,3 @@
 install(FILES LowRecoilMuonMomentum.yaml LowRecoilMuonMomentumTarget3Iron.yaml LowRecoilMuonMomentumTracker.yaml NeutronMultiplicityTracker.yaml NeutronDetectionTracker.yaml NeutronMultiplicityTarget5Iron.yaml InclusivePzPT.yaml InclusivePzPTWithCCQENu.yaml NSFValidation.yaml DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-install(FILES Targets.yaml CommonModels.yaml NucCCNeutronsSystematics.yaml DESTINATION bin)
+install(FILES Targets.yaml CommonModels.yaml NucCCNeutronsSystematics.yaml AllNSFSystematics.yaml DESTINATION bin)

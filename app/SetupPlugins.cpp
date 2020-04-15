@@ -244,11 +244,12 @@ namespace app
     //"global" configuration for algorithms specific to my analysis
     evt::CVUniverse::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));
 
-    if(isMC && !options.ConfigFile()["app"]["skipSystematics"]) //TODO: Remove this legacy option.  Just leave the systematics block blank.
+    if(isMC)
     {
       DefaultCVUniverse::SetNFluxUniverses(options.ConfigFile()["app"]["nFluxUniverses"].as<int>(50));
 
       const auto errorBands = ::chooseSystematics(options.ConfigFile()["systematics"].as<std::vector<std::string>>(), chw);
+      result.insert(errorBands.begin(), errorBands.end());
     }
 
     //Name of the NeutrinoInt from which to extract kinematic quantities
