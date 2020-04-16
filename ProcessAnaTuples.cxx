@@ -532,7 +532,7 @@ int main(const int argc, const char** argv)
 
     std::ofstream tableFile(tableName);
     tableFile << "#" << pot_used << " POT\n";
-    truthSummary.print(tableFile);
+    truthSummary.print(tableFile) << "\n";
     tableFile << "Git commit hash: " << git::commitHash() << "\n";
     std::cout << "#" << pot_used << " POT\n";
     truthSummary.print(std::cout) << "\n";
@@ -559,7 +559,7 @@ int main(const int argc, const char** argv)
 
     std::ofstream tableFile(tableName);
     tableFile << "#" << pot_used << " POT\n";
-    recoSummary.print(tableFile);
+    recoSummary.print(tableFile) << "\n";
     tableFile << "Git commit hash: " << git::commitHash() << "\n";
     std::cout << "#" << pot_used << " POT\n";
     recoSummary.print(std::cout) << "\n";

@@ -4,64 +4,61 @@
 
 systematics:
   #Beam angle
-  #TODO: Turn these on and test
   #- BeamAngleX
   #- BeamAngleY
   #Flux
   - Flux
   #Genie knobs
-  - AGKYxF1pi
-  - AhtBY
-  - BhtBY
-  - CCQEPauliSupViaKF
-  - CV1uBY
-  - CV2uBY
-  - EtaNCEL
-  - FrAbs_N
-  - FrAbs_pi
-  - FrCEx_N
-  - FrCEx_pi
-  - FrElas_N
-  - FrElas_pi
-  - FrInel_N
-  - FrPiProd_N
-  - FrPiProd_pi
-  - MFP_N
-  - MFP_pi
-  - MaCCQEshape
-  - MaNCEL
-  - MaRES
-  - MvRES
-  - NormCCQE
-  - NormCCRES
-  - NormDISCC
-  - NormNCRES
-  - RDecBR1gamma
-  - Rvn1pi
-  - Rvp1pi
-  - Rvn2pi
-  - Rvp2pi
-  - Theta_Delta2Npi
-  - VecFFCCQEshape
+  - GENIE_AGKYxF1pi
+  - GENIE_AhtBY
+  - GENIE_BhtBY
+  - GENIE_CCQEPauliSupViaKF
+  - GENIE_CV1uBY
+  - GENIE_CV2uBY
+  - GENIE_EtaNCEL
+  - GENIE_FrAbs_N
+  - GENIE_FrAbs_pi
+  - GENIE_FrCEx_N
+  - GENIE_FrCEx_pi
+  - GENIE_FrElas_N
+  - GENIE_FrElas_pi
+  - GENIE_FrInel_N
+  - GENIE_FrPiProd_N
+  - GENIE_FrPiProd_pi
+  - GENIE_MFP_N
+  - GENIE_MFP_pi
+  - GENIE_MaCCQEshape
+  - GENIE_MaNCEL
+  - GENIE_MaRES
+  - GENIE_MvRES
+  - GENIE_NormCCQE
+  - GENIE_NormCCRES
+  - GENIE_NormDISCC
+  - GENIE_NormNCRES
+  - GENIE_RDecBR1gamma
+  - GENIE_Rvn1pi
+  - GENIE_Rvp1pi
+  - GENIE_Rvn2pi
+  - GENIE_Rvp2pi
+  - GENIE_Theta_Delta2Npi
+  - GENIE_VecFFCCQEshape
   #Minos Reconstruction
-  #TODO: Turn this on and test
-  #- MinosEfficiency
+  #- MINOS_Reconstruction_Efficiency
   #MINERvA tune systematics.  You might be able to turn some of these off
   #depending on your model block.
-  - 2p2h
-  - HighQ2
-  - LowQ2
+  - Low_Recoil_2p2h_Tune
+  - RPA_HighQ2
+  - RPA_LowQ2
   #- LowQ2Pi #TODO: Broken?
   #Muon reconstruction
-  #TODO: Turn these on and test
-  #- MuonResolution
-  #- Muon #Muon energy specifically
-  #Particle response (from Test Beam?)
-  #TODO: Turn these on and test
-  #- proton
-  #- meson
-  #- em
-  #- other
-  #- low_neutron #TODO: Replace this with something more complicated?
-  #- mid_neutron #TODO: Replace this with something more complicated?
-  #- high_neutron #TODO: Replace this with something more complicated?
+  #- Muon_Energy_Resolution
+  #- Muon_Energy_MINERvA
+  #- Muon_Energy_MINOS
+  ##Particle response (from Test Beam?)
+  #- response_proton
+  #- response_meson
+  #- response_em
+  #- response_other
+  #- response_low_neutron #TODO: Replace this with something more complicated?
+  #- response_mid_neutron #TODO: Replace this with something more complicated?
+  #- response_high_neutron #TODO: Replace this with something more complicated?

@@ -41,6 +41,21 @@
 
 namespace
 {
+  //Merge entries into a map<string, vector<>>.  Normally, map<>::insert() does nothing if the key used already exists.
+  //Since I'm dealing with a map<string, vector<>>, just merge with the existing vector<> if the string already exists.
+  //To better match what Ben's example for the MasterAnaMacro does, I'm going to map universes to their ShortName()s.
+  //This means that the standard that the user sees is the same as the error band names that appear in an output MnvH1D.
+  std::map<std::string, std::vector<evt::CVUniverse*>>& merge(const std::map<std::string, std::vector<evt::CVUniverse*>>& from, std::map<std::string, std::vector<evt::CVUniverse*>>& to)
+  {
+    for(const auto& group: from)
+    {
+      const auto name = group.second.front()->ShortName();
+      to[name].insert(to[name].end(), group.second.begin(), group.second.end());
+    }
+
+    return to;
+  }
+
   //Given the names of cuts for a sideband, all reco cuts, and the cuts already associated with sidebands,
   //create a hash code that describes which cuts an event must fail to be
   //in this sideband and move any needed cuts from allCuts to sidebandCuts.
@@ -76,27 +91,17 @@ namespace
   std::map<std::string, std::vector<evt::CVUniverse*>> getStandardSystematics(PlotUtils::ChainWrapper* chain)
   {
     //TODO: Keep this list up to date
-    auto allErrorBands  = PlotUtils::GetAngleSystematicsMap<evt::CVUniverse>(chain); //TODO: What if I want to change beam angle uncertainties?
-    auto toAdd = PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chain, PlotUtils::DefaultCVUniverse::GetNFluxUniverses());
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chain);
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::GetMinosEfficiencySystematicsMap<evt::CVUniverse>(chain);
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::Get2p2hSystematicsMap<evt::CVUniverse>(chain);
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::GetRPASystematicsMap<evt::CVUniverse>(chain);
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::GetLowQ2PiSystematicsMap<evt::CVUniverse>(chain);
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::GetMuonResolutionSystematicsMap<evt::CVUniverse>(chain);
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::GetMinervaMuonSystematicsMap<evt::CVUniverse>(chain);
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::GetMinosMuonSystematicsMap<evt::CVUniverse>(chain);
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
-    toAdd = PlotUtils::GetResponseSystematicsMap<evt::CVUniverse>(chain, true); //TODO: flag to turn off neutron response?
-    allErrorBands.insert(toAdd.begin(), toAdd.end());
+    auto allErrorBands = PlotUtils::GetAngleSystematicsMap<evt::CVUniverse>(chain); //TODO: What if I want to change beam angle uncertainties?
+    ::merge(PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chain, PlotUtils::DefaultCVUniverse::GetNFluxUniverses()), allErrorBands);
+    ::merge(PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinosEfficiencySystematicsMap<evt::CVUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::Get2p2hSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetRPASystematicsMap<evt::CVUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetLowQ2PiSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMuonResolutionSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinervaMuonSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinosMuonSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetResponseSystematicsMap<evt::CVUniverse>(chain, true), allErrorBands); //TODO: flag to turn off neutron response?
 
     return allErrorBands;
   }

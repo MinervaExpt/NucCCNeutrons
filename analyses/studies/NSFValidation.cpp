@@ -28,7 +28,7 @@ namespace ana
     const std::vector<double> pTMuBins{0, 0.075, 0.15, 0.25, 0.325, 0.4, 0.475, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 2.5, 4.5};
     fPTMu = dir.make<HIST<GeV>>("h_inclusive_Pt", "Reco", pTMuBins, univs);
 
-    fRecoilE = dir.make<HIST<MeV>>("h_inclusive_Nu", "Reco", 50, 0, 5050, univs);
+    fRecoilE = dir.make<HIST<MeV>>("h_inclusive_Nu", "Reco", 110, 0, 5050, univs);
   }
 
   void NSFValidation::mcSignal(const evt::CVUniverse& event, const events weight)
