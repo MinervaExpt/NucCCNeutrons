@@ -11,6 +11,7 @@ app:
   AnaTupleName: &TupleName "CCQENu"
   HypothesisName: *TupleName
   useNuEConstraint: true
+  nFluxUniverses: 50
 
 systematics: []
 
