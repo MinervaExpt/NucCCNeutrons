@@ -12,7 +12,7 @@ app:
   nFluxUniverses: 100 #To match Rob
 
 signal: !NSFValidation
-  name: "NSF Validation"
+  name: "h_inclusive" #Match Rob's histogram naming convention
 
 cuts:
   truth:

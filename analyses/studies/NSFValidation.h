@@ -37,9 +37,21 @@ namespace ana
       template <class UNIT>
       using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;
 
+      template <class UNIT>
+      using HIST2D = units::WithUnits<Hist2DWrapper<evt::CVUniverse>, UNIT, events, entries>;
+
       HIST<GeV>* fEMu; //Muon energy
       HIST<GeV>* fPTMu; //Muon transverse momentum
       HIST<MeV>* fRecoilE; //Recoil energy as defined by CCQENu
+
+      //Histograms of physics quantities versus weights.
+      //They help debug weights when they are different from the reference.
+      HIST2D<GeV>* fPMINOSVersusMINOSWeight;
+      HIST2D<GeV>* fEMuVersusMINOSWeight;
+      HIST2D<GeV>* fEMuVersusGENIEWeight;
+      HIST2D<GeV>* fEMuVersusRPAWeight;
+      HIST2D<GeV>* fEMuVersus2p2hWeight;
+      HIST2D<GeV>* fEMuVersusFluxWeight;
   };
 }
 

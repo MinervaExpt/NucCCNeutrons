@@ -315,6 +315,9 @@ namespace app
     {
       try
       {
+        #ifndef NDEBUG
+          std::cout << "Using a model of type " << model.second.Tag() << "\n";
+        #endif //NDEBUG
         models.emplace_back(modelFactory.Get(model.second));
       }
       catch(const std::runtime_error& e)
@@ -322,6 +325,10 @@ namespace app
         throw std::runtime_error(std::string("Failed to set up a Model named " + model.first.as<std::string>() + ":\n") + e.what());
       }
     }
+
+    #ifndef NDEBUG
+      std::cout << "Using " << models.size() << " models.\n";
+    #endif //NDEBUG
 
     return models;
   }
