@@ -9,6 +9,7 @@ model: *MnvGENIEv1
 
 app:
   useNuEConstraint: true
+  nFluxUniverses: 50
 
 systematics: []
 
