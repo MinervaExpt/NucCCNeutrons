@@ -28,7 +28,7 @@ namespace ana
     const std::vector<double> pTMuBins{0, 0.075, 0.15, 0.25, 0.325, 0.4, 0.475, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 2.5, 4.5};
     fPTMu = dir.make<HIST<GeV>>("Pt", "Reco", pTMuBins, univs);
 
-    fRecoilE = dir.make<HIST<MeV>>("Nu", "Reco", 110, 0, 5050, univs);
+    fRecoilE = dir.make<HIST<MeV>>("Nu", "Reco", 100, 0, 5050, univs);
 
     fPMINOSVersusMINOSWeight = dir.make<HIST2D<GeV>>("WgtVsPmuMinos_MINOS", "Reco;Weight", 40, 0, 20, 100, 0.9, 1.1, univs);
 
@@ -47,19 +47,18 @@ namespace ana
   {
     const auto muonP = event.GetMuonP();
     const GeV muonE = muonP.E();
-    const GeV muonT = muonE - 105.6583_MeV; //TODO: Remove the need for this when Rob updates his histograms.
     const units::XYZVector<double> zHat{0, 0, 1};
 
     fEMu->Fill(&event, muonE, weight);
-    fPTMu->Fill(&event, muonP.p().cross(zHat).mag(), weight);
+    fPTMu->Fill(&event, /*muonP.p().cross(zHat).mag()*/muonP.p().mag()*sin(event.GetMuonTheta()), weight);
     fRecoilE->Fill(&event, event.GetRecoilE(), weight); //N.B.: My GetRecoilE() might not always match the NSF_ValidationSuite
 
     fPMINOSVersusMINOSWeight->Fill(&event, MeV(event.GetPmuMinos()), events(event.GetMinosEfficiencyWeight()), 1_entries);
-    fEMuVersusMINOSWeight->Fill(&event, muonT, events(event.GetMinosEfficiencyWeight()), 1_entries);
-    fEMuVersusGENIEWeight->Fill(&event, muonT, events(event.GetGenieWeight()), 1_entries);
-    fEMuVersusRPAWeight->Fill(&event, muonT, events(event.GetRPAWeight()), 1_entries);
-    fEMuVersus2p2hWeight->Fill(&event, muonT, events(event.GetLowRecoil2p2hWeight()), 1_entries);
-    fEMuVersusFluxWeight->Fill(&event, muonT, events(event.GetFluxAndCVWeight()), 1_entries);
+    fEMuVersusMINOSWeight->Fill(&event, muonE, events(event.GetMinosEfficiencyWeight()), 1_entries);
+    fEMuVersusGENIEWeight->Fill(&event, muonE, events(event.GetGenieWeight()), 1_entries);
+    fEMuVersusRPAWeight->Fill(&event, muonE, events(event.GetRPAWeight()), 1_entries);
+    fEMuVersus2p2hWeight->Fill(&event, muonE, events(event.GetLowRecoil2p2hWeight()), 1_entries);
+    fEMuVersusFluxWeight->Fill(&event, muonE, events(event.GetFluxAndCVWeight()), 1_entries);
   }
 
   void NSFValidation::afterAllFiles(const events /*passedSelection*/)
