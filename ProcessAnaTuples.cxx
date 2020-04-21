@@ -20,6 +20,7 @@
 //utility includes
 #include "util/Factory.cpp"
 #include "util/Table.h"
+#include "util/StreamRedirection.h"
 
 //analysis includes
 #include "analyses/base/Study.h"
@@ -157,6 +158,11 @@ int main(const int argc, const char** argv)
     {
       throw std::runtime_error(std::string("Failed to set up the signal Study:\n") + e.what());
     }
+
+    //Send whatever noise PlotUtils makes during setup to a file in the current working directory
+    #ifdef NDEBUG
+      util::StreamRedirection silencePlotUtils(std::cout, "NSFNoise.txt");
+    #endif
 
     truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"]); //TODO: Tell the user which Cut failed
     truthSignal = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"]); //TODO: Tell the user which Cut failed

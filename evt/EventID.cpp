@@ -58,7 +58,7 @@ namespace evt
 
   std::ostream& operator <<(std::ostream& os, const GateID& gate)
   {
-    return os << static_cast<SubrunID>(gate) << " Gate " << gate;
+    return os << static_cast<SubrunID>(gate) << " Gate " << gate.gate;
   }
 
   bool SliceID::operator < (const SliceID& rhs) const
@@ -75,6 +75,6 @@ namespace evt
 
   std::ostream& operator <<(std::ostream& os, const SliceID& slice)
   {
-    return os << static_cast<SliceID>(slice) << " Slice " << slice;
+    return os << static_cast<GateID>(slice) << " Slice " << slice.slice;
   }
 }
