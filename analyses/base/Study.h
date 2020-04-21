@@ -71,6 +71,10 @@ namespace ana
       //Function for implementing the event loop.  Do not use in derived classes.
       bool passesCuts(const evt::CVUniverse& event);
 
+      //Not all Studies need the Truth loop.  Override this function and return false
+      //for Studies that don't need the Truth loop to more halve runtime!
+      virtual bool wantsTruthLoop() const;
+
       //Create a static instance of an ana::Study::Registrar<> for your Study in the
       //"anonymous namespace" at the bottom of your .cpp file to make it discoverable
       //at runtime.

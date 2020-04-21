@@ -60,6 +60,9 @@ namespace ana
         fResolution->SyncCVHistos();
       }
 
+      //No Truth loop needed
+      virtual bool wantsTruthLoop() const override { return false; }
+
       using Registrar = ana::Study::Registrar<Resolution<VARIABLE>>;
 
     private:

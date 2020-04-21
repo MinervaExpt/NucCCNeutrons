@@ -258,15 +258,18 @@ int main(const int argc, const char** argv)
         //TODO: ChainWrapper -> TreeWrapper to avoid opening tupleFile again
         PlotUtils::ChainWrapper truthTree("Truth");
 
-        try
+        if(signal->wantsTruthLoop())
         {
-          truthTree.Add(fName);
-        }
-        catch(const PlotUtils::ChainWrapper::BadFile& err)
-        {
-          std::cerr << "Failed to find an AnaTuple named Truth "
-                    << " in " << fName << ".  Skipping this file name.\n";
-          continue; //TODO: Don't use continue if I can help it
+          try
+          {
+            truthTree.Add(fName);
+          }
+          catch(const PlotUtils::ChainWrapper::BadFile& err)
+          {
+            std::cerr << "Failed to find an AnaTuple named Truth "
+                      << " in " << fName << ".  Skipping this file name.\n";
+            continue; //TODO: Don't use continue if I can help it
+          }
         }
 
         //MC loop
@@ -366,44 +369,47 @@ int main(const int argc, const char** argv)
         } //For each entry in the MC tree
 
         //Truth loop
-        const size_t nTruthEntries = truthTree.GetEntries();
-        for(auto& compat: groupedUnivs)
+        if(signal->wantsTruthLoop())
         {
-          for(auto univ: compat) univ->SetTree(&truthTree);
-        }
-
-        //Don't try to get MINOS weights in the truth tree loop
-        PlotUtils::DefaultCVUniverse::SetTruth(true);
-
-        for(size_t entry = 0; entry < nTruthEntries; ++entry)
-        {
-          #ifndef NDEBUG
-            if((entry % printFreq) == 0) std::cout << "Done with truth entry " << entry << "\n";
-          #endif
-
-          cv->SetEntry(entry);
-          weights.SetEntry(*cv);
-
-          const double truthWeight = ::getWeight(reweighters, *cv).in<events>();
-          truthTotal += truthWeight;
-
-          //Use number of events in efficiency denominator for efficiencies in Cut table.
-          if(::requireAll(truthPhaseSpace, *cv) && ::requireAll(truthSignal, *cv))
+          const size_t nTruthEntries = truthTree.GetEntries();
+          for(auto& compat: groupedUnivs)
           {
-            truthSumSignal += truthWeight;
+            for(auto univ: compat) univ->SetTree(&truthTree);
           }
 
-          for(const auto& compat: groupedUnivs)
-          {
-            auto& event = *compat.front(); //All compatible universes pass the same cuts
-            for(auto univ: compat) univ->SetEntry(entry);
+          //Don't try to get MINOS weights in the truth tree loop
+          PlotUtils::DefaultCVUniverse::SetTruth(true);
 
-            if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
+          for(size_t entry = 0; entry < nTruthEntries; ++entry)
+          {
+            #ifndef NDEBUG
+              if((entry % printFreq) == 0) std::cout << "Done with truth entry " << entry << "\n";
+            #endif
+
+            cv->SetEntry(entry);
+            weights.SetEntry(*cv);
+
+            const double truthWeight = ::getWeight(reweighters, *cv).in<events>();
+            truthTotal += truthWeight;
+
+            //Use number of events in efficiency denominator for efficiencies in Cut table.
+            if(::requireAll(truthPhaseSpace, *cv) && ::requireAll(truthSignal, *cv))
             {
-              for(const auto univ: compat) signal->truth(*univ, ::getWeight(reweighters, *univ));
-            } //If event passes all truth cuts
-          } //For each error band
-        } //For each entry in Truth tree
+              truthSumSignal += truthWeight;
+            }
+
+            for(const auto& compat: groupedUnivs)
+            {
+              auto& event = *compat.front(); //All compatible universes pass the same cuts
+              for(auto univ: compat) univ->SetEntry(entry);
+
+              if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
+              {
+                for(const auto univ: compat) signal->truth(*univ, ::getWeight(reweighters, *univ));
+              } //If event passes all truth cuts
+            } //For each error band
+          } //For each entry in Truth tree
+        } //If wantsTruthLoop
       } //If isThisJobMC
       else
       {
@@ -508,7 +514,7 @@ int main(const int argc, const char** argv)
   tableName = tableName.substr(0, tableName.find('.'));
   tableName += ".md"; //Markdown
 
-  if(options->isMC())
+  if(options->isMC() && signal->wantsTruthLoop())
   {
     util::Table<6> truthSummary({"Cut Name", "Events", "\% Eff", "\% Purity", "Relative \% Eff", "Relative \% All"});
 
@@ -538,7 +544,8 @@ int main(const int argc, const char** argv)
     truthSummary.print(std::cout) << "\n";
     std::cout << "Git commit hash: " << git::commitHash() << "\n";
   }
-  else
+  else //I might also get here for an MC file if there's no Truth loop.  Some studies
+       //don't need the Truth loop.
   {
     util::Table<3> recoSummary({"Cut Name", "Total Entries", "Relative \% Sample Left"});
 

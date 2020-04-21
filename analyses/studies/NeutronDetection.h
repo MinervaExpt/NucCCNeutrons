@@ -36,6 +36,9 @@ namespace ana
       virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
       virtual void data(const evt::CVUniverse& /*event*/) override {}; //TODO: Do I want to plot candidate observables in data?
 
+      //No Truth loop needed
+      virtual bool wantsTruthLoop() const override { return false; }
+
     private:
       //Cuts that decide whether a Candidate or FSPart should be counted
       ana::NeutronMultiplicity fCuts;

@@ -33,6 +33,9 @@ namespace ana
       virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
       virtual void data(const evt::CVUniverse& /*event*/) override {}; //TODO: Do I want to plot candidate observables in data?
 
+      //I don't need the Truth loop
+      virtual bool wantsTruthLoop() const override { return false; }
+
     private:
       template <class UNIT>
       using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;

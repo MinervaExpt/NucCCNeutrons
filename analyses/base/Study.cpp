@@ -35,4 +35,9 @@ namespace ana
   void Study::afterAllFiles(const events /*passedSelection*/)
   {
   }
+
+  bool Study::wantsTruthLoop() const
+  {
+    return true;
+  }
 }
