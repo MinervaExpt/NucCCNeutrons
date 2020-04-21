@@ -32,7 +32,7 @@ systematics:
   - GENIE_MaRES
   - GENIE_MvRES
   - GENIE_NormCCQE
-  - GENIE_NormCCRES
+  #- GENIE_NormCCRES
   - GENIE_NormDISCC
   - GENIE_NormNCRES
   - GENIE_RDecBR1gamma
