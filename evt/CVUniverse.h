@@ -82,7 +82,6 @@ namespace evt
       //DefaultCVUniverse interfaces
       //This is really used as "hypothesis name" for NeutrinoInt-based branches.
       virtual std::string GetAnaToolName() const override { return fHypothesisName; }
-      [[deprecated("TODO: Go back to old recoil definition instead of using a branch from CCQENu.")]]
       virtual double GetRecoilEnergy() const override;
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
