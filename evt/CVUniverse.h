@@ -48,14 +48,12 @@ namespace evt
     void SetEntry(PlotUtils::DefaultCVUniverse& cv)
     {
       //Make sure I don't call any universes' overrides by mistake
-      minosEff = cv.DefaultCVUniverse::GetMinosEfficiencyWeight();
       GENIE = cv.DefaultCVUniverse::GetGenieWeight();
       fluxAndCV = cv.DefaultCVUniverse::GetFluxAndCVWeight();
       mec = cv.DefaultCVUniverse::GetLowRecoil2p2hWeight(); //Yes, I know 2p2h and MEC aren't exactly the same.  2p2h isn't a valid identifier though.
       rpa = cv.DefaultCVUniverse::GetRPAWeight();
     }
 
-    double minosEff = 0;
     double GENIE = 0;
     double fluxAndCV = 0;
     double mec = 0;
@@ -138,13 +136,6 @@ namespace evt
         //Rob told me that this is MnvGENIE v1.1 on 2/11/2020
         //TODO: I also need the non-resonant pion reweight for MnvGENIEv1
         return GetMinosEfficiencyWeight() * GetGenieWeight() * GetFluxAndCVWeight() * GetLowRecoil2p2hWeight() * GetRPAWeight();
-      }
-
-      //Override DefaultCVUniverse weight functions to used cached values as starting point.
-      //This way, systematic universes only redo calculations they shift.
-      virtual double GetMinosEfficiencyWeight() const override
-      {
-        return fWeightCache->minosEff;
       }
 
       virtual double GetGenieWeight() const override

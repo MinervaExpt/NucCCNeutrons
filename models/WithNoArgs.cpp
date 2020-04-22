@@ -26,7 +26,6 @@ namespace model
 //Register some models from PlotUtils that I want to compose at runtime
 namespace
 {
-  static model::WithNoArgs<&evt::CVUniverse::GetMinosEfficiencyWeight>::Registrar reg_MINOS("MINOSEfficiency");
   static model::WithNoArgs<&evt::CVUniverse::GetRPAWeight>::Registrar reg_RPA("RPA");
   static model::WithNoArgs<&evt::CVUniverse::GetLowRecoil2p2hWeight>::Registrar reg_2p2h("2p2h");
 }

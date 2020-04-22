@@ -50,7 +50,7 @@ namespace ana
     const units::XYZVector<double> zHat{0, 0, 1};
 
     fEMu->Fill(&event, muonE, weight);
-    fPTMu->Fill(&event, /*muonP.p().cross(zHat).mag()*/muonP.p().mag()*sin(event.GetMuonTheta()), weight);
+    fPTMu->Fill(&event, /*muonP.p().cross(zHat).mag()*/ MeV(event.GetPmu()*sin(event.GetMuonTheta())), weight);
     fRecoilE->Fill(&event, event.GetRecoilE(), weight); //N.B.: My GetRecoilE() might not always match the NSF_ValidationSuite
 
     fPMINOSVersusMINOSWeight->Fill(&event, MeV(event.GetPmuMinos()), events(event.GetMinosEfficiencyWeight()), 1_entries);
