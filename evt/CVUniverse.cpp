@@ -25,7 +25,8 @@ namespace evt
 
   double CVUniverse::GetRecoilEnergy() const
   {
-    return GetVecElem("recoil_summed_energy", 0);
+    return GetDouble((GetAnaToolName() + "_recoilE").c_str());
+    //return GetVecElem("recoil_summed_energy", 0);
   }
 
   MeV CVUniverse::GetEAvailable() const
