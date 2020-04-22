@@ -257,6 +257,10 @@ int main(const int argc, const char** argv)
         continue; //TODO: Don't use continue if I can help it
       }
 
+      //Bookkeeping for when there's no efficiency numerator
+      const size_t nEntries = anaTuple.GetEntries();
+      nEntriesTotal += nEntries;
+
       //On to the event loops
       if(options->isMC())
       {
@@ -423,8 +427,6 @@ int main(const int argc, const char** argv)
         //TODO: This data loop is looking worse and worse as I optimize the MC loop.
         //      I'm also getting unfilled histograms from my MC jobs now.  I think
         //      it's time to put the data loop back in its own program.
-        const size_t nEntries = anaTuple.GetEntries();
-        nEntriesTotal += nEntries;
         cv->SetTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)
@@ -543,9 +545,9 @@ int main(const int argc, const char** argv)
     }
 
     std::ofstream tableFile(tableName);
+    tableFile << "#" << options->playlist() << "\n";
     tableFile << "#" << pot_used << " POT\n";
     truthSummary.print(tableFile) << "\n";
-    tableFile << "Git commit hash: " << git::commitHash() << "\n";
     std::cout << "#" << pot_used << " POT\n";
     truthSummary.print(std::cout) << "\n";
     std::cout << "Git commit hash: " << git::commitHash() << "\n";
@@ -571,9 +573,9 @@ int main(const int argc, const char** argv)
     }
 
     std::ofstream tableFile(tableName);
+    tableFile << "#" << options->playlist() << "\n";
     tableFile << "#" << pot_used << " POT\n";
     recoSummary.print(tableFile) << "\n";
-    tableFile << "Git commit hash: " << git::commitHash() << "\n";
     std::cout << "#" << pot_used << " POT\n";
     recoSummary.print(std::cout) << "\n";
     std::cout << "Git commit hash: " << git::commitHash() << "\n";
@@ -583,6 +585,9 @@ int main(const int argc, const char** argv)
   options->HistFile->cd();
   auto pot = new TParameter<double>("POTUsed", pot_used);
   pot->Write();
+
+  auto commitHash = new TNamed("NucCCNeutronsGitCommitHash", git::commitHash());
+  commitHash->Write();
 
   return app::CmdLine::ExitCode::Success;
 }
