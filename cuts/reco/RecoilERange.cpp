@@ -13,7 +13,7 @@ namespace reco
 
   bool RecoilERange::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetRecoilE() > fMin && event.GetRecoilE() < fMax;
+    return event.GetEAvailable() > fMin && event.GetEAvailable() < fMax;
   }
 }
 
