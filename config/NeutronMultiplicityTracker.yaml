@@ -11,7 +11,9 @@
 model: *MnvGENIEv1
 
 app:
-  #TODO: candidate algorithm and other such options
+  useNuEConstraint: false
+  nFluxUniverses: 100
+
 
 #TODO: Figure out how to configure cuts that define neutron candidates.
 #      This is really more of a reconstruction step, but I have to do it
@@ -29,21 +31,25 @@ signal: !NeutronMultiplicitySignal
 cuts:
   truth:
     phaseSpace:
+      Apothem: !Apothem
+        apothem: !mm 850
+      Tracker: *OneTrackTracker
       MuonMomentum: !MuonMomentum
         min: !GeV 2
       TrackAngle: !TrackAngle
         max: !degrees 20
     signal:
       Antineutrino: !IsAntineutrino
-      LowQ3: &Q3Range !Q3Range
+      LowEAvailable: !EAvailRange
         max: !GeV 0.4
-      Apothem: &ApothemCut !Apothem
-        apothem: !mm 850
-      Tracker: *OneTrackTracker
+      CC: !IsCC
   reco:
+    Apothem: !Apothem
+      apothem: !mm 850
+    Tracker: *OneTrackTracker
     OneTrack: !nTracks
       max: 1
-    LowQ3: &Q3Range !Q3Range
+    LowEAvailable: !RecoilERange
         max: !GeV 0.4
     MinosDeltaT: !MinosDeltaT
       min: !ns -40
@@ -53,8 +59,8 @@ cuts:
     MuonMomentum: !MuonMomentum
       min: !GeV 2
     Antineutrino: !IsAntineutrino
-    Apothem: *ApothemCut
-    Tracker: *OneTrackTracker
+    DeadTime: !DeadDiscriminators
+      max: 1
 
 #Names in sidebands' "fails" blocks refer to truth cuts by block name.
 sidebands:
