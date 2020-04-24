@@ -32,7 +32,7 @@ namespace evt
   MeV CVUniverse::GetEAvailable() const
   {
     const auto edeps = Getblob_edep();
-    return GetRecoilE() - std::accumulate(edeps.begin(), edeps.end(), 0_MeV);
+    return std::max(0_MeV, GetRecoilE() - std::accumulate(edeps.begin(), edeps.end(), 0_MeV));
   }
 
   units::LorentzVector<MeV> CVUniverse::GetTruthPmu() const
@@ -62,7 +62,7 @@ namespace evt
       else if(fs.pdgCode != 2112 && abs(fs.pdgCode) != 13) E_avail += fs.energy; //Don't count energy for an FS neutron.  It isn't availble for reconstruction.  Marvin doesn't seem to count the muon either.
     }
 
-    return E_avail;
+    return std::max(0_GeV, E_avail);
   }
 
   SliceID CVUniverse::GetEventID(const bool isData) const

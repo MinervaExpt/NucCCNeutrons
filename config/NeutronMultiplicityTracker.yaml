@@ -38,10 +38,10 @@ cuts:
         min: !GeV 2
       TrackAngle: !TrackAngle
         max: !degrees 20
-    signal:
-      Antineutrino: !IsAntineutrino
       LowEAvailable: !EAvailRange
         max: !GeV 0.4
+    signal:
+      Antineutrino: !IsAntineutrino
       CC: !IsCC
   reco:
     Apothem: !Apothem
