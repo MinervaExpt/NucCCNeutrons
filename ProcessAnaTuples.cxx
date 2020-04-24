@@ -550,7 +550,7 @@ int main(const int argc, const char** argv)
     truthSummary.print(tableFile) << "\n";
     tableFile << "#Signal Definition:\n";
     for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
-    tableFile << "#Phase Space Cuts:\n";
+    tableFile << "\n#Phase Space Cuts:\n";
     for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["phaseSpace"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
 
     std::cout << "#" << pot_used << " POT\n";
