@@ -39,8 +39,8 @@ cuts:
       TrackAngle: !TrackAngle
         max: !degrees 20
       LowEAvailable: !EAvailRange
-        min: !GeV -1e-3
-        max: !GeV 0.4
+        min: &smallNegativeNumber !GeV -1e-3
+        max: &maxEAvail !GeV 0.1
     signal:
       Antineutrino: !IsAntineutrino
       CC: !IsCC
@@ -51,8 +51,8 @@ cuts:
     OneTrack: !nTracks
       max: 1
     LowEAvailable: !RecoilERange
-        min: !GeV -1e-3
-        max: !GeV 0.4
+        min: *smallNegativeNumber
+        max: *maxEAvail
     MinosDeltaT: !MinosDeltaT
       min: !ns -40
       max: !ns 110
