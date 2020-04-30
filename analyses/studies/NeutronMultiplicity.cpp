@@ -24,7 +24,7 @@ namespace ana
   //A muon momentum magnitude VARIABLE for the CrossSection<> templates.
   struct NeutronMultiplicity
   {
-    NeutronMultiplicity(const YAML::Node& config): fTruthMinEDep(config["truth"]["MinEDep"].as<MeV>()),
+    NeutronMultiplicity(const YAML::Node& config): fTruthMinKE(config["truth"]["MinKE"].as<MeV>()),
                                                    fRecoMinEDep(config["reco"]["MinEDep"].as<MeV>()),
                                                    fRecoMaxZDist(config["reco"]["MaxZDist"].as<mm>())
     {
@@ -55,13 +55,14 @@ namespace ana
     template <class FS>
     bool countAsTruth(const FS& fs) const
     {
-      return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinEDep;
+      return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinKE;
     }
 
     neutrons truth(const evt::CVUniverse& event)
     {
       //Count FS neutrons above an energy deposit threshold
-      const auto fs = event.Get<FSPart>(event.GetFSPDG_code(), event.GetFSenergy());
+      const auto fs = event.Get<FSPart>(event.GetFSPDGCodes(), event.GetFSEnergies());
+
       return std::count_if(fs.begin(), fs.end(), [this](const auto& fs)
                                                  { return this->countAsTruth(fs);});
     }
@@ -77,7 +78,7 @@ namespace ana
     }
 
     private:
-      MeV fTruthMinEDep; //Minimum energy deposit cut on candidates
+      MeV fTruthMinKE; //Minimum energy deposit cut on candidates
       MeV fRecoMinEDep;
       mm fRecoMaxZDist; //Minimum z distance from vertex for candidates
   };

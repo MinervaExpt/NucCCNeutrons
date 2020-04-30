@@ -62,7 +62,7 @@ namespace ana
 
     //Physics objects I'll need
     const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron());
-    const auto fs = event.Get<FSPart>(event.GetFSPDG_code(), event.GetFSenergy(), event.GetFSangle_wrt_z());
+    const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetTruthMatchedangle_wrt_z());
     const auto vertex = event.GetVtx();
 
     std::set<int> FSWithCands; //FS neutrons with 1 or more reconstructed candidates

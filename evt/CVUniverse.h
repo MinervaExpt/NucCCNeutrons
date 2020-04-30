@@ -33,8 +33,8 @@
     return GetVec<TYPE>(("truth_" + blobAlg + "_" #BRANCH).c_str());\
   }
 
-#define fs(BRANCH, TYPE)\
-  virtual std::vector<TYPE> GetFS##BRANCH() const\
+#define truthMatched(BRANCH, TYPE)\
+  virtual std::vector<TYPE> GetTruthMatched##BRANCH() const\
   {\
     return GetVec<TYPE>("truth_FS_" #BRANCH);\
   }
@@ -177,21 +177,42 @@ namespace evt
       blobTruth(blob_FS_index, int)
       blobTruth(blob_earliest_true_hit_time, ns)
 
-      //Per FS particle branches
-      fs(PDG_code, int)
-      fs(angle_wrt_z, double)
-      fs(edep, MeV)
-      fs(energy, MeV)
+      //Official FS particle branches.  These work in the Truth
+      //tree as well as the "reco" tree.
+      virtual std::vector<int> GetFSPDGCodes() const
+      {
+        return GetVec<int>("mc_FSPartPDG");
+      }
 
-      //Branches for FS neutron energy loss study
-      fs(leaving_energy, GeV)
-      fs(late_energy, GeV)
-      fs(max_edep, MeV)
-      fs(elastic_loss, GeV)
-      fs(binding_energy, GeV)
-      fs(capture_energy, GeV)
-      fs(edep_before_birks, GeV)
-      fs(passive_loss, GeV)
+      virtual std::vector<units::LorentzVector<MeV>> GetFSMomenta() const
+      {
+        return Get<units::LorentzVector<MeV>>(GetVec<MeV>("mc_FSPartPx"),
+                                              GetVec<MeV>("mc_FSPartPy"),
+                                              GetVec<MeV>("mc_FSPartPz"),
+                                              GetVec<MeV>("mc_FSPartE"));
+      }
+
+      virtual std::vector<MeV> GetFSEnergies() const
+      {
+        return GetVec<MeV>("mc_FSPartE");
+      }
+
+      //Truth-matched branches for FS neutron energy loss study.
+      //They only work in the "reco" tree.  Using them in the
+      //Truth tree will give inconsistent results.
+      //TODO: Put these two branches back once I've fixed all code that uses them in the Truth tree
+      truthMatched(PDG_code, int)
+      truthMatched(energy, MeV)
+      truthMatched(angle_wrt_z, double)
+      truthMatched(edep, MeV)
+      truthMatched(leaving_energy, GeV)
+      truthMatched(late_energy, GeV)
+      truthMatched(max_edep, MeV)
+      truthMatched(elastic_loss, GeV)
+      truthMatched(binding_energy, GeV)
+      truthMatched(capture_energy, GeV)
+      truthMatched(edep_before_birks, GeV)
+      truthMatched(passive_loss, GeV)
 
       //Unpack several related vector<> branches into an Analysis-specific struct called CAND.
       //One function to rule them all; one function to find them.

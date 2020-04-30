@@ -48,18 +48,18 @@ namespace evt
     //Information I'm going to need about an FS particle
     struct FSPart
     {
-      GeV energy;
+      units::LorentzVector<MeV> momentum;
       int pdgCode;
     };    
 
-    const auto allFS = Get<FSPart>(GetFSenergy(), GetFSPDG_code());
+    const auto allFS = Get<FSPart>(GetFSMomenta(), GetFSPDGCodes());
 
     GeV E_avail = 0;
     for(const auto& fs: allFS)
     {
-      if(abs(fs.pdgCode) == 211) E_avail += fs.energy - 139.57_MeV;
-      else if(fs.pdgCode == 2212) E_avail += fs.energy - 938.3_MeV;
-      else if(fs.pdgCode != 2112 && abs(fs.pdgCode) != 13) E_avail += fs.energy; //Don't count energy for an FS neutron.  It isn't availble for reconstruction.  Marvin doesn't seem to count the muon either.
+      if(abs(fs.pdgCode) == 211) E_avail += fs.momentum.E() - 139.57_MeV;
+      else if(fs.pdgCode == 2212) E_avail += fs.momentum.E() - 938.28_MeV;
+      else if(fs.pdgCode != 2112 && abs(fs.pdgCode) != 13) E_avail += fs.momentum.E(); //Don't count energy for an FS neutron.  It isn't availble for reconstruction.  Marvin doesn't seem to count the muon either.
     }
 
     return std::max(0_GeV, E_avail);
