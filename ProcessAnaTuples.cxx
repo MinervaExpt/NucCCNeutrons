@@ -237,6 +237,7 @@ int main(const int argc, const char** argv)
                   << " in " << fName << ".  Skipping this file name.\n";
         continue; //TODO: Don't use continue if I can help it
       }
+      recoTree->SetCacheSize(1e7); //Read 10MB at a time
 
       PlotUtils::TreeWrapper anaTuple(recoTree);
 
@@ -353,6 +354,7 @@ int main(const int argc, const char** argv)
                       << " in " << fName << ".  Skipping this file name.\n";
             continue; //TODO: Don't use continue if I can help it
           }
+          truthTree->SetCacheSize(1e7); //Read 10MB at a time
           PlotUtils::TreeWrapper truthTuple(truthTree);
 
           const size_t nTruthEntries = truthTuple.GetEntries();
