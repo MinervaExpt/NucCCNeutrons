@@ -200,62 +200,45 @@ int main(const int argc, const char** argv)
       LOG_DEBUG("Loading " << fName)
       //Sanity checks on AnaTuple files
       double thisFilesPOT = 0;
-      try
+      std::unique_ptr<TFile> tupleFile(TFile::Open(fName.c_str()));
+      if(tupleFile == nullptr)
       {
-        std::unique_ptr<TFile> tupleFile(TFile::Open(fName.c_str()));
-        if(tupleFile == nullptr)
-        {
-          std::cerr << fName << ": No such file or directory.  Skipping this "
-                    << "file name.\n";
-          continue; //TODO: Don't use break if I can help it
-        }
+        std::cerr << fName << ": No such file or directory.  Skipping this "
+                  << "file name.\n";
+        continue; //TODO: Don't use break if I can help it
+      }
   
-        //TODO: Doesn't my ROOT error checking function throw an exception here?
-        if(app::IsMC(fName) != options->isMC())
-        {
-          std::cerr << "This job " << (options->isMC()?"is":"is not")
-                    << " processing MC files, but " << fName << " is a "
-                    << (app::IsMC(fName)?"MC":"data")
-                    << "file.  Skipping this file!\n";
-          continue; //TODO: Don't use break if I can help it
-        }
+      //TODO: Doesn't my ROOT error checking function throw an exception here?
+      if(app::IsMC(fName) != options->isMC())
+      {
+        std::cerr << "This job " << (options->isMC()?"is":"is not")
+                  << " processing MC files, but " << fName << " is a "
+                  << (app::IsMC(fName)?"MC":"data")
+                  << "file.  Skipping this file!\n";
+        continue; //TODO: Don't use break if I can help it
+      }
   
-        auto metaTree = dynamic_cast<TTree*>(tupleFile->Get("Meta"));
-        if(!metaTree)
-        {
-          std::cerr << fName << " does not contain POT information!  This might be a merging failure.  Skipping this file.\n";
-          continue; //TODO: Don't use break if I can help it
-        }
+      auto metaTree = dynamic_cast<TTree*>(tupleFile->Get("Meta"));
+      if(!metaTree)
+      {
+        std::cerr << fName << " does not contain POT information!  This might be a merging failure.  Skipping this file.\n";
+        continue; //TODO: Don't use break if I can help it
+      }
 
-        //Get POT for this file, but don't accumulate it until I've found the
-        //other trees I need.
-        PlotUtils::TreeWrapper meta(metaTree);
-        thisFilesPOT = meta.GetValue("POT_Used", 0);
-      }
-      catch(const ROOT::warning& e)
-      {
-        std::cerr << e.what() << "\nInterrupting loading a file in the event loop, so you probably got incomplete results!\n";
-        return app::CmdLine::ExitCode::IOError;
-      }
-      catch(const ROOT::error& e)
-      {
-        std::cerr << e.what() << "\nInterrupting loading a file in the event loop, so you probably got incomplete results!\n";
-        return app::CmdLine::ExitCode::IOError;
-      }
+      //Get POT for this file, but don't accumulate it until I've found the
+      //other trees I need.
+      PlotUtils::TreeWrapper meta(metaTree);
+      thisFilesPOT = meta.GetValue("POT_Used", 0);
   
-      //TODO: Make this a TreeWrapper to avoid opening fName twice
-      PlotUtils::ChainWrapper anaTuple(anaTupleName.c_str());
-
-      try
-      {
-        anaTuple.Add(fName);
-      }
-      catch(const PlotUtils::ChainWrapper::BadFile& err)
+      auto recoTree = dynamic_cast<TTree*>(tupleFile->Get(anaTupleName.c_str()));
+      if(!recoTree)
       {
         std::cerr << "Failed to find an AnaTuple named " << anaTupleName
                   << " in " << fName << ".  Skipping this file name.\n";
         continue; //TODO: Don't use continue if I can help it
       }
+
+      PlotUtils::TreeWrapper anaTuple(recoTree);
 
       //Bookkeeping for when there's no efficiency numerator
       const size_t nEntries = anaTuple.GetEntries();
@@ -264,24 +247,6 @@ int main(const int argc, const char** argv)
       //On to the event loops
       if(options->isMC())
       {
-        //Check for Truth tree
-        //TODO: ChainWrapper -> TreeWrapper to avoid opening tupleFile again
-        PlotUtils::ChainWrapper truthTree("Truth");
-
-        if(signal->wantsTruthLoop())
-        {
-          try
-          {
-            truthTree.Add(fName);
-          }
-          catch(const PlotUtils::ChainWrapper::BadFile& err)
-          {
-            std::cerr << "Failed to find an AnaTuple named Truth "
-                      << " in " << fName << ".  Skipping this file name.\n";
-            continue; //TODO: Don't use continue if I can help it
-          }
-        }
-
         //MC loop
         const size_t nMCEntries = anaTuple.GetEntries();
         for(auto& compat: groupedUnivs)
@@ -381,10 +346,19 @@ int main(const int argc, const char** argv)
         //Truth loop
         if(signal->wantsTruthLoop())
         {
-          const size_t nTruthEntries = truthTree.GetEntries();
+          auto truthTree = dynamic_cast<TTree*>(tupleFile->Get("Truth"));
+          if(!truthTree)
+          {
+            std::cerr << "Failed to find an AnaTuple named Truth "
+                      << " in " << fName << ".  Skipping this file name.\n";
+            continue; //TODO: Don't use continue if I can help it
+          }
+          PlotUtils::TreeWrapper truthTuple(truthTree);
+
+          const size_t nTruthEntries = truthTuple.GetEntries();
           for(auto& compat: groupedUnivs)
           {
-            for(auto univ: compat) univ->SetTree(&truthTree);
+            for(auto univ: compat) univ->SetTree(&truthTuple);
           }
 
           //Don't try to get MINOS weights in the truth tree loop

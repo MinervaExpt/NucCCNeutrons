@@ -19,7 +19,7 @@ namespace evt
 {
   std::string CVUniverse::blobAlg = "mergedTejinBlobs";
 
-  CVUniverse::CVUniverse(/*const std::string& blobAlg,*/ PlotUtils::ChainWrapper* chw, const double nsigma): DefaultCVUniverse(chw, nsigma)
+  CVUniverse::CVUniverse(/*const std::string& blobAlg,*/ typename DefaultCVUniverse::config_t chw, const double nsigma): DefaultCVUniverse(chw, nsigma)
   {
   }
 

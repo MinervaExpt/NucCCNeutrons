@@ -63,7 +63,7 @@ namespace evt
   class CVUniverse: public PlotUtils::DefaultCVUniverse
   {
     public:
-      CVUniverse(/*const std::string& blobAlg,*/ PlotUtils::ChainWrapper* chw, const double nsigma = 0); //TODO: Get away from ChainWrapper?
+      CVUniverse(/*const std::string& blobAlg,*/ typename PlotUtils::DefaultCVUniverse::config_t chw, const double nsigma = 0);
       virtual ~CVUniverse() = default;
 
       //Configuration interfaces.  The design of the NSF prevents me from
@@ -84,7 +84,7 @@ namespace evt
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
       //The user is responsible for deleting m_chw as in its normal usage.
-      void SetTree(PlotUtils::ChainWrapper* chw) { m_chw = chw; }
+      void SetTree(PlotUtils::TreeWrapper* chw) { m_chw = chw; }
 
       //TODO: Some of these branches could be moved to a .cpp file.  Then, changing branch names would
       //      only force this file's unit to recompile.
@@ -122,12 +122,6 @@ namespace evt
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
       virtual int GetCurrent() const { return GetInt("mc_current"); }
       virtual int GetInteractionType() const { return GetInt("mc_intType"); }
-
-      //TODO: Remove this hack
-      [[deprecated("TODO: Separate weights that aren't applied to the Truth tree into another concept.")]] std::string GetTreeName() const
-      {
-        return m_chw->GetChain()->GetName();
-      }
 
       //TODO: Deprecate this function with reweighter feature?
       [[deprecated("Use models interface instead")]] virtual events GetWeight() const
