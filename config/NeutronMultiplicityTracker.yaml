@@ -48,8 +48,6 @@ cuts:
     Apothem: !Apothem
       apothem: !mm 850
     Tracker: *OneTrackTracker
-    OneTrack: !nTracks
-      max: 1
     LowEAvailable: !RecoilERange
         min: *smallNegativeNumber
         max: *maxEAvail
