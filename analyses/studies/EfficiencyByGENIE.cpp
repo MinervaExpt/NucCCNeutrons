@@ -4,21 +4,10 @@
 
 //signal includes
 #include "analyses/studies/EfficiencyByGENIE.h"
+#include "analyses/studies/TruthInteractionCategories.h"
 
 //util includes
 #include "util/Factory.cpp"
-
-namespace
-{
-  //GENIE interaction types for GENIE 2.8.12 according to Dan.  I'm matching an enum that the Gaudi
-  //framework gets from GENIE.
-  std::map<int, std::string> GENIECategories = {{1, "QE"},
-                                                {8, "2p2h"},
-                                                {2, "RES"},
-                                                {3, "DIS"}
-                                                //Other is built in for free
-                                               };
-}
 
 namespace ana
 {
