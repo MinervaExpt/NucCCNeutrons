@@ -31,14 +31,14 @@ namespace ana
         fRecoVersusTrue = dir.make<HIST2D>("Reco" + fVar.name() + "VersusTrue", "Reco " + fVar.name() + " versus True;True " + fVar.name() + ";Reco " + fVar.name(),
                                            config["binning"].as<std::vector<double>>(), config["binning"].as<std::vector<double>>(), universes);
         fResolution = dir.make<HIST>(fVar.name() + "Resolution", fVar.name() + " Resolution;#frac{Reco " + fVar.name() + " - True " + fVar.name() + "}{True " + fVar.name() + "};events",
-                                     config["binning"].as<std::vector<double>>(), universes);
+                                     100, -2, 2, universes);
       }
 
       virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
       {
         const UNITS reco = fVar.reco(event), truth = fVar.truth(event);
         fRecoVersusTrue->Fill(&event, truth, reco, weight);
-        if(truth.template in<UNITS>() > 0) fResolution->FillUniverse(&event, (reco - truth).template in<UNITS>()/truth.template in<UNITS>(), weight.in<events>());
+        if(fabs(truth.template in<UNITS>()) > 1e-7) fResolution->FillUniverse(&event, (reco - truth).template in<UNITS>()/truth.template in<UNITS>(), weight.in<events>());
       }
 
       //mcBackground failed the truth signal selection.

@@ -110,6 +110,11 @@ namespace evt
       virtual bool hasInteractionVertex() const { return GetInt("has_interaction_vertex"); }
       virtual int GetNDeadDiscriminatorsUpstreamMuon() const { return GetInt("phys_n_dead_discr_pair_upstream_prim_track_proj"); }
 
+      //More reco-only branches
+      virtual MeV GetODEnergy() const { return GetDouble((GetAnaToolName() + "_OD_energy").c_str()); }
+      virtual MeV GetIDECALEnergy() const { return GetDouble((GetAnaToolName() + "_Unused_ID_ECAL_energy").c_str()); }
+      virtual MeV GetIDHCALEnergy() const { return GetDouble((GetAnaToolName() + "_Unused_ID_HCAL_energy").c_str()); }
+
       //Truth branches
       virtual MeV GetTruthQ3() const { return Getq3True(); }
       virtual MeV GetTruthQ0() const { return Getq0True(); }

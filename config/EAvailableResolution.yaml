@@ -8,7 +8,7 @@
 model: *MnvGENIEv1
 
 app:
-  useNuEConstraint: true
+  useNuEConstraint: false
   nFluxUniverses: 50
 
 systematics: []
@@ -21,28 +21,38 @@ signal: !EAvailableResolution
 cuts:
   truth:
     phaseSpace:
-      TrackAngle: &AngleCut !TrackAngle
-        max: !degrees 20
-      PZMu: !MuonZMomentum
-        min: !GeV 1.5
-      Tracker: &Fiducial !IsInTarget
-        truth: &TruthFiducial
-          min: !mm 5980
-          max: !mm 8422
-        reco: *TruthFiducial
-      Apothem: &ApothemCut !Apothem
+      Apothem: !Apothem
         apothem: !mm 850
+      Tracker: *OneTrackTracker
+      MuonMomentum: !MuonMomentum
+        min: !GeV 2
+      TrackAngle: !TrackAngle
+        max: !degrees 20
+      LowEAvailable: !EAvailRange
+        min: &smallNegativeNumber !GeV -1e-3
+        max: &maxEAvail !GeV 0.1
     signal:
-      Neutrino: !IsNeutrino
+      Antineutrino: !IsAntineutrino
       CC: !IsCC
   reco:
-    Tracker: *Fiducial
+    Apothem: !Apothem
+      apothem: !mm 850
+    Tracker: *OneTrackTracker
+    LowEAvailable: !RecoilERange
+        min: *smallNegativeNumber
+        max: *maxEAvail
+    MinosDeltaT: !MinosDeltaT
+      min: !ns -40
+      max: !ns 110
     TrackAngle: !TrackAngle
-      max: !degrees 19.996227
-    Neutrino: !IsNeutrino
+      max: !degrees 20
+    MuonMomentum: !MuonMomentum
+      min: !GeV 2
+    Antineutrino: !IsAntineutrino
     DeadTime: !DeadDiscriminators
       max: 1
-    Apothem: *ApothemCut
+    ODEnergyLimit: !ODEnergyMax
+      max: !MeV 250
 
 #Names in sidebands' "fails" blocks refer to truth cuts by block name.
 #Backgrounds are well-constrained in the original (LE) inclusive 2D
