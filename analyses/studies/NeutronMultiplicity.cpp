@@ -58,7 +58,7 @@ namespace ana
       return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinKE;
     }
 
-    neutrons truth(const evt::CVUniverse& event)
+    neutrons truth(const evt::CVUniverse& event) const
     {
       //Count FS neutrons above an energy deposit threshold
       const auto fs = event.Get<FSPart>(event.GetFSPDGCodes(), event.GetFSEnergies());
@@ -67,7 +67,7 @@ namespace ana
                                                  { return this->countAsTruth(fs);});
     }
 
-    neutrons reco(const evt::CVUniverse& event)
+    neutrons reco(const evt::CVUniverse& event) const
     {
       //Count candidates close enough to the vertex and with enough energy deposit
       const auto vertex = event.GetVtx();
