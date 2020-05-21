@@ -26,6 +26,7 @@ namespace evt
   double CVUniverse::GetRecoilEnergy() const
   {
     return GetDouble((GetAnaToolName() + "_recoilE").c_str());
+    //return GetDouble((GetAnaToolName() + "_recoilE_withNukeCCCaloSpline").c_str());
     //return GetVecElem("recoil_summed_energy", 0);
   }
 
