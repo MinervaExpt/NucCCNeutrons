@@ -28,16 +28,20 @@ namespace ana
                                                      fNNeutrons(config["multiplicity"]),
                                                      fEAvailable(config["EAvailable"]),
                                                      fEAvailableMax(config["EAvailable"]["Max"].as<GeV>()),
-                                                     fArachneLinks("EAvailableMigrationProblem.txt"),
+                                                     fMismatchedCutLinks("EAvailableCutsMismatched.txt"),
+                                                     fNoRecoLinks("EAvailableNoReco.txt"),
                                                      fTruthMultiplicity(pionFSCategories, dir, "TruthNeutronMultiplicity", "Truth", std::vector<double>{0, 1, 2, 4, 10}, univs),
-                                                     fEAvailableResidual(pionFSCategories, dir,  "EAvailableResidual", "E_{Available} Residual;Reco - Truth", 100, -fEAvailableMax.in<MeV>(), fEAvailableMax.in<MeV>(), univs)
+                                                     fEAvailableResidual(pionFSCategories, dir,  "EAvailableResidual", "E_{Available} Residual;#frac{Reco - Truth}{Truth}", 100, -1, 4, univs)
   {
+    fTruthAvailWhenNoReco = dir.make<HIST<MeV>>("TruthEAvailWhenNoReco", "Truth E_{available}", 100, 0, 2000, univs);
   }
 
   void EAvailableReconstruction::mcSignal(const evt::CVUniverse& event, const events weight)
   {
     const GeV EAvailReco = fEAvailable.reco(event),
               EAvailTruth = fEAvailable.truth(event);
+
+    const unitless EAvailResidual = (EAvailReco - EAvailTruth).in<GeV>()/EAvailTruth.in<GeV>();
 
     if((EAvailReco <= fEAvailableMax) && (EAvailTruth > fEAvailableMax))
     {
@@ -48,9 +52,15 @@ namespace ana
   
       fTruthMultiplicity[whichCategory].Fill(&event, fNNeutrons.truth(event), weight);
   
-      fEAvailableResidual[whichCategory].Fill(&event, EAvailReco - EAvailTruth, weight);
+      if(EAvailTruth != 0_GeV) fEAvailableResidual[whichCategory].Fill(&event, EAvailResidual, weight);
 
-      fArachneLinks << util::arachne(event.GetEventID(false), false);
+      fMismatchedCutLinks << util::arachne(event.GetEventID(false), false);
+    }
+
+    if(fabs(EAvailResidual + 1_unitless) < 1e-3_unitless)
+    {
+      fTruthAvailWhenNoReco->Fill(&event, EAvailTruth);
+      fNoRecoLinks << util::arachne(event.GetEventID(false), false);
     }
   }
 

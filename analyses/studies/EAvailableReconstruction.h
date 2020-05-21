@@ -13,7 +13,6 @@
 #include "analyses/studies/NeutronMultiplicity.cpp"
 #include "analyses/studies/EAvailable.cpp"
 
-
 //util includes
 #include "util/Categorized.h"
 
@@ -59,13 +58,16 @@ namespace ana
 
       GeV fEAvailableMax; //Upper limit on available energy in both reco and truth
 
-      std::ofstream fArachneLinks; //File of arachne links to events that pass the reco available energy Cut but
-                                   //fail the truth available energy Cut.
+      std::ofstream fMismatchedCutLinks; //File of arachne links to events that pass the reco available energy Cut but
+                                         //fail the truth available energy Cut.
+      std::ofstream fNoRecoLinks; //File of arachne links to events with 0 reconstructed available energy
 
       util::Categorized<HIST<neutrons>, FSCategory*> fTruthMultiplicity; //Truth neutron multiplicity is the variable
                                                                         //in which I originally observed this problem.
 
-      util::Categorized<HIST<MeV>, FSCategory*> fEAvailableResidual; //Truth - reco for available energy
+      util::Categorized<HIST<unitless>, FSCategory*> fEAvailableResidual; //Truth - reco for available energy
+
+      HIST<MeV>* fTruthAvailWhenNoReco; //Truth when there is 0 reco available energy to investigate the -1 residual peak
   };
 }
 
