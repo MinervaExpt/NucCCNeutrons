@@ -33,7 +33,7 @@ namespace ana
                                                      fTruthMultiplicity(pionFSCategories, dir, "TruthNeutronMultiplicity", "Truth", std::vector<double>{0, 1, 2, 4, 10}, univs),
                                                      fEAvailableResidual(pionFSCategories, dir,  "EAvailableResidual", "E_{Available} Residual;#frac{Reco - Truth}{Truth}", 100, -1, 4, univs)
   {
-    fTruthAvailWhenNoReco = dir.make<HIST<MeV>>("TruthEAvailWhenNoReco", "Truth E_{available}", 100, 0, 2000, univs);
+    fTruthAvailWhenNoReco = dir.make<HIST<MeV>>("TruthEAvailWhenNoReco", "Truth E_{available}", 20, 0, 2*fEAvailableMax.in<MeV>(), univs);
   }
 
   void EAvailableReconstruction::mcSignal(const evt::CVUniverse& event, const events weight)

@@ -27,11 +27,11 @@ systematics:
   - GENIE_FrPiProd_pi
   - GENIE_MFP_N
   - GENIE_MFP_pi
-  - GENIE_MaCCQEshape
+  #- GENIE_MaCCQEshape
   - GENIE_MaNCEL
   - GENIE_MaRES
   - GENIE_MvRES
-  - GENIE_NormCCQE
+  #- GENIE_NormCCQE
   #- GENIE_NormCCRES
   - GENIE_NormDISCC
   - GENIE_NormNCRES
