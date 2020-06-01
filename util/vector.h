@@ -257,7 +257,7 @@ namespace units
 
       mag2_t dot(const LorentzVector<SCALAR>& rhs) const
       {
-        return {fT * rhs.fY - fX * rhs.fX - fY * rhs.y - fZ * rhs.fZ};
+        return {fT * rhs.fT - fX * rhs.fX - fY * rhs.fY - fZ * rhs.fZ};
       }
 
       mag2_t m2() const

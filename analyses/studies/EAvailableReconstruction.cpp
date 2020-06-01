@@ -45,6 +45,19 @@ namespace ana
 
     if((EAvailReco <= fEAvailableMax) && (EAvailTruth > fEAvailableMax))
     {
+      /*std::cout << "Found an event that should pass the reco cut but fail the truth cut.\n"
+                << "EAvailable Reco: " << EAvailReco << "\n"
+                << "EAvailable Truth: " << EAvailTruth << "\n"
+                << util::arachne(event.GetEventID(false), false) << "\n";
+
+      std::cout << "FS particles:\n";
+      const auto pdgs = event.GetFSPDGCodes();
+      const auto momenta = event.GetFSMomenta();
+      for(size_t whichFS = 0; whichFS < pdgs.size(); ++whichFS)
+      {
+        std::cout << "PDG code = " << pdgs[whichFS] << "; KE = " << momenta[whichFS].E() - momenta[whichFS].mass() << "\n";
+      }*/
+
       const auto found = std::find_if(ana::pionFSCategories.begin(), ana::pionFSCategories.end(),
                                       [&event](const auto category)
                                       { return (*category)(event); });
@@ -52,16 +65,22 @@ namespace ana
   
       fTruthMultiplicity[whichCategory].Fill(&event, fNNeutrons.truth(event), weight);
   
-      if(EAvailTruth != 0_GeV) fEAvailableResidual[whichCategory].Fill(&event, EAvailResidual, weight);
-
-      fMismatchedCutLinks << util::arachne(event.GetEventID(false), false);
+      if(EAvailTruth != 0_GeV)
+      {
+        fEAvailableResidual[whichCategory].Fill(&event, EAvailResidual, weight);
+        fMismatchedCutLinks << util::arachne(event.GetEventID(false), false) << "\n";
+      }
     }
 
-    if(fabs(EAvailResidual + 1_unitless) < 1e-3_unitless)
+    /*if(fabs(EAvailResidual + 1_unitless) < 1e-3_unitless)
     {
+      std::cout << "Got a residual close to -1: " << EAvailResidual << "\n"
+                << "Reco: " << EAvailReco << "\n"
+                << "Truth: " << EAvailTruth << "\n"
+                << util::arachne(event.GetEventID(false), false) << "\n";
       fTruthAvailWhenNoReco->Fill(&event, EAvailTruth);
-      fNoRecoLinks << util::arachne(event.GetEventID(false), false);
-    }
+      fNoRecoLinks << util::arachne(event.GetEventID(false), false) << "\n";
+    }*/
   }
 
   void EAvailableReconstruction::afterAllFiles(const events /*passedSelection*/)

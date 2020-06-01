@@ -60,7 +60,9 @@ namespace evt
     {
       if(abs(fs.pdgCode) == 211) E_avail += fs.momentum.E() - 139.57_MeV;
       else if(fs.pdgCode == 2212) E_avail += fs.momentum.E() - 938.28_MeV;
-      else if(fs.pdgCode != 2112 && abs(fs.pdgCode) != 13) E_avail += fs.momentum.E(); //Don't count energy for an FS neutron.  It isn't availble for reconstruction.  Marvin doesn't seem to count the muon either.
+      else if(fs.pdgCode == 111) E_avail += fs.momentum.E();
+      else if(fs.pdgCode == 22) E_avail += fs.momentum.E();
+      //Implicitly exclude nuclei, kaons, and heavy baryons
     }
 
     return std::max(0_GeV, E_avail);
