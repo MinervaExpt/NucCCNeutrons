@@ -27,13 +27,14 @@ namespace evt
   {
     return GetDouble((GetAnaToolName() + "_recoilE").c_str());
     //return GetDouble((GetAnaToolName() + "_recoilE_withNukeCCCaloSpline").c_str());
-    //return GetVecElem("recoil_summed_energy", 0);
+    //return GetVecElem("recoil_summed_energy", 0); //CCQENu version
   }
 
   MeV CVUniverse::GetEAvailable() const
   {
     const auto edeps = Getblob_edep();
     return std::max(0_MeV, GetRecoilE() - std::accumulate(edeps.begin(), edeps.end(), 0_MeV));
+    //return GetRecoilE(); //Works with CCQENu which doesn't have my neutron branches
   }
 
   units::LorentzVector<MeV> CVUniverse::GetTruthPmu() const
