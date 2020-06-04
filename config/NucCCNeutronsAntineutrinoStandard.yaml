@@ -1,0 +1,68 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: NucCCNeutronsAntineutrinoStandard.yaml
+#Brief: My standard cuts for my neutron multiplicity analysis in antineutrino mode in the TRACKER.
+#       You still have to plug in a "signal" block and a systematics block from another YAML file
+#       on the command line.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+#MnvGENIEv1
+model:
+  Flux: !FluxAndCV
+  GENIE: !GENIE
+    UseNonResonantPion: true
+  MINOSEfficiency: !MINOSEfficiency
+  RPASuppression: !RPA
+  Valencia2p2h: !2p2h
+
+#nu-e constraint doesn't work in antineutrino data yet as of 6/4/2020.
+#100 flux universes matches the NSF validation suite.
+app:
+  useNuEConstraint: false
+  nFluxUniverses: 100
+
+#Basically, Amy/Dan's inclusive Cuts (adapted for my AnaTool) + available energy.
+cuts:
+  truth:
+    phaseSpace:
+      Apothem: !Apothem
+        apothem: !mm 850
+      Tracker: *OneTrackTracker
+      MuonMomentum: !MuonMomentum
+        min: !GeV 2
+      TrackAngle: !TrackAngle
+        max: !degrees 20
+      LowEAvailable: !EAvailRange
+        min: &smallNegativeNumber !GeV -1e-3
+        max: &maxEAvail !GeV 0.2
+    signal:
+      Antineutrino: !IsAntineutrino
+      CC: !IsCC
+  reco:
+    Apothem: !Apothem
+      apothem: !mm 850
+    Tracker: *OneTrackTracker
+    LowEAvailable: !RecoilERange
+        min: *smallNegativeNumber
+        max: *maxEAvail
+    MinosDeltaT: !MinosDeltaT
+      min: !ns -40
+      max: !ns 110
+    TrackAngle: !TrackAngle
+      max: !degrees 20
+    MuonMomentum: !MuonMomentum
+      min: !GeV 2
+    Antineutrino: !IsAntineutrino
+    DeadTime: !DeadDiscriminators
+      max: 1
+
+#Names in sidebands' "fails" blocks refer to truth cuts by block name.
+#None yet!
+sidebands:
+
+#TODO: I'll want these some day
+backgrounds:
+#  NeutralCurrent:
+#    NC: !IsNC
+#  WrongSignMuon:
+#    Antineutrino: !IsAntineutrino
+
