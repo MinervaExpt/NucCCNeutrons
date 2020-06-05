@@ -12,7 +12,7 @@
 
 namespace
 {
-  static reco::Cut::Registrar<reco::UpperLimit<MeV, &evt::CVUniverse::GetIDHCALEnergy>> reg_ODMax("GetIDHCALEnergy");
+  static reco::Cut::Registrar<reco::UpperLimit<MeV, &evt::CVUniverse::GetIDHCALEnergy>> reg_ODMax("HCALEnergyMax");
 }
 
 #endif //RECO_HCALENERGYMAX_CPP
