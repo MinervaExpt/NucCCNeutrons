@@ -523,10 +523,11 @@ int main(const int argc, const char** argv)
     std::ofstream tableFile(tableName);
     tableFile << "#" << options->playlist() << "\n";
     tableFile << "#" << pot_used << " POT\n";
+    tableFile << "#Selection:\n";
     truthSummary.print(tableFile) << "\n";
     tableFile << "#Signal Definition:\n";
     for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
-    tableFile << "\n#Phase Space Cuts:\n";
+    tableFile << "\n#Phase Space Definition:\n";
     for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["phaseSpace"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
 
     std::cout << "#" << pot_used << " POT\n";
@@ -556,11 +557,13 @@ int main(const int argc, const char** argv)
     std::ofstream tableFile(tableName);
     tableFile << "#" << options->playlist() << "\n";
     tableFile << "#" << pot_used << " POT\n";
+    tableFile << "#Selection:\n";
     recoSummary.print(tableFile) << "\n";
     if(options->isMC())
     {
       tableFile << "#Signal Definition:\n";
       for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
+      //Phase space definition is only applied in the Truth loop
     }
 
     std::cout << "#" << pot_used << " POT\n";
