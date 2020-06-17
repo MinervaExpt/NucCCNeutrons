@@ -1,0 +1,19 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: NeutronDetection_StudyOnly.yaml
+#Brief: Study neutron detection efficiency and sources of backgrounds.  Needs to
+#       be used with a selection definition and a list of systematics.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+signal: !NeutronDetection
+  name: "Neutron Detection"
+  variable: &Variable
+    truth:
+      MinKE: !MeV 10 #Not many detectable candidates below this threshold
+    reco:
+      MinEDep: !MeV 1.5 #Just above cross-talk
+      MaxZDist: !mm 1500 #roughly tuned for tracker
+  binning:
+    edep: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65]
+    angle: [-1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    beta: [-1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    energy: [10, 12, 14, 16, 18, 20, 23, 26, 30, 35, 40, 45, 50, 55, 60, 65, 70, 85, 100, 150]
+    zDist: [0, 30, 60, 90, 150, 300, 450, 600, 800, 1000, 1250, 1500]

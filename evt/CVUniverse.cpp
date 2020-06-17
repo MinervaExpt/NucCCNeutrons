@@ -26,13 +26,15 @@ namespace evt
   double CVUniverse::GetRecoilEnergy() const
   {
     return GetDouble((GetAnaToolName() + "_recoilE").c_str());
+    //return GetDouble((GetAnaToolName() + "_recoilE").c_str()) - GetODEnergy().in<MeV>();
     //return GetDouble((GetAnaToolName() + "_recoilE_withNukeCCCaloSpline").c_str());
     //return GetVecElem("recoil_summed_energy", 0); //CCQENu version
   }
 
   MeV CVUniverse::GetEAvailable() const
   {
-    const auto edeps = Getblob_edep();
+    //const auto edeps = Getblob_edep();
+    const auto edeps = Getblob_calo_edep();
     return std::max(0_MeV, GetRecoilE() - std::accumulate(edeps.begin(), edeps.end(), 0_MeV));
     //return GetRecoilE(); //Works with CCQENu which doesn't have my neutron branches
   }
@@ -63,7 +65,7 @@ namespace evt
       else if(fs.pdgCode == 2212) E_avail += fs.momentum.E() - 938.28_MeV;
       else if(fs.pdgCode == 111) E_avail += fs.momentum.E();
       else if(fs.pdgCode == 22) E_avail += fs.momentum.E();
-      //Implicitly exclude nuclei, kaons, and heavy baryons
+      //Implicitly exclude neutrons, nuclei, kaons, and heavy baryons
     }
 
     return std::max(0_GeV, E_avail);
