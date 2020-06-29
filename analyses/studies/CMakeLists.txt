@@ -1,1 +1,1 @@
-add_library(studies OBJECT MuonMomentum.cpp NeutronMultiplicity.cpp NeutronDetection.cpp EAvailable.cpp EfficiencyByGENIE.cpp NSFValidation.cpp EAvailableReconstruction.cpp EventDisplay.cpp)
+add_library(studies OBJECT MuonMomentum.cpp NeutronMultiplicity.cpp NeutronDetection.cpp EAvailable.cpp EfficiencyByGENIE.cpp NSFValidation.cpp EAvailableReconstruction.cpp EventDisplay.cpp q3.cpp)

@@ -96,8 +96,15 @@ namespace evt
       //TODO: Fix branches that come from derived values.  I need to calculate them from the most
       //      basic values I can find instead for the NS Framework.
       //Reco branches
-      virtual MeV GetQ3() const { return GetDouble((GetAnaToolName() + "_q3").c_str()); } //TODO: I think this branch is derived from recoilE and Q^2
+      [[deprecated("Use analyses/studies/q3.cpp instead")]] virtual MeV GetQ3() const { return GetDouble((GetAnaToolName() + "_q3").c_str()); } //TODO: I think this branch is derived from recoilE and Q^2
       virtual MeV GetRecoilE() const { return GetRecoilEnergy(); } //Put units on the NS Framework
+      //TODO: Shift q0 in the same systematic universe that shifts GetRecoilEnergy().
+      //q0 is different from GetRecoilE() because GetRecoilE() makes no attempt
+      //to reconstruct the total energy of the outgoing hadronic system.  q0 is
+      //therefore suitable for a calorimetric definition of neutrino energy while
+      //GetRecoilE() is not.  Mechanically, this is done by the infamous
+      //calorimetric spline which q0 uses and GetRecoilE() does not.
+      virtual MeV Getq0() const { return GetDouble((GetAnaToolName() + "_q0Reco").c_str()); }
       virtual units::LorentzVector<mm> GetVtx() const { return units::LorentzVector<mm>(GetVec<double>("vtx")); }
       virtual ns GetMINOSTrackDeltaT() const { return GetDouble("minos_minerva_track_deltaT"); }
       virtual int GetNTracks() const { return GetInt("n_tracks"); }
