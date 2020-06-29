@@ -104,7 +104,7 @@ namespace evt
       virtual int GetHelicity() const { return GetInt((GetAnaToolName() + "_nuHelicity").c_str()); }
       virtual units::LorentzVector<MeV> GetMuonP() const { return GetMuon4V(); }
       virtual radians GetMuonTheta() const { return GetThetamu(); }
-      virtual MeV GetEAvailable() const; //Recoil energy - neutron candidate energy
+      [[deprecated("Use analyses/studies/EAvailable.cpp instead")]] virtual MeV GetEAvailable() const;
 
       //Reco branches from CCQENu
       virtual bool hasInteractionVertex() const { return GetInt("has_interaction_vertex"); }
@@ -114,10 +114,12 @@ namespace evt
       virtual MeV GetODEnergy() const { return GetDouble((GetAnaToolName() + "_OD_energy").c_str()); }
       virtual MeV GetIDECALEnergy() const { return GetDouble((GetAnaToolName() + "_Unused_ID_ECAL_energy").c_str()); }
       virtual MeV GetIDHCALEnergy() const { return GetDouble((GetAnaToolName() + "_Unused_ID_HCAL_energy").c_str()); }
+      virtual MeV GetMuonFuzzEnergy() const { return GetDouble("muon_fuzz_energy"); }
 
       //Truth branches
       virtual MeV GetTruthQ3() const { return Getq3True(); }
       virtual MeV GetTruthQ0() const { return Getq0True(); }
+      virtual typename units::detail::do_pow<2, GeV>::result_t GetTruthQ2() const { return GetQ2True(); }
       virtual GeV GetTruthEAvailable() const;
       virtual units::LorentzVector<mm> GetTruthVtx() const { return units::LorentzVector<mm>(GetVec<double>("mc_vtx")); }
       virtual int GetTruthTargetZ() const { return GetInt("mc_targetZ"); }
@@ -128,7 +130,6 @@ namespace evt
       virtual int GetCurrent() const { return GetInt("mc_current"); }
       virtual int GetInteractionType() const { return GetInt("mc_intType"); }
 
-      //TODO: Deprecate this function with reweighter feature?
       [[deprecated("Use models interface instead")]] virtual events GetWeight() const
       {
         //Rob told me that this is MnvGENIE v1.1 on 2/11/2020

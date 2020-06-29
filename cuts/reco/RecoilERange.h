@@ -5,6 +5,9 @@
 #ifndef RECO_RECOILERANGE_H
 #define RECO_RECOILERANGE_H
 
+//analyses includes
+#include "analyses/studies/EAvailable.cpp"
+
 //cut includes
 #include "cuts/reco/Cut.h"
 
@@ -23,6 +26,8 @@ namespace reco
     private:
       GeV fMin;
       GeV fMax;
+
+      ana::EAvailable fCalc;
   };
 }
 

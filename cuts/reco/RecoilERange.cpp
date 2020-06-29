@@ -7,13 +7,14 @@
 
 namespace reco
 {
-  RecoilERange::RecoilERange(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>())
+  RecoilERange::RecoilERange(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>()), fCalc(config["EAvailable"])
   {
   }
 
   bool RecoilERange::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetEAvailable() > fMin && event.GetEAvailable() < fMax;
+    const auto reco = fCalc.reco(event);
+    return reco > fMin && reco < fMax;
   }
 }
 

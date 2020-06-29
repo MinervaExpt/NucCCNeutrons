@@ -28,7 +28,7 @@ namespace ana
                      std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
                                                                                        fVar(config["variable"])
       {
-        fRecoVersusTrue = dir.make<HIST2D>("Reco" + fVar.name() + "VersusTrue", "Reco " + fVar.name() + " versus True;True " + fVar.name() + ";Reco " + fVar.name(),
+        fTrueVersusReco = dir.make<HIST2D>("True" + fVar.name() + "VersusReco", "True " + fVar.name() + " versus Reco;Reco " + fVar.name() + ";True " + fVar.name(),
                                            config["binning"].as<std::vector<double>>(), config["binning"].as<std::vector<double>>(), universes);
         fResolution = dir.make<HIST>(fVar.name() + "Resolution", fVar.name() + " Resolution;#frac{Reco " + fVar.name() + " - True " + fVar.name() + "}{True " + fVar.name() + "};events",
                                      100, -2, 2, universes);
@@ -37,7 +37,7 @@ namespace ana
       virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
       {
         const UNITS reco = fVar.reco(event), truth = fVar.truth(event);
-        fRecoVersusTrue->Fill(&event, truth, reco, weight);
+        fTrueVersusReco->Fill(&event, reco, truth, weight);
         if(fabs(truth.template in<UNITS>()) > 1e-7) fResolution->FillUniverse(&event, (reco - truth).template in<UNITS>()/truth.template in<UNITS>(), weight.in<events>());
       }
 
@@ -56,7 +56,7 @@ namespace ana
       //POT processed should be in the output histogram file.
       virtual void afterAllFiles(const events /*passedSelection*/) override
       {
-        fRecoVersusTrue->SyncCVHistos();
+        fTrueVersusReco->SyncCVHistos();
         fResolution->SyncCVHistos();
       }
 
@@ -69,7 +69,7 @@ namespace ana
       VARIABLE fVar;
 
       //Reconstructed versus truth branch in migration style
-      HIST2D* fRecoVersusTrue;
+      HIST2D* fTrueVersusReco;
       //Resolution = reco - true in case true is 0
       HIST* fResolution;
   };

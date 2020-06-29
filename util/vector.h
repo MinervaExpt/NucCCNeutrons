@@ -8,7 +8,8 @@
 #define UNITS_VECTOR_H
 
 //util includes
-#include "util/units.h"
+//#include "util/units.h"
+#include "util/mathWithUnits.h"
 
 //BaseUnits includes
 #include "units/units.h"
@@ -25,7 +26,7 @@ namespace units
   //because I want them to be interchangeable.
 
   //Make the compiler try this before std::sqrt().  Ultimately, this should go in BaseUnits.
-  template <class TAG, class PREFIX, class FLOAT>
+  /*template <class TAG, class PREFIX, class FLOAT>
   quantity<TAG, std::ratio<1>, FLOAT> sqrt(const quantity<productTag<TAG, TAG>, PREFIX, FLOAT> value)
   {
     return std::sqrt(value.template in<quantity<productTag<TAG, TAG>, std::ratio<1>, FLOAT>>());
@@ -53,7 +54,7 @@ namespace units
   quantity<TAG, PREFIX, FLOAT> fabs(const quantity<TAG, PREFIX, FLOAT> value)
   {
     return (value.template in<quantity<TAG, PREFIX, FLOAT>>() < 0)?-value:value;
-  }
+  }*/
 
   namespace detail
   {
