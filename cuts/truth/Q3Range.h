@@ -5,6 +5,9 @@
 #ifndef TRUTH_Q3RANGE_H
 #define TRUTH_Q3RANGE_H
 
+//analyses includes
+#include "analyses/studies/q3.cpp"
+
 //cut includes
 #include "cuts/truth/Cut.h"
 
@@ -29,6 +32,7 @@ namespace truth
       virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
+      ana::q3 fCalc;
       GeV fMin;
       GeV fMax;
   };

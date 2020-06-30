@@ -5,6 +5,9 @@
 #ifndef RECO_Q3RANGE_H
 #define RECO_Q3RANGE_H
 
+//analyses includes
+#include "analyses/studies/q3.cpp"
+
 //cut includes
 #include "cuts/reco/Cut.h"
 
@@ -23,6 +26,7 @@ namespace reco
       virtual bool passesCut(const evt::CVUniverse& event) const override;
 
     private:
+      ana::q3 fCalc;
       GeV fMin;
       GeV fMax;
   };

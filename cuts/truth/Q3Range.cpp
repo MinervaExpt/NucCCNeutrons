@@ -10,13 +10,13 @@
 
 namespace truth
 {
-  Q3Range::Q3Range(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>())
+  Q3Range::Q3Range(const YAML::Node& config): Cut(config), fCalc(config), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>())
   {
   }
 
   bool Q3Range::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetTruthQ3() > fMin && event.GetTruthQ3() < fMax;
+    return fCalc.truth(event) > fMin && fCalc.truth(event) < fMax;
   }
 }
 
