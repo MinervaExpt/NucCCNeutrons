@@ -42,8 +42,14 @@ cuts:
       apothem: !mm 850
     Tracker: *OneTrackTracker
     LowEAvailable: !RecoilERange
-        min: *smallNegativeNumber
-        max: *maxEAvail
+      min: *smallNegativeNumber
+      max: *maxEAvail
+    EAvailable:
+      truth:
+        MinKE: !MeV 10 #Not many detectable candidates below this threshold
+      reco:
+        MinEDep: !MeV 1.5 #Just above cross-talk
+        MaxZDist: !mm 1500 #roughly tuned for tracker
     MinosDeltaT: !MinosDeltaT
       min: !ns -40
       max: !ns 110
