@@ -43,6 +43,8 @@ namespace util
         double correction;
       };
 
+      double fScale; //Overall energy scale applied to all Clusters
+
       std::vector<PolyPoint> fPoints;
   };
 }

@@ -53,6 +53,21 @@ namespace ana
 
     fEffNumerator = dir.make<Efficiency>("EfficiencyNumerator", "Reco", univs, energyBins, angleBins, betaBins);
     fEffDenominator = dir.make<Efficiency>("EfficiencyDenominator", "Truth", univs, energyBins, angleBins, betaBins);
+
+    fDataCands = dir.make<Observables>("Data", "Data;Reco", univs, config["binning"]["edep"].as<std::vector<double>>(),
+                                       config["binning"]["angle"].as<std::vector<double>>(),
+                                       config["binning"]["zDist"].as<std::vector<double>>(),
+                                       config["binning"]["beta"].as<std::vector<double>>());
+  }
+
+  void NeutronDetection::data(const evt::CVUniverse& event)
+  {
+    const auto cands = event.Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time());
+    const auto vertex = event.GetVtx();
+    for(const auto& cand: cands)
+    {
+      if(fCuts.countAsReco(cand, vertex)) fDataCands->Fill(event, 1_neutrons, cand, vertex);
+    }
   }
 
   void NeutronDetection::mcSignal(const evt::CVUniverse& event, const events weight)
@@ -101,6 +116,9 @@ namespace ana
                               hist.SyncCVHistos();
                             });
 
+    fDataCands->Scale(1./passedSelection.in<events>());
+    fDataCands->SyncCVHistos();
+
     fEffNumerator->SyncCVHistos();
     fEffDenominator->SyncCVHistos();
   }
@@ -114,7 +132,7 @@ namespace ana
   {
   }
 
-  void NeutronDetection::Observables::Fill(const evt::CVUniverse& event, neutrons weightPerNeutron, const MCCandidate& cand, const units::LorentzVector<mm>& vertex)
+  /*void NeutronDetection::Observables::Fill(const evt::CVUniverse& event, neutrons weightPerNeutron, const NeutronCandidate& cand, const units::LorentzVector<mm>& vertex)
   {
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
     const double dist = std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
@@ -125,7 +143,7 @@ namespace ana
     fAngles.FillUniverse(&event, angle, weightPerNeutron.in<neutrons>());
     fBeta.FillUniverse(&event, beta, weightPerNeutron.in<neutrons>());
     fZDistFromVertex.Fill(&event, cand.z - vertex.z(), weightPerNeutron);
-  }
+  }*/
 
   void NeutronDetection::Observables::SetDirectory(TDirectory* dir)
   {

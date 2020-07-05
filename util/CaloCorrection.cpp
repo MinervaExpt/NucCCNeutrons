@@ -23,10 +23,20 @@
 
 namespace util
 {
+  std::string& trim(std::string& toTrim)
+  {
+    const size_t firstWhitespace = toTrim.find_first_not_of(" ");
+    if(firstWhitespace != std::string::npos) toTrim = toTrim.substr(firstWhitespace);
+
+    toTrim.erase(toTrim.find_last_not_of(" ")+1, std::string::npos);
+    
+    return toTrim;
+  }
+
   bool foundKeyword(const std::string& line, const std::string& keyword, size_t& nextToken)
   {
     nextToken = line.find(keyword);
-    if(nextToken != std::string::npos) nextToken += keyword.length();
+    if(nextToken != std::string::npos) nextToken += keyword.length() + 1;
     return nextToken != std::string::npos;
   }
 
@@ -69,6 +79,7 @@ namespace util
     while(!filesLeft.empty())
     {
       std::ifstream currentFile(replaceEnvVars(filesLeft.top()));
+      assert(currentFile.is_open() && "Failed to open a calorimetry spline file!");
       filesLeft.pop();
       //--depth; //TODO: This depth check doesn't seem correct because I keep going with the current file
 
@@ -77,8 +88,7 @@ namespace util
       std::string line;
       while(std::getline(currentFile, line))
       {
-        //Trim whitespace and ignore empty lines and comments
-        line = line.substr(line.find_first_not_of(" "), line.length());
+        line = trim(line);
         if(line.empty() || line[0] == '#') continue;
 
         //Parser state machine.
@@ -122,6 +132,11 @@ namespace util
             std::sort(currentCorr->second.fPoints.begin(), currentCorr->second.fPoints.end(), [](const auto& lhs, const auto& rhs) { return lhs.threshold < rhs.threshold; });
             parseState = State::Top;
           }
+          else if(foundKeyword(line, "SCALE", nextToken))
+          {
+            std::stringstream findScale(line.substr(nextToken));
+            findScale >> currentCorr->second.fScale;
+          }
           else
           {
             #ifndef NDEBUG
@@ -143,25 +158,41 @@ namespace util
   {
     const auto parsed = parse(caloFile);
     const auto found = parsed.find(tuningName);
-    if(found != parsed.end()) fPoints = found->second.fPoints;
-    assert(found != parsed.end() && "Failed to find calorimetric correction by name!");
+    if(found != parsed.end())
+    {
+      fPoints = found->second.fPoints;
+      fScale = found->second.fScale;
+    }
+    else
+    {
+      std::cerr << "Calorimetric splines found:\n";
+      for(const auto& spline: parsed) std::cerr << spline.first << ".\n";
+
+      throw std::runtime_error("Failed to find a calorimetric spline named " + tuningName + ".");
+    }
+
+    #ifndef NDEBUG
+      std::cout << "Using a calorimetric correction named " << tuningName << " with scale " << fScale << " from " << caloFile << ":\n";
+      for(const auto& point: fPoints) std::cout << point.threshold << ", " << point.correction << "\n";
+    #endif
   }
 
   GeV CaloCorrection::eCorrection(const MeV rawRecoil) const
   {
-    const auto upperPoint = std::lower_bound(std::next(fPoints.begin()), fPoints.end(), rawRecoil, [](const auto& point, const auto raw) { return point.threshold < raw; });
+    const MeV scaledRecoil = rawRecoil.in<MeV>() * fScale;
+    const auto upperPoint = std::lower_bound(std::next(fPoints.begin()), fPoints.end(), scaledRecoil, [](const auto& point, const auto recoil) { return point.threshold < recoil; });
     if(upperPoint != fPoints.end())
     {
       const auto lowerPoint = std::prev(upperPoint);
-      return std::max(0., upperPoint->correction + (upperPoint->correction - lowerPoint->correction) * rawRecoil.in<GeV>() / (upperPoint->threshold - lowerPoint->threshold).in<GeV>());
+      return std::max(0., lowerPoint->correction + (upperPoint->correction - lowerPoint->correction) * (scaledRecoil - lowerPoint->threshold).in<GeV>() / (upperPoint->threshold - lowerPoint->threshold).in<GeV>());
     }
-    else return rawRecoil; //rawRecoil is after last point, so don't correct.
-                           //This is both a fail-safe mechanism for very energetic
-                           //neutrinos which are very rare in MINERvA's <6 GeV>
-                           //beam and the Default spline.
+    else return scaledRecoil; //scaledRecoil is after last point, so don't correct.
+                              //This is both a fail-safe mechanism for very energetic
+                              //neutrinos which are very rare in MINERvA's <6 GeV>
+                              //beam and the Default spline.
   }
 
-  CaloCorrection::CaloCorrection(): fPoints{}
+  CaloCorrection::CaloCorrection(): fScale(0), fPoints{}
   {
   }
 }

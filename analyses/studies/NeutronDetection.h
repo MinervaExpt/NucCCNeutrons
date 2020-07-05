@@ -12,6 +12,8 @@
 
 //util includes
 #include "util/Categorized.h"
+#include "util/units.h"
+#include "util/mathWithUnits.h"
 
 #ifndef SIG_NEUTRONDETECTION_H
 #define SIG_NEUTRONDETECTION_H
@@ -34,7 +36,7 @@ namespace ana
       //Do nothing for backgrounds, the Truth tree, and data
       virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
       virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
-      virtual void data(const evt::CVUniverse& /*event*/) override {}; //TODO: Do I want to plot candidate observables in data?
+      virtual void data(const evt::CVUniverse& /*event*/) override;
 
       //No Truth loop needed
       //virtual bool wantsTruthLoop() const override { return false; }
@@ -44,12 +46,20 @@ namespace ana
       ana::NeutronMultiplicity fCuts;
 
       //Format for neutron candidate information.
+      struct NeutronCandidate
+      {
+        MeV edep;
+        mm z;
+        mm transverse;
+        ns time;
+      };
+
       struct MCCandidate
       {
         MeV edep;
         mm z;
-        mm transverse; //Transverse distance from the z axis of the detector
-        ns time; //Time of earliest Cluster in this candidate
+        mm transverse;
+        ns time;
         int FS_index; //Mapping from a Candidate to an FSPart by index in the array of FSParts
         mm dist_to_edep_as_neutron; //Distance parent and ancestors travelled that were neutrons
       };
@@ -71,7 +81,19 @@ namespace ana
                     const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& zBins,
                     const std::vector<double>& betaBins);
 
-        void Fill(const evt::CVUniverse& event, const neutrons weight, const MCCandidate& cand, const units::LorentzVector<mm>& vertex);
+        template <class CANDIDATE>
+        void Fill(const evt::CVUniverse& event, const neutrons weightPerNeutron, const CANDIDATE& cand, const units::LorentzVector<mm>& vertex)
+        {
+          const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
+          const mm dist = sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ));
+          const double angle = deltaZ.in<mm>() / sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ)).template in<mm>();
+          const double beta = dist.in<mm>() / cand.time.template in<ns>() / 300.; //Speed of light is 300mm/ns
+                                                                                                                        
+          fEDeps.Fill(&event, cand.edep, weightPerNeutron);
+          fAngles.FillUniverse(&event, angle, weightPerNeutron.in<neutrons>());
+          fBeta.FillUniverse(&event, beta, weightPerNeutron.in<neutrons>());
+          fZDistFromVertex.Fill(&event, cand.z - vertex.z(), weightPerNeutron);
+        }
 
         void SetDirectory(TDirectory* dir);
         void SyncCVHistos();
@@ -103,6 +125,8 @@ namespace ana
                                                                       //to explore backgrounds in phase space.
       Efficiency* fEffNumerator; //Neutron detection efficiency numerator
       Efficiency* fEffDenominator; //Neutron detection efficiency denominator
+
+      Observables* fDataCands; //Neutron candidate observables in data
   };
 }
 

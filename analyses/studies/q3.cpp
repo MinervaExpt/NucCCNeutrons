@@ -15,6 +15,7 @@
 
 //utility includes
 #include "util/Factory.cpp"
+#include "util/CaloCorrection.h"
 
 #ifndef ANA_Q3_CPP
 #define ANA_Q3_CPP
@@ -24,7 +25,7 @@ namespace ana
   //An available energy VARIABLE for the CrossSection<> templates.
   struct q3
   {
-    q3(const YAML::Node& /*config*/) {}
+    q3(const YAML::Node& config): fCaloSpline(config["caloFile"].as<std::string>(), config["caloTune"].as<std::string>()) {}
 
     inline std::string name() const { return "q_3"; }
 
@@ -35,11 +36,15 @@ namespace ana
 
     GeV reco(const evt::CVUniverse& event) const
     {
-      const auto Enu = event.GetMuonP().E() + event.Getq0();
+      const auto q0 = fCaloSpline.eCorrection(event.GetRecoilE() + event.GetODEnergy());
+      const auto Enu = event.GetMuonP().E() + q0;
       using GeV2 = units::detail::do_pow<2, GeV>::result_t;
       const GeV2 qSquared = 2.0 * (Enu * (event.GetMuonP().E() - event.GetMuonP().z()) - pow<2>(105.7_MeV)).in<GeV2>();
-      return sqrt(pow<2>(event.Getq0()) + qSquared);
+      return sqrt(pow<2>(q0) + qSquared);
     }
+
+    private:
+      util::CaloCorrection fCaloSpline;
   };
 }
 
