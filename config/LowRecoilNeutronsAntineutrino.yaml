@@ -1,6 +1,6 @@
 #!/usr/bin/env ProcessAnaTuples
-#File: NucCCNeutronsAntineutrinoStandard.yaml
-#Brief: My standard cuts for my neutron multiplicity analysis in antineutrino mode in the TRACKER.
+#File: LowRecoilNeutronsAntineutrino.yaml
+#Brief: Analysis cuts to emulate the low recoil neutron analysis from the Low Energy era.
 #       You still have to plug in a "signal" block and a systematics block from another YAML file
 #       on the command line.
 #Author: Andrew Olivier aolivier@ur.rochester.edu
@@ -24,6 +24,10 @@ app:
 cuts:
   truth:
     phaseSpace:
+      LowQ3: &q3Cut !Q3Range
+        min: !GeV -1e-3
+        max: !GeV 0.4
+        caloTune: "NukeCC_AntiNu_Tracker"
       Apothem: !Apothem
         apothem: !mm 850
       Tracker: *OneTrackTracker
@@ -31,25 +35,14 @@ cuts:
         min: !GeV 2
       TrackAngle: !TrackAngle
         max: !degrees 20
-      LowEAvailable: !EAvailRange
-        min: &smallNegativeNumber !GeV -1e-3
-        max: &maxEAvail !GeV 0.2
     signal:
       Antineutrino: !IsAntineutrino
       CC: !IsCC
   reco:
+    LowQ3: *q3Cut
     Apothem: !Apothem
       apothem: !mm 850
     Tracker: *OneTrackTracker
-    LowEAvailable: !RecoilERange
-      min: *smallNegativeNumber
-      max: *maxEAvail
-      EAvailable:
-        truth:
-          MinKE: !MeV 10 #Not many detectable candidates below this threshold
-        reco:
-          MinEDep: !MeV 1.5 #Just above cross-talk
-          MaxZDist: !mm 1500 #roughly tuned for tracker
     MinosDeltaT: !MinosDeltaT
       min: !ns -40
       max: !ns 110

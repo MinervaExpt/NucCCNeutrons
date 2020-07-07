@@ -1,0 +1,5 @@
+signal: !q3Resolution
+  name: "q3"
+  variable:
+    caloTune: "NukeCC_AntiNu_Tracker"
+  binning: [0, 0.4, 0.8, 1.2, 1.5]

@@ -25,7 +25,7 @@ namespace ana
   //An available energy VARIABLE for the CrossSection<> templates.
   struct q3
   {
-    q3(const YAML::Node& config): fCaloSpline(config["caloFile"].as<std::string>(), config["caloTune"].as<std::string>()) {}
+    q3(const YAML::Node& config): fCaloSpline(config["caloFile"].as<std::string>("$MPARAMFILESROOT/data/Calibrations/energy_calib/CalorimetryTunings.txt"), config["caloTune"].as<std::string>()) {}
 
     inline std::string name() const { return "q_3"; }
 
