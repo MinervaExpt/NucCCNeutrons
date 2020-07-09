@@ -33,7 +33,7 @@ namespace reco
       inline static bool check(const units::LorentzVector<mm>& vertex, const ROOT::Math::AxisAngle& rot, const mm mmToDivide)
       {
         const mm local = (rot * (vertex.p().in<mm>())).y();
-        return vertex.x() < 0_mm && (local - mmToDivide) > 0_mm;
+        return vertex.x() < 0_mm && (local - mmToDivide) < 0_mm;
       }
     };
 
