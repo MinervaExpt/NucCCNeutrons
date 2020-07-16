@@ -7,13 +7,14 @@
 
 namespace reco
 {
-  MuonMomentum::MuonMomentum(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>())
+  MuonMomentum::MuonMomentum(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>()), fMax(config["max"].as<GeV>())
   {
   }
 
   bool MuonMomentum::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetMuonP().p().mag() > fMin;
+    const auto pMu = event.GetMuonP().p().mag();
+    return pMu > fMin && pMu < fMax;
   }
 }
 

@@ -29,6 +29,7 @@ cuts:
       Tracker: *OneTrackTracker
       MuonMomentum: !MuonMomentum
         min: !GeV 2
+        max: !GeV 20
       TrackAngle: !TrackAngle
         max: !degrees 20
       LowEAvailable: !EAvailRange
@@ -57,6 +58,7 @@ cuts:
       max: !degrees 20
     MuonMomentum: !MuonMomentum
       min: !GeV 2
+      max: !GeV 20
     Antineutrino: !IsAntineutrino
     DeadTime: !DeadDiscriminators
       max: 1

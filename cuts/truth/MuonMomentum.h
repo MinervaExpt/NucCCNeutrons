@@ -22,6 +22,7 @@ namespace truth
 
     private:
       GeV fMin;
+      GeV fMax;
   };
 }
 

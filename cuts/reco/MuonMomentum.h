@@ -28,6 +28,7 @@ namespace reco
 
     private:
       GeV fMin;
+      GeV fMax;
   };
 }
 

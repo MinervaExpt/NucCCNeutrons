@@ -10,13 +10,14 @@
 
 namespace truth
 {
-  MuonMomentum::MuonMomentum(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>())
+  MuonMomentum::MuonMomentum(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>()), fMax(config["max"].as<GeV>())
   {
   }
 
   bool MuonMomentum::passesCut(const evt::CVUniverse& event) const
   {
-    return event.GetTruthPmu().p().mag() > fMin;
+    const auto pMu = event.GetTruthPmu().p().mag();
+    return pMu > fMin && pMu < fMax;
   }
 }
 
