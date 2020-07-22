@@ -15,8 +15,8 @@
 
 namespace
 {
-  std::vector<util::NamedCategory<int>> pdgCategories = {util::NamedCategory<int>{{2112}, "GENIE Neutrons"}, 
-                                                         util::NamedCategory<int>{{std::numeric_limits<int>::max()}, "GEANT Neutrons"},
+  std::vector<util::NamedCategory<int>> pdgCategories = {util::NamedCategory<int>{{2112}, "Direct Neutrons"}, //"GENIE Neutrons"}, 
+                                                         util::NamedCategory<int>{{std::numeric_limits<int>::max()}, "Reinteraction Neutrons"}, //"GEANT Neutrons"},
                                                          util::NamedCategory<int>{{-211, 211, 2212, 111,22}, "EM and Hadrons"},
                                                          util::NamedCategory<int>{{-13, 13}, "Muon"}
                                                         };
