@@ -36,7 +36,7 @@ namespace ana
 
     GeV reco(const evt::CVUniverse& event) const
     {
-      const auto q0 = fCaloSpline.eCorrection(event.GetRecoilE() + event.GetODEnergy());
+      const auto q0 = fCaloSpline.eCorrection(event.GetRecoilE());
       const auto Enu = event.GetMuonP().E() + q0;
       using GeV2 = units::detail::do_pow<2, GeV>::result_t;
       const GeV2 qSquared = 2.0 * (Enu * (event.GetMuonP().E() - event.GetMuonP().z()) - pow<2>(105.7_MeV)).in<GeV2>();

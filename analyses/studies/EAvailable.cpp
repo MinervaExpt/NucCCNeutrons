@@ -46,7 +46,7 @@ namespace ana
                                               return sum;
                                             });
 
-      return event.GetRecoilE() - neutronE;
+      return event.GetRecoilE() - event.GetODEnergy() - neutronE;
 
       //return event.GetRecoilE();
 
