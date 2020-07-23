@@ -179,6 +179,7 @@ namespace evt
       blobReco(blob_first_muon_long, mm)
       blobReco(blob_earliest_time, ns)
       blobReco(blob_nViews, size_t)
+      blobReco(blob_n_clusters, int)
 
       blobTruth(blob_geant_dist_to_edep_as_neutron, mm)
       blobTruth(blob_FS_index, int)
