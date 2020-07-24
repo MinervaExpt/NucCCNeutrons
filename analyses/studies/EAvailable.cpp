@@ -36,11 +36,11 @@ namespace ana
 
     GeV reco(const evt::CVUniverse& event) const
     {
-      const auto cands = event.Get<Candidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_calo_edep());
+      const auto cands = event.Get<Candidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_calo_edep(), event.Getblob_n_clusters());
       const auto neutronE = std::accumulate(cands.begin(), cands.end(), 0_MeV,
                                             [&event, this](const MeV sum, const auto& cand)
                                             {
-                                              if(this->fMultiplicity.countAsReco(cand, event.GetVtx()) && cand.caloEdep > 100_MeV)
+                                              if(this->fMultiplicity.countAsReco(cand, event.GetVtx()) && cand.nClusters < 4)
                                                 return sum + cand.caloEdep;
 
                                               return sum;
@@ -50,7 +50,7 @@ namespace ana
 
       //return event.GetRecoilE();
 
-      //return event.GetEAvailable() + event.GetMuonFuzzEnergy() + event.GetODEnergy();
+      //return event.GetEAvailable() + event.GetMuonFuzzEnergy();
     }
 
     private:
@@ -59,6 +59,7 @@ namespace ana
         MeV edep;
         mm z;
         MeV caloEdep;
+        int nClusters;
       };
 
       NeutronMultiplicity fMultiplicity;

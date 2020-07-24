@@ -127,6 +127,8 @@ namespace ana
       Efficiency* fEffDenominator; //Neutron detection efficiency denominator
 
       Observables* fDataCands; //Neutron candidate observables in data
+
+      units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, neutrons, events>* fCandsPerFSNeutron;
   };
 }
 

@@ -58,6 +58,8 @@ namespace ana
                                        config["binning"]["angle"].as<std::vector<double>>(),
                                        config["binning"]["zDist"].as<std::vector<double>>(),
                                        config["binning"]["beta"].as<std::vector<double>>());
+
+    fCandsPerFSNeutron = dir.make<units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, neutrons, events>>("CandsPerFSNeutron", "Candidates per FS Neutron;N Candidates;Events", 4, 0, 4, univs);
   }
 
   void NeutronDetection::data(const evt::CVUniverse& event)
@@ -81,6 +83,7 @@ namespace ana
     const auto vertex = event.GetVtx();
 
     std::set<int> FSWithCands; //FS neutrons with 1 or more reconstructed candidates
+    std::multiset<int> candsPerFS; //One entry for each FS particle for each candidate it caused
 
     for(const auto& cand: cands)
     {
@@ -93,14 +96,22 @@ namespace ana
           pdg = fs[cand.FS_index].PDGCode;
           //Check for "GEANT neutron"s: FS particles that weren't neutrons but produced neutrons that I detected.
           if(pdg != 2112 && cand.dist_to_edep_as_neutron > 0_mm) pdg = std::numeric_limits<int>::max();
-          if(fCuts.countAsTruth(fs[cand.FS_index])) FSWithCands.insert(cand.FS_index);
+          if(fCuts.countAsTruth(fs[cand.FS_index]))
+          {
+            FSWithCands.insert(cand.FS_index);
+            candsPerFS.insert(cand.FS_index);
+          }
         }
 
         fPDGToObservables[pdg].Fill(event, weightPerNeutron, cand, vertex);
       }
     }
 
-    for(const auto& withCands: FSWithCands) fEffNumerator->Fill(event, weightPerNeutron, fs[withCands]);
+    for(const auto& withCands: FSWithCands)
+    {
+      fCandsPerFSNeutron->Fill(&event, neutrons(candsPerFS.count(withCands)), weight);
+      fEffNumerator->Fill(event, weightPerNeutron, fs[withCands]);
+    }
 
     for(const auto& part: fs)
     {
