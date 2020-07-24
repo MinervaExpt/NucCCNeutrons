@@ -76,7 +76,20 @@ namespace ana
         double angle_wrt_z; //Angle w.r.t. the z axis of the detector in radians
       };
 
-      util::Categorized<units::WithUnits<PlotUtils::Hist2DWrapper<evt::CVUniverse>, Clusters, MeV, neutrons>, int> fPDGToEDepVersusNClusters; //Can I isolate candidates from pi0s by cutting in the energy deposited-number of Clusters plane?
+      //Helper function that needs to know about MCCandidate
+      static mm distToVertex(const MCCandidate& cand, const units::LorentzVector<mm>& vertex);
+
+      template <class XUNIT, class YUNIT, class WUNIT>
+      using HIST2D = units::WithUnits<PlotUtils::Hist2DWrapper<evt::CVUniverse>, XUNIT, YUNIT, WUNIT>;
+      //template <class XUNIT, class WUNIT>
+      //using HIST = PlotUtils::HistWrapper<evt::CVUniverse>; //units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, XUNIT, WUNIT>;
+      using LOGHIST2D = PlotUtils::Hist2DWrapper<evt::CVUniverse>;
+
+      util::Categorized<HIST2D<Clusters, MeV, neutrons>, int> fPDGToEDepVersusNClusters; //Can I isolate candidates from pi0s by cutting in the energy deposited-number of Clusters plane?
+
+      //The next 2 plots are filled with log() on each axis based on a study I did in November 2019.
+      LOGHIST2D* fClosestEDepVersusDist; //Energy deposit versus distance from vertex for the closest candidate to the vertex for each FS neutron
+      LOGHIST2D* fFartherEDepVersusDist; //Energy deposit versus distance from vertex for candidates that are not closest to the vertex for each FS neutron
   };
 }
 

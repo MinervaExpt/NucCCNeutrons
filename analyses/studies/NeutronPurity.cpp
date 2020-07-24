@@ -3,14 +3,15 @@
 //       It's a good place to plot variables I'm considering adding to my candidate selection.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-//c++ includes
-#include <cmath>
-
 //signal includes
 #include "analyses/studies/NeutronPurity.h"
 
 //util includes
 #include "util/Factory.cpp"
+
+//c++ includes
+#include <cmath>
+#include <unordered_map>
 
 namespace
 {
@@ -26,6 +27,12 @@ namespace
 
 namespace ana
 {
+  mm NeutronPurity::distToVertex(const MCCandidate& cand, const units::LorentzVector<mm>& vertex)
+  {
+    using namespace units;
+    return sqrt(pow<2>(cand.transverse) + pow<2>(cand.z - vertex.z()));
+  }
+
   NeutronPurity::NeutronPurity(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
                                      std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                                                    fCuts(config["variable"]),
@@ -34,6 +41,10 @@ namespace ana
                                                                                                                              config["binning"]["edep"].as<std::vector<double>>(),
                                                                                                                              univs)
   {
+    constexpr int nBins = 30;
+    fClosestEDepVersusDist = dir.make<LOGHIST2D>("ClosestEDepVersusDist", "Closest Candidate per FS;log(Distance from Vertex/1mm);log(Candidate Visible Energy/1MeV)", nBins, 3, 9, nBins, 0.2, 6, univs);
+
+    fFartherEDepVersusDist = dir.make<LOGHIST2D>("FartherEDepVersusDist", "Not Closest Candidate per FS;log(Distance from Vertex/1mm);log(Candidate Visible Energy/1MeV)", nBins, 3, 9, nBins, 0.2, 6, univs);
   }
 
   void NeutronPurity::mcSignal(const evt::CVUniverse& event, const events weight)
@@ -49,6 +60,8 @@ namespace ana
     const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetTruthMatchedangle_wrt_z());
     const auto vertex = event.GetVtx();
 
+    std::unordered_map<int, std::vector<MCCandidate>> fsNeutronToCands; //Mapping from FS neutron to candidates it produced
+
     for(const auto& cand: cands)
     {
       if(fCuts.countAsReco(cand, vertex))
@@ -60,10 +73,29 @@ namespace ana
           pdg = fs[cand.FS_index].PDGCode;
           //Check for "GEANT neutron"s: FS particles that weren't neutrons but produced neutrons that I detected.
           if(pdg != 2112 && cand.dist_to_edep_as_neutron > 0_mm) pdg = std::numeric_limits<int>::max();
+
+          if(fCuts.countAsTruth(fs[cand.FS_index])) fsNeutronToCands[cand.FS_index].push_back(cand);
         }
 
         fPDGToEDepVersusNClusters[pdg].Fill(&event, Clusters(cand.nClusters), cand.caloEdep, weightPerNeutron);
       }
+    }
+
+    for(auto fs: fsNeutronToCands)
+    {
+      const auto closest = std::min_element(fs.second.begin(), fs.second.end(),
+                                            [&vertex](const auto& lhs, const auto& rhs)
+                                            {
+                                              return distToVertex(lhs, vertex) < distToVertex(rhs, vertex);
+                                            });
+
+      if(closest != fs.second.end())
+      {
+        fClosestEDepVersusDist->FillUniverse(&event, log(distToVertex(*closest, vertex).in<mm>()), log(closest->caloEdep.in<MeV>()), weight.in<events>());
+        fs.second.erase(closest); //N.B.: I'm modifying fsNeutronToCands here!
+      }
+
+      for(const auto& cand: fs.second) fFartherEDepVersusDist->FillUniverse(&event, log(distToVertex(cand, vertex).in<mm>()), log(cand.caloEdep.in<MeV>()), weight.in<events>());
     }
   }
 
@@ -71,7 +103,6 @@ namespace ana
   {
     fPDGToEDepVersusNClusters.visit([passedSelection](auto& hist)
                                     {
-                                      //hist.hist->Scale(1./passedSelection.in<events>());
                                       hist.SyncCVHistos();
                                     });
   }
