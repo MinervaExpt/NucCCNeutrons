@@ -34,7 +34,7 @@ cuts:
         max: !degrees 20
       LowEAvailable: !EAvailRange
         min: &smallNegativeNumber !GeV -1e-3
-        max: &maxEAvail !GeV 0.05
+        max: &maxEAvail !GeV 0.1
     signal:
       Antineutrino: !IsAntineutrino
       CC: !IsCC

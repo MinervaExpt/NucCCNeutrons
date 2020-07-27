@@ -40,7 +40,7 @@ namespace ana
       const auto neutronE = std::accumulate(cands.begin(), cands.end(), 0_MeV,
                                             [&event, this](const MeV sum, const auto& cand)
                                             {
-                                              if(this->fMultiplicity.countAsReco(cand, event.GetVtx()) && cand.nClusters < 4)
+                                              if(this->fMultiplicity.countAsReco(cand, event.GetVtx()) && cand.nClusters < 3)
                                                 return sum + cand.caloEdep;
 
                                               return sum;
