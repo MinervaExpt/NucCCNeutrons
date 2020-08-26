@@ -180,6 +180,8 @@ namespace evt
       blobReco(blob_earliest_time, ns)
       blobReco(blob_nViews, size_t)
       blobReco(blob_n_clusters, int)
+      blobReco(blob_n_digits, int)
+      blobReco(blob_highest_digit_E, MeV)
 
       blobTruth(blob_geant_dist_to_edep_as_neutron, mm)
       blobTruth(blob_FS_index, int)

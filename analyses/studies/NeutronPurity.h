@@ -14,10 +14,14 @@
 #include "util/units.h"
 #include "util/mathWithUnits.h"
 
+//c++ includes
+#include <fstream>
+
 #ifndef SIG_NEUTRONDETECTION_H
 #define SIG_NEUTRONDETECTION_H
 
 DECLARE_UNIT_WITH_TYPE_AND_YAML(Clusters, int)
+DECLARE_UNIT_WITH_TYPE_AND_YAML(Digits, int)
 
 namespace ana
 {
@@ -64,6 +68,8 @@ namespace ana
         mm transverse;
         ns time;
         int nClusters;
+        int nDigits;
+        MeV highestDigitE;
         int FS_index; //Mapping from a Candidate to an FSPart by index in the array of FSParts
         mm dist_to_edep_as_neutron; //Distance parent and ancestors travelled that were neutrons
       };
@@ -86,10 +92,17 @@ namespace ana
       using LOGHIST2D = PlotUtils::Hist2DWrapper<evt::CVUniverse>;
 
       util::Categorized<HIST2D<Clusters, MeV, neutrons>, int> fPDGToEDepVersusNClusters; //Can I isolate candidates from pi0s by cutting in the energy deposited-number of Clusters plane?
+      util::Categorized<HIST2D<Digits, MeV, neutrons>, int> fPDGToEDepVersusNDigits;
+
+      util::Categorized<units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, MeV, neutrons>, int> fPDGToHighestDigitE;
+
+      util::Categorized<HIST2D<Digits, MeV, neutrons>, int> fPDGToHighestEVersusNDigits;
 
       //The next 2 plots are filled with log() on each axis based on a study I did in November 2019.
       LOGHIST2D* fClosestEDepVersusDist; //Energy deposit versus distance from vertex for the closest candidate to the vertex for each FS neutron
       LOGHIST2D* fFartherEDepVersusDist; //Energy deposit versus distance from vertex for candidates that are not closest to the vertex for each FS neutron
+
+      std::ofstream fSingleDigitPi0Events; //Write a file with Arachne event display links to events with 1-digit pi0-induced neutron candidates
   };
 }
 
