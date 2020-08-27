@@ -91,9 +91,9 @@ namespace ana
                             };
         const auto smallestAnglePrefix = std::min_element(cands.begin(), whichCand, compareAngle);
         const auto smallestAnglePostfix = std::min_element(whichCand+1, cands.end(), compareAngle);
-        fSmallestAngleDiff = std::numeric_limits<double>::max();
-        if(smallestAnglePrefix != cands.end()) fSmallestAngleDiff = fabs(angle(*smallestAnglePrefix, vertex));
-        if(smallestAnglePostfix != cands.end()) fSmallestAngleDiff = std::min(fSmallestAngleDiff, fabs(angle(*smallestAnglePostfix, vertex)));
+        fSmallestAngleDiff = 9999; //std::numeric_limits<double>::max();
+        if(smallestAnglePrefix != cands.end()) fSmallestAngleDiff = fabs(angle(*whichCand, vertex) - angle(*smallestAnglePrefix, vertex));
+        if(smallestAnglePostfix != cands.end()) fSmallestAngleDiff = std::min(fSmallestAngleDiff, fabs(angle(*whichCand, vertex) - angle(*smallestAnglePostfix, vertex)));
 
         fMCTree->Fill();
       }
@@ -104,7 +104,8 @@ namespace ana
   double PerCandidateTree::angle(const MCCandidate& cand, const units::LorentzVector<mm>& vertex) const
   {
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
-    return deltaZ.in<mm>() / sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ)).in<mm>();
+    //return deltaZ.in<mm>() / sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ)).in<mm>();
+    return atan2(deltaZ.in<mm>(), cand.transverse.in<mm>());
   }
 }
 
