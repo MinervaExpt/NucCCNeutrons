@@ -63,6 +63,7 @@ namespace ana
         int FS_index; //Mapping from a Candidate to an FSPart by index in the array of FSParts
         mm dist_to_edep_as_neutron; //Distance parent and ancestors travelled that were neutrons
         int nDigits;
+        int nClusters;
         MeV highestDigitE;
       };
 
@@ -87,7 +88,9 @@ namespace ana
       double fDistFromVertex;
       double fDeltaT;
       double fAngleWrtVertex;
-      double fNDigits;
+      int fNDigits;
+      int fNClusters;
+      int fNCandidates;
       double fHighestDigitE;
       double fSmallestAngleDiff;
 

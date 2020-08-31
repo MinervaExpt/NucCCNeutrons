@@ -32,6 +32,8 @@ namespace ana
     fMCTree->Branch("DeltaT", &fDeltaT);
     fMCTree->Branch("AngleWrtVertex", &fAngleWrtVertex);
     fMCTree->Branch("NDigits", &fNDigits);
+    fMCTree->Branch("NClusters", &fNClusters);
+    fMCTree->Branch("NCandidates", &fNCandidates);
     fMCTree->Branch("HighestDigitE", &fHighestDigitE);
     fMCTree->Branch("SmallestAngleDiff", &fSmallestAngleDiff);
 
@@ -46,9 +48,12 @@ namespace ana
     const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(),
                                               event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(),
                                               event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron(),
-                                              event.Getblob_n_digits(), event.Getblob_highest_digit_E());
+                                              event.Getblob_n_digits(), event.Getblob_n_clusters(),
+                                              event.Getblob_highest_digit_E());
     const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetTruthMatchedangle_wrt_z());
     const auto vertex = event.GetVtx();
+
+    fNCandidates = fCuts.reco(event).in<neutrons>();
 
     for(auto whichCand = cands.begin(); whichCand != cands.end(); ++whichCand)
     {
@@ -82,6 +87,7 @@ namespace ana
         fEDep = cand.edep.in<MeV>();
         fDeltaT = cand.time.in<ns>();
         fNDigits = cand.nDigits;
+        fNClusters = cand.nClusters;
         fHighestDigitE = cand.highestDigitE.in<MeV>();
 
         //Checked that angle() can return a negative number.  Consider deltaZ < 0.
