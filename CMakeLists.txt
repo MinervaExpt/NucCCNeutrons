@@ -74,7 +74,7 @@ add_subdirectory(app)
 
 add_dependencies(ProcessAnaTuples generateGitVersion)
 #target_include_directories(ProcessAnaTuples PRIVATE ${CMAKE_CURRENT_BINARY_DIR}) #for gitVersion.h
-target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
+target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app cutter)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 

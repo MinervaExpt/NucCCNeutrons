@@ -163,6 +163,13 @@ namespace util
     return recoSummary.print(printTo);
   }
 
+  double Cutter::totalWeightPassed() const
+  {
+    if(!fRecoSidebandCuts.empty()) return fRecoSidebandCuts.back()->totalPassed();
+    else if(!fRecoPreCuts.empty()) return fRecoPreCuts.back()->totalPassed();
+    else return fSumAllAnaToolWeights;
+  }
+
   std::ostream& operator <<(std::ostream& printTo, const Cutter& printMe)
   {
     return printMe.summarize(printTo);

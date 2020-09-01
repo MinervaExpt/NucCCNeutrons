@@ -42,6 +42,7 @@ namespace util
       bool isPhaseSpace(const evt::CVUniverse& univ);
 
       std::ostream& summarize(std::ostream& printTo) const;
+      double totalWeightPassed() const; //Get total weight that passed all cuts
 
     private:
       long int fSumAllAnaToolWeights;
