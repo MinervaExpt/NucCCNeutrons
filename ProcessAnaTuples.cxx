@@ -261,7 +261,7 @@ int main(const int argc, const char** argv)
           //anything besides the CV.
           cv->SetEntry(entry);
           weights.SetEntry(*cv);
-          const auto cvWeightForCuts = ::getWeight(reweighters, *cv);
+          const double cvWeightForCuts = ::getWeight(reweighters, *cv).in<events>();
 
           for(const auto& compat: groupedUnivs)
           {
@@ -270,7 +270,7 @@ int main(const int argc, const char** argv)
 
             //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
             //for sidebands defined by multiple cuts.
-            const auto passedReco = cuts->isSelected(event, cvWeightForCuts.in<events>());
+            const auto passedReco = cuts->isSelected(event, cvWeightForCuts);
             if(!passedReco.none())
             {
               //Look up the sideband, if any, by which reco cuts failed.

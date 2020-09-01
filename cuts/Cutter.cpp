@@ -31,7 +31,7 @@ namespace util
     //If univ is the CV, keep statistics for summarize()
     bool isSignalForCuts = false;
     //TODO: Don't check ShortName() with string comparison
-    if(univ.ShortName() == "cv")
+    if(!strcmp(univ.ShortName().c_str(), "cv"))
     {
       ++fNRecoEntries; //TODO: This is not true if I do any cuts before calling isSelected().
                        //      Think of Heidi's column-wise cuts.
@@ -44,7 +44,10 @@ namespace util
         fSumSignalAnaToolWeights += weight;
       }
     }
-    else weight = 0;
+    else
+    {
+      weight = 0;
+    }
 
     if(!std::all_of(fRecoPreCuts.begin(), fRecoPreCuts.end(), [&univ, weight, isSignalForCuts](auto& cut)
                                                               { return (*cut)(univ, weight, isSignalForCuts); }))
@@ -78,14 +81,14 @@ namespace util
 
   bool Cutter::isPhaseSpace(const evt::CVUniverse& univ)
   {
-    return std::all_of(fTruthSignalDef.begin(), fTruthSignalDef.end(), [&univ](const auto& def) { return (*def)(univ); });
+    return std::all_of(fTruthPhaseSpace.begin(), fTruthPhaseSpace.end(), [&univ](const auto& def) { return (*def)(univ); });
   }
 
   bool Cutter::isEfficiencyDenom(const evt::CVUniverse& univ, const double weight)
   {
     const bool result = isSignal(univ) && isPhaseSpace(univ);
     //TODO: Don't compare to ShortName()
-    if(univ.ShortName() == "cv")
+    if(!strcmp(univ.ShortName().c_str(), "cv"))
     {
       fSumAllTruthWeights += weight;
 
@@ -116,6 +119,9 @@ namespace util
                              fSumSignalAnaToolWeights / fSumAllAnaToolWeights * 100.,
                              fSumSignalAnaToolWeights / fSumSignalTruthWeights * 100.,
                              fSumAllAnaToolWeights / fSumAllTruthWeights * 100.);
+
+      std::cout << "fSumSignalAnaToolWeights = " << fSumSignalAnaToolWeights << "\n";
+      std::cout << "fSumSignalTruthWeights = " << fSumSignalTruthWeights << "\n";
 
       double prevSignal = fSumSignalAnaToolWeights;
       double prevTotal = fSumAllAnaToolWeights;

@@ -45,10 +45,10 @@ namespace util
       double totalWeightPassed() const; //Get total weight that passed all cuts
 
     private:
-      long int fSumAllAnaToolWeights;
-      long int fSumSignalTruthWeights;
-      long int fSumSignalAnaToolWeights;
-      long int fSumAllTruthWeights;
+      double fSumAllAnaToolWeights;
+      double fSumSignalTruthWeights;
+      double fSumSignalAnaToolWeights;
+      double fSumAllTruthWeights;
       long int fNRecoEntries;
 
       reco_t fRecoPreCuts;
