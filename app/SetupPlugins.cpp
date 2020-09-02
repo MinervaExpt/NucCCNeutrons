@@ -279,7 +279,7 @@ namespace app
 
     for(const auto& band: bands)
     {
-      if(band.first == "cv") vertical.insert(vertical.end(), band.second.begin(), band.second.end());
+      if(band.first == "cv") vertical.insert(vertical.begin(), band.second.begin(), band.second.end());
       else
       {
         for(const auto univ: band.second)
