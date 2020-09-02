@@ -29,7 +29,7 @@
 //Cuts includes
 #include "cuts/truth/Cut.h"
 #include "cuts/reco/Cut.h"
-#include "cuts/Cutter.h"
+#include "PlotUtils/Cutter.h"
 
 //models includes
 #include "models/Model.h"
