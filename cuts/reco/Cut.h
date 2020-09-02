@@ -19,39 +19,25 @@
 //util includes
 #include "util/Factory.cpp"
 
+//PlotUtils includes
+#include "PlotUtils/Cut.h"
+
+//TODO: Don't need this once debugging is done
+using PCut = PlotUtils::Cut<evt::CVUniverse>;
+
 namespace reco
 {
-  class Cut
+  class Cut: public PCut
   {
     public:
-      Cut(const YAML::Node& /*config*/, const std::string& name): fName(name) {}
+      Cut(const YAML::Node& /*config*/, const std::string& name): PlotUtils::Cut<evt::CVUniverse>(name) {}
       virtual ~Cut() = default;
       
-      //Public interface.  If you're writing a new Cut, look
-      //at the private implementation below.
-      //
-      //I designed Cut this way so I have a hook to keep
-      //statistics for a cut table later.
-      bool operator ()(const evt::CVUniverse& event, const double weight = 1, const bool isSignal = true);
-
-      //Access to Cut performance statistics
-      inline double signalPassed() const { return fSignalPassed; }
-      inline double totalPassed() const { return fTotalPassed; }
-      inline const std::string& name() const { return fName; }
-
       template <class DERIVED>
       using Registrar = plgn::Registrar<reco::Cut, DERIVED, std::string&>;
 
-    protected:
-      //Your concrete Cut class must override these methods.
-      virtual bool passesCut(const evt::CVUniverse& event) const = 0;
-
-    private:
-      std::string fName; //Name of this cut for reporting
-
-      //Data for the cut table
-      double fSignalPassed = 0; //Sum of event weights for which operator() returned true
-      double fTotalPassed = 0; //Number of times an event passed this Cut
+      //Adapter for old Cut interface
+      std::string name() const { return getName(); }
   };
 }
 

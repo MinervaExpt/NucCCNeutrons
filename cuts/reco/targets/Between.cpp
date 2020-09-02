@@ -14,7 +14,7 @@ namespace reco
   {
   }
 
-  bool Between::passesCut(const evt::CVUniverse& event) const
+  bool Between::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
   {
     return event.GetVtx().z() > fZMin && event.GetVtx().z() < fZMax;
   }

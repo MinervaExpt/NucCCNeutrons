@@ -13,7 +13,7 @@ namespace reco
   {
   }
 
-  bool nTracks::passesCut(const evt::CVUniverse& event) const
+  bool nTracks::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
   {
     return event.GetNTracks() >= fMin && event.GetNTracks() <= fMax;
   }

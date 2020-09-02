@@ -8,6 +8,9 @@
 //ana includes
 #include "analyses/base/Study.h"
 
+//PlotUtils includes
+#include "PlotUtils/Cut.h"
+
 //c++ includes
 #include <unordered_map>
 #include <bitset>
@@ -48,14 +51,14 @@ namespace app
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> setupSidebands(const YAML::Node& sidebands, util::Directory& histDir,
                                                                                                std::vector<std::unique_ptr<ana::Background>>& backgrounds,
                                                                                                std::map<std::string, std::vector<evt::CVUniverse*>>& universes,
-                                                                                               std::vector<std::unique_ptr<reco::Cut>>& recoCuts,
-                                                                                               std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts);
+                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& recoCuts,
+                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& sidebandCuts);
   //Set up Background categories.  Signal and sideband Studies will categorize histograms
   //by these Backgrounds' names.
   std::vector<std::unique_ptr<ana::Background>> setupBackgrounds(const YAML::Node& config);
 
   //Set up reco::Cuts that define an event selection.
-  std::vector<std::unique_ptr<reco::Cut>> setupRecoCuts(const YAML::Node& config);
+  std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>> setupRecoCuts(const YAML::Node& config);
 
   //Load the set of systematics I'm going to process this event with.
   std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC);

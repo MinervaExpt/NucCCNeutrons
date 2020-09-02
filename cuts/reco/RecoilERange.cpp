@@ -11,7 +11,7 @@ namespace reco
   {
   }
 
-  bool RecoilERange::passesCut(const evt::CVUniverse& event) const
+  bool RecoilERange::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
   {
     const auto reco = fCalc.reco(event);
     return reco > fMin && reco < fMax;

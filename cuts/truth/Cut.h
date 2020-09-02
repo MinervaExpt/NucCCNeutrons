@@ -18,29 +18,26 @@
 //utilities includes
 #include "util/Factory.cpp"
 
+//PlotUtils includes
+#include "PlotUtils/Cut.h"
+
 namespace truth
 {
-  //TODO: This could easily be a class template on CVUniverse
-  //      for other analyses to use it.
-  class Cut
+  class Cut: public PlotUtils::SignalConstraint<evt::CVUniverse>
   {
     public:
-      Cut(const YAML::Node& /*config*/) {}
+      Cut(const YAML::Node& /*config*/): PlotUtils::SignalConstraint<evt::CVUniverse>("FIXME") {}
       virtual ~Cut() = default;
       
-      //Public interface.  If you're writing a new Cut, look
-      //at the private implementation below.
-      //
-      //I designed Cut this way so I have a hook to keep
-      //statistics for a cut table later.
-      bool operator ()(const evt::CVUniverse& event);
-
       template <class DERIVED>
       using Registrar = plgn::Registrar<truth::Cut, DERIVED>;
 
     protected:
       //Your concrete Cut class must override these methods.
       virtual bool passesCut(const evt::CVUniverse& event) const = 0;
+
+      //Forward legacy passesCut() onto what PlotUtils::SignalConstraint expects
+      virtual bool checkConstraint(const evt::CVUniverse& event) const override;
   };
 }
 

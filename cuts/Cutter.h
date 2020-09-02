@@ -4,9 +4,14 @@
 //       definition, and truth phase space.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+#ifndef PLOTUTILS_CUTTER_H
+#define PLOTUTILS_CUTTER_H
+
 //cuts includes
-#include "cuts/reco/Cut.h"
 #include "cuts/truth/Cut.h"
+
+//PlotUtils includes
+#include "PlotUtils/Cut.h"
 
 //c++ includes
 #include <iostream>
@@ -20,11 +25,12 @@ namespace evt
 
 namespace util
 {
+  template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
   class Cutter
   {
     public:
-      using reco_t = std::vector<std::unique_ptr<reco::Cut>>;
-      using truth_t = std::vector<std::unique_ptr<truth::Cut>>;
+      using reco_t = std::vector<std::unique_ptr<PlotUtils::Cut<UNIVERSE, EVENT>>>;
+      using truth_t = std::vector<std::unique_ptr<PlotUtils::SignalConstraint<UNIVERSE>>>;
 
       Cutter(reco_t&& recoPre, reco_t&& recoSideband, truth_t&& truthSignal, truth_t&& truthPhaseSpace);
 
@@ -33,13 +39,13 @@ namespace util
       //Look for isSelected().all() for the main analysis.
       //isSelected()[n] is the status of the nth sideband cut.
       //isSelected().none() means the pre-cuts failed and no sidebands were checked to save computation time.
-      std::bitset<64> isSelected(const evt::CVUniverse& univ, const double weight);
+      std::bitset<64> isSelected(const UNIVERSE& univ, EVENT& event, const double weight);
       //isSignal() && isPhaseSpace() with some extra bookkeeping to report overall efficiency and purity.
-      bool isEfficiencyDenom(const evt::CVUniverse& univ, const double weight);
+      bool isEfficiencyDenom(const UNIVERSE& univ, const double weight);
 
       //No statistics kept for these
-      bool isSignal(const evt::CVUniverse& univ);
-      bool isPhaseSpace(const evt::CVUniverse& univ);
+      bool isSignal(const UNIVERSE& univ);
+      bool isPhaseSpace(const UNIVERSE& univ);
 
       std::ostream& summarize(std::ostream& printTo) const;
       double totalWeightPassed() const; //Get total weight that passed all cuts
@@ -57,5 +63,10 @@ namespace util
       truth_t fTruthPhaseSpace;
   };
 
-  std::ostream& operator <<(std::ostream& printTo, const Cutter& printMe);
+  template <class UNIVERSE, class EVENT>
+  std::ostream& operator <<(std::ostream& printTo, const Cutter<UNIVERSE, EVENT>& printMe);
 }
+
+#include "cuts/Cutter.cpp"
+
+#endif //PLOTUTILS_CUTTER_H

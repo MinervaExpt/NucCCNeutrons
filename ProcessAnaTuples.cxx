@@ -79,6 +79,14 @@ namespace
   //How often I print out entry number when in debug mode
   constexpr auto printFreq = 1000ul;
 
+  template <class BASE, class DERIVED>
+  std::vector<std::unique_ptr<BASE>> toBase(std::vector<std::unique_ptr<DERIVED>>&& derived)
+  {
+    std::vector<std::unique_ptr<BASE>> result;
+    for(auto& ptr: derived) result.emplace_back(std::move(ptr));
+    return result;
+  }
+
   std::unique_ptr<ana::Background> null(nullptr); //TODO: This is a horrible hack so I can hold a reference to a nullptr
 
   template <class ITERATOR>
@@ -94,7 +102,7 @@ namespace
     return std::all_of(cuts.begin(), cuts.end(),
                        [&event, args...](const auto& cut)
                        {
-                         return (*cut)(event, args...);
+                         return cut->passes(event, args...);
                        });
   }
 
@@ -117,7 +125,7 @@ int main(const int argc, const char** argv)
   evt::CVUniverse* cv;
   std::vector<std::unique_ptr<ana::Background>> backgrounds;
   std::unique_ptr<ana::Study> signal;
-  std::unique_ptr<util::Cutter> cuts;
+  std::unique_ptr<util::Cutter<evt::CVUniverse, PlotUtils::detail::empty>> cuts;
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands;
   std::vector<std::unique_ptr<model::Model>> reweighters;
 
@@ -155,12 +163,12 @@ int main(const int argc, const char** argv)
       util::StreamRedirection silencePlotUtils(std::cout, "NSFNoise.txt");
     #endif
 
-    auto truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"]); //TODO: Tell the user which Cut failed
-    auto truthSignal = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"]); //TODO: Tell the user which Cut failed
+    auto truthPhaseSpace = ::toBase<PlotUtils::SignalConstraint<evt::CVUniverse>>(plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"])); //TODO: Tell the user which Cut failed
+    auto truthSignal = ::toBase<PlotUtils::SignalConstraint<evt::CVUniverse>>(plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"])); //TODO: Tell the user which Cut failed
     auto recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
     decltype(recoCuts) sidebandCuts;
     sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
-    cuts.reset(new util::Cutter(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
+    cuts.reset(new util::Cutter<evt::CVUniverse, PlotUtils::detail::empty>(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
 
     cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
@@ -266,11 +274,12 @@ int main(const int argc, const char** argv)
           for(const auto& compat: groupedUnivs)
           {
             auto& event = *compat.front(); //All compatible universes pass the same cuts
+            PlotUtils::detail::empty shared;
             for(const auto univ: compat) univ->SetEntry(entry); //I still need to GetWeight() for entry
 
             //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
             //for sidebands defined by multiple cuts.
-            const auto passedReco = cuts->isSelected(event, cvWeightForCuts);
+            const auto passedReco = cuts->isSelected(event, shared, cvWeightForCuts);
             if(!passedReco.none())
             {
               //Look up the sideband, if any, by which reco cuts failed.
@@ -376,7 +385,9 @@ int main(const int argc, const char** argv)
           #endif
 
           cv->SetEntry(entry);
-          const auto passedCuts = cuts->isSelected(*cv, 1);
+
+          PlotUtils::detail::empty shared;
+          const auto passedCuts = cuts->isSelected(*cv, shared, 1);
           if(!passedCuts.none())
           {
             if(passedCuts.all()) signal->data(*cv);

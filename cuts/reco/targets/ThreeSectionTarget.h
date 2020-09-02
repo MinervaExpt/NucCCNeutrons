@@ -74,7 +74,7 @@ namespace reco
       virtual ~ThreeSectionTarget() = default;
 
     protected:
-      virtual bool passesCut(const evt::CVUniverse& event) const override
+      virtual bool checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const override
       {
         return detail::impl<MaterialZ>::check(event.GetVtx(), fRotation, mmToDivide);
       }

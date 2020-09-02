@@ -4,9 +4,6 @@
 //       definition, and truth phase space.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-//cuts includes
-#include "cuts/Cutter.h"
-
 //evt includes
 #include "evt/CVUniverse.h"
 
@@ -18,7 +15,8 @@
 
 namespace util
 {
-  Cutter::Cutter(reco_t&& recoPre, reco_t&& recoSideband,
+  template <class UNIVERSE, class EVENT>
+  Cutter<UNIVERSE, EVENT>::Cutter(reco_t&& recoPre, reco_t&& recoSideband,
                  truth_t&& truthSignal, truth_t&& truthPhaseSpace): fSumAllAnaToolWeights(0), fSumSignalTruthWeights(0),
                                                                     fSumSignalAnaToolWeights(0), fSumAllTruthWeights(0), fNRecoEntries(0),
                                                                     fRecoPreCuts(std::move(recoPre)), fRecoSidebandCuts(std::move(recoSideband)),
@@ -26,7 +24,8 @@ namespace util
   {
   }
 
-  std::bitset<64> Cutter::isSelected(const evt::CVUniverse& univ, double weight)
+  template <class UNIVERSE, class EVENT>
+  std::bitset<64> Cutter<UNIVERSE, EVENT>::isSelected(const UNIVERSE& univ, EVENT& event, double weight)
   {
     //If univ is the CV, keep statistics for summarize()
     bool isSignalForCuts = false;
@@ -49,8 +48,8 @@ namespace util
       weight = 0;
     }
 
-    if(!std::all_of(fRecoPreCuts.begin(), fRecoPreCuts.end(), [&univ, weight, isSignalForCuts](auto& cut)
-                                                              { return (*cut)(univ, weight, isSignalForCuts); }))
+    if(!std::all_of(fRecoPreCuts.begin(), fRecoPreCuts.end(), [&univ, &event, weight, isSignalForCuts](auto& cut)
+                                                              { return cut->passesCut(univ, event, weight, isSignalForCuts); }))
     {
       return 0; //All sideband cuts set to false
     }
@@ -63,7 +62,7 @@ namespace util
     int whichCut = 0;
     for(auto& cut: fRecoSidebandCuts)
     {
-      if(!(*cut)(univ, weight, isSignalForCuts))
+      if(!cut->passesCut(univ, event, weight, isSignalForCuts))
       {
         result.set(whichCut, false);
         weight = 0; //Keep checking for sideband, but this event has not been selected.
@@ -74,17 +73,20 @@ namespace util
     return result;
   }
 
-  bool Cutter::isSignal(const evt::CVUniverse& univ)
+  template <class UNIVERSE, class EVENT>
+  bool Cutter<UNIVERSE, EVENT>::isSignal(const UNIVERSE& univ)
   {
-    return std::all_of(fTruthSignalDef.begin(), fTruthSignalDef.end(), [&univ](const auto& def) { return (*def)(univ); });
+    return std::all_of(fTruthSignalDef.begin(), fTruthSignalDef.end(), [&univ](const auto& def) { return def->passes(univ); });
   }
 
-  bool Cutter::isPhaseSpace(const evt::CVUniverse& univ)
+  template <class UNIVERSE, class EVENT>
+  bool Cutter<UNIVERSE, EVENT>::isPhaseSpace(const UNIVERSE& univ)
   {
-    return std::all_of(fTruthPhaseSpace.begin(), fTruthPhaseSpace.end(), [&univ](const auto& def) { return (*def)(univ); });
+    return std::all_of(fTruthPhaseSpace.begin(), fTruthPhaseSpace.end(), [&univ](const auto& def) { return def->passes(univ); });
   }
 
-  bool Cutter::isEfficiencyDenom(const evt::CVUniverse& univ, const double weight)
+  template <class UNIVERSE, class EVENT>
+  bool Cutter<UNIVERSE, EVENT>::isEfficiencyDenom(const UNIVERSE& univ, const double weight)
   {
     const bool result = isSignal(univ) && isPhaseSpace(univ);
     //TODO: Don't compare to ShortName()
@@ -97,7 +99,8 @@ namespace util
     return result;
   }
 
-  std::ostream& Cutter::summarize(std::ostream& printTo) const
+  template <class UNIVERSE, class EVENT>
+  std::ostream& Cutter<UNIVERSE, EVENT>::summarize(std::ostream& printTo) const
   {
     assert(fNRecoEntries > 0 && "No entries got into the cut table!  Perhaps you don't have a universe with ShortName() == \"cv\"?");
 
@@ -130,14 +133,14 @@ namespace util
 
       auto summarizeCut = [&truthSummary, &prevSignal, &prevTotal, this](const auto& cut)
                           {
-                            truthSummary.appendRow(cut->name(),
-                                                   cut->totalPassed(),
-                                                   cut->signalPassed() / this->fSumSignalTruthWeights * 100.,
-                                                   cut->signalPassed() / cut->totalPassed() * 100.,
-                                                   cut->signalPassed() / prevSignal * 100.,
-                                                   (double)cut->totalPassed() / prevTotal * 100.);
-                            prevSignal = cut->signalPassed();
-                            prevTotal = cut->totalPassed();
+                            truthSummary.appendRow(cut->getName(),
+                                                   cut->getTotalPassed(),
+                                                   cut->getSignalPassed() / this->fSumSignalTruthWeights * 100.,
+                                                   cut->getSignalPassed() / cut->getTotalPassed() * 100.,
+                                                   cut->getSignalPassed() / prevSignal * 100.,
+                                                   (double)cut->getTotalPassed() / prevTotal * 100.);
+                            prevSignal = cut->getSignalPassed();
+                            prevTotal = cut->getTotalPassed();
                           };
 
       std::for_each(fRecoPreCuts.begin(), fRecoPreCuts.end(), summarizeCut);
@@ -159,10 +162,10 @@ namespace util
     int prevSampleLeft = fNRecoEntries;
     auto summarizeCut = [&recoSummary, &prevSampleLeft](const auto& cut)
                         {
-                          recoSummary.appendRow(cut->name(),
-                                                cut->totalPassed(),
-                                                (double)cut->totalPassed() / prevSampleLeft * 100.);
-                          prevSampleLeft = cut->totalPassed();
+                          recoSummary.appendRow(cut->getName(),
+                                                cut->getTotalPassed(),
+                                                (double)cut->getTotalPassed() / prevSampleLeft * 100.);
+                          prevSampleLeft = cut->getTotalPassed();
                         };
 
     std::for_each(fRecoPreCuts.begin(), fRecoPreCuts.end(), summarizeCut);
@@ -171,14 +174,16 @@ namespace util
     return recoSummary.print(printTo);
   }
 
-  double Cutter::totalWeightPassed() const
+  template <class UNIVERSE, class EVENT>
+  double Cutter<UNIVERSE, EVENT>::totalWeightPassed() const
   {
-    if(!fRecoSidebandCuts.empty()) return fRecoSidebandCuts.back()->totalPassed();
-    else if(!fRecoPreCuts.empty()) return fRecoPreCuts.back()->totalPassed();
+    if(!fRecoSidebandCuts.empty()) return fRecoSidebandCuts.back()->getTotalPassed();
+    else if(!fRecoPreCuts.empty()) return fRecoPreCuts.back()->getTotalPassed();
     else return fSumAllAnaToolWeights;
   }
 
-  std::ostream& operator <<(std::ostream& printTo, const Cutter& printMe)
+  template <class UNIVERSE, class EVENT>
+  std::ostream& operator <<(std::ostream& printTo, const Cutter<UNIVERSE, EVENT>& printMe)
   {
     return printMe.summarize(printTo);
   }

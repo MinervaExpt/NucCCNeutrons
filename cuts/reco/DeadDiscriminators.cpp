@@ -12,7 +12,7 @@ namespace reco
   {
   }
 
-  bool DeadDiscriminators::passesCut(const evt::CVUniverse& event) const
+  bool DeadDiscriminators::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
   {
     return event.GetNDeadDiscriminatorsUpstreamMuon() <= fMax;
   }

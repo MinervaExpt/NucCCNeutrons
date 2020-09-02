@@ -59,14 +59,14 @@ namespace
   //Given the names of cuts for a sideband, all reco cuts, and the cuts already associated with sidebands,
   //create a hash code that describes which cuts an event must fail to be
   //in this sideband and move any needed cuts from allCuts to sidebandCuts.
-  std::bitset<64> hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<reco::Cut>>& allCuts, std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts)
+  std::bitset<64> hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& allCuts, std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& sidebandCuts)
   {
     std::bitset<64> result;
     result.set(); //Sets result to all true
                                                                                                                                                                               
     for(const auto& name: cutNames)
     {
-      const auto found = std::find_if(allCuts.begin(), allCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
+      const auto found = std::find_if(allCuts.begin(), allCuts.end(), [&name](const auto& cut) { return cut->getName() == name; });
       if(found != allCuts.end())
       {
         result.set(sidebandCuts.size(), false); //BEFORE the update because of 0-based indexing
@@ -75,7 +75,7 @@ namespace
       }
       else
       {
-        const auto inSideband = std::find_if(sidebandCuts.begin(), sidebandCuts.end(), [&name](const auto& cut) { return cut->name() == name; });
+        const auto inSideband = std::find_if(sidebandCuts.begin(), sidebandCuts.end(), [&name](const auto& cut) { return cut->getName() == name; });
         if(inSideband != sidebandCuts.end())
         {
           result.set(std::distance(sidebandCuts.begin(), inSideband), false);
@@ -158,8 +158,8 @@ namespace app
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> setupSidebands(const YAML::Node& sidebands, util::Directory& histDir,
                                                                                                std::vector<std::unique_ptr<ana::Background>>& backgrounds,
                                                                                                std::map<std::string, std::vector<evt::CVUniverse*>>& universes,
-                                                                                               std::vector<std::unique_ptr<reco::Cut>>& recoCuts,
-                                                                                               std::vector<std::unique_ptr<reco::Cut>>& sidebandCuts)
+                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& recoCuts,
+                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& sidebandCuts)
   {
     auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<ana::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
     auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
@@ -217,9 +217,9 @@ namespace app
     return backgrounds;
   }
 
-  std::vector<std::unique_ptr<reco::Cut>> setupRecoCuts(const YAML::Node& config)
+  std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>> setupRecoCuts(const YAML::Node& config)
   {
-    std::vector<std::unique_ptr<reco::Cut>> recoCuts;
+    std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>> recoCuts;
     auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
     for(auto cut: config)
     {

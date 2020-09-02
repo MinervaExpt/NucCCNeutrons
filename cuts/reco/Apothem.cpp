@@ -13,7 +13,7 @@ namespace reco
   {
   }
 
-  bool Apothem::passesCut(const evt::CVUniverse& event) const
+  bool Apothem::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
   {
     const auto vertex = event.GetVtx();
     return (fabs(vertex.y()) < mm(fSlope*fabs(vertex.x().in<mm>()) + 2.*fApothem.in<mm>()/sqrt(3.)))

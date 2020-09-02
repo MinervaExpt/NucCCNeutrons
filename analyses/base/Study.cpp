@@ -29,7 +29,8 @@ namespace ana
 
   bool Study::passesCuts(const evt::CVUniverse& event)
   {
-    return std::all_of(fPasses.begin(), fPasses.end(), [&event](auto& cut) { return (*cut)(event); });
+    PlotUtils::detail::empty dummy;
+    return std::all_of(fPasses.begin(), fPasses.end(), [&event, &dummy](auto& cut) { return cut->passesCut(event, dummy); });
   }
 
   void Study::afterAllFiles(const events /*passedSelection*/)

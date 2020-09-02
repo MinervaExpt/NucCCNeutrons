@@ -13,7 +13,7 @@ namespace reco
   {
   }
 
-  bool MinosDeltaT::passesCut(const evt::CVUniverse& event) const
+  bool MinosDeltaT::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
   {
     const ns deltaT = event.GetMINOSTrackDeltaT();
     return deltaT > fMin && deltaT < fMax;

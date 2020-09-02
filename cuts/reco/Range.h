@@ -60,7 +60,7 @@ namespace reco
       }
 
     protected:
-      virtual bool passesCut(const evt::CVUniverse& event) const override
+      virtual bool checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const override
       {
         const UNIT var = fVar.reco(event);
         return var >= fMin && var <= fMax;

@@ -11,7 +11,7 @@ namespace reco
   {
   }
 
-  bool Q3Range::passesCut(const evt::CVUniverse& event) const
+  bool Q3Range::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
   {
     return fCalc.reco(event) > fMin && fCalc.reco(event) < fMax;
   }

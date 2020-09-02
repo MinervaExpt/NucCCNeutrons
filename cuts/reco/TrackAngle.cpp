@@ -12,7 +12,7 @@ namespace reco
   {
   }
 
-  bool TrackAngle::passesCut(const evt::CVUniverse& event) const
+  bool TrackAngle::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
   {
     return event.GetMuonTheta() <= fMax;
   }

@@ -12,9 +12,8 @@
 
 namespace truth
 {
-  bool Cut::operator ()(const evt::CVUniverse& event)
+  bool Cut::checkConstraint(const evt::CVUniverse& univ) const
   {
-    //TODO: Record statistics on passed and failed events here
-    return passesCut(event);
+    return passesCut(univ);
   }
 }

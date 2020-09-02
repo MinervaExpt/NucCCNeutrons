@@ -18,7 +18,7 @@ namespace reco
   {
   }
 
-  bool OneSectionTarget::passesCut(const evt::CVUniverse& /*event*/) const
+  bool OneSectionTarget::checkCut(const evt::CVUniverse& /*event*/, PlotUtils::detail::empty& /*empty*/) const
   {
     return true;
   }
