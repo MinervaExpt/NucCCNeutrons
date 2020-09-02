@@ -99,6 +99,8 @@ namespace util
 
   std::ostream& Cutter::summarize(std::ostream& printTo) const
   {
+    assert(fNRecoEntries > 0 && "No entries got into the cut table!  Perhaps you don't have a universe with ShortName() == \"cv\"?");
+
     //2 kinds of summaries are available: with Truth tree and without.
     //If a loop over the Truth tree has been run, then I can report efficiency
     //and purity.
