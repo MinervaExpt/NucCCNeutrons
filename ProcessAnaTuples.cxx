@@ -29,6 +29,7 @@
 //Cuts includes
 #include "cuts/truth/Cut.h"
 #include "cuts/reco/Cut.h"
+#include "cuts/Cutter.h"
 
 //models includes
 #include "models/Model.h"
@@ -87,7 +88,6 @@ namespace
     return *it;
   }
 
-  //TODO: Since I've got to do this to dereference std::unique_ptr<CUT>, I could give Cut's cut function a more descriptive name
   template <class CUT, class ...ARGS>
   bool requireAll(const std::vector<std::unique_ptr<CUT>>& cuts, const evt::CVUniverse& event, ARGS... args)
   {
@@ -117,18 +117,9 @@ int main(const int argc, const char** argv)
   evt::CVUniverse* cv;
   std::vector<std::unique_ptr<ana::Background>> backgrounds;
   std::unique_ptr<ana::Study> signal;
-  std::vector<std::unique_ptr<truth::Cut>> truthPhaseSpace;
-  std::vector<std::unique_ptr<truth::Cut>> truthSignal;
-  std::vector<std::unique_ptr<reco::Cut>> recoCuts;
+  std::unique_ptr<util::Cutter> cuts;
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands;
-  decltype(recoCuts) sidebandCuts;
   std::vector<std::unique_ptr<model::Model>> reweighters;
-
-  double anaToolTotal = 0;
-  double truthSumSignal = 0;
-  size_t nEntriesTotal = 0;
-  double anaToolSignal = 0;
-  double truthTotal = 0;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
   std::unique_ptr<app::CmdLine> options;
@@ -164,10 +155,13 @@ int main(const int argc, const char** argv)
       util::StreamRedirection silencePlotUtils(std::cout, "NSFNoise.txt");
     #endif
 
-    truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"]); //TODO: Tell the user which Cut failed
-    truthSignal = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"]); //TODO: Tell the user which Cut failed
-    recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
+    auto truthPhaseSpace = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"]); //TODO: Tell the user which Cut failed
+    auto truthSignal = plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"]); //TODO: Tell the user which Cut failed
+    auto recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
+    decltype(recoCuts) sidebandCuts;
     sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
+    cuts.reset(new util::Cutter(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
+
     cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
     reweighters = app::setupModels(options->ConfigFile()["model"]); //This MUST come after setting up universes because of the static variables that DefaultCVUniverse relies on
@@ -243,12 +237,11 @@ int main(const int argc, const char** argv)
 
       //Bookkeeping for when there's no efficiency numerator
       const size_t nEntries = anaTuple.GetEntries();
-      nEntriesTotal += nEntries;
 
       //On to the event loops
       if(options->isMC())
       {
-        //MC loop
+        //MC reco loop
         const size_t nMCEntries = anaTuple.GetEntries();
         for(auto& compat: groupedUnivs)
         {
@@ -268,42 +261,24 @@ int main(const int argc, const char** argv)
           //anything besides the CV.
           cv->SetEntry(entry);
           weights.SetEntry(*cv);
-          double weightForCuts = ::getWeight(reweighters, *cv).in<events>();
-          anaToolTotal += weightForCuts;
-          if(::requireAll(truthSignal, *cv) && ::requireAll(truthPhaseSpace, *cv)) anaToolSignal += weightForCuts;
+          const double cvWeightForCuts = ::getWeight(reweighters, *cv).in<events>();
 
           for(const auto& compat: groupedUnivs)
           {
             auto& event = *compat.front(); //All compatible universes pass the same cuts
             for(const auto univ: compat) univ->SetEntry(entry); //I still need to GetWeight() for entry
 
-            //MC loop
-            const bool isTruthSignal = ::requireAll(truthSignal, event);
-            const bool isTruthForCuts = isTruthSignal && ::requireAll(truthPhaseSpace, event);
-
-            if(::requireAll(recoCuts, event, weightForCuts, isTruthForCuts))
+            //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
+            //for sidebands defined by multiple cuts.
+            const auto passedReco = cuts->isSelected(event, cvWeightForCuts);
+            if(!passedReco.none())
             {
-              //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
-              //for sidebands defined by multiple cuts.
-              std::bitset<64> passedReco;
-              passedReco.set();
-
-              for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
-              {
-                const auto& cut = sidebandCuts[whichCut];
-                if(!(*cut)(event, weightForCuts, isTruthForCuts))
-                {
-                  passedReco.set(whichCut, false);
-                  weightForCuts = 0; //Cuts after this one wouldn't normally be called since we're in a sideband now
-                }
-              }
-
               //Look up the sideband, if any, by which reco cuts failed.
               //I might not find any sideband if this event is reconstructed signal
               //or just isn't in a sideband I'm interested in.
               //Putting the code here just makes it easier to maintain.
               const auto relevantSidebands = sidebands.find(passedReco);
-              ana::Study* sideband = nullptr; //TODO: Come up with some clever return value semantics to avoid the raw pointer here
+              ana::Study* sideband = nullptr;
               if(relevantSidebands != sidebands.end())
               {
                 const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
@@ -313,7 +288,7 @@ int main(const int argc, const char** argv)
               }
 
               //Categorize by whether this is signal or some background
-              if(isTruthSignal)
+              if(cuts->isSignal(event))
               {
                 if(passedReco.all())
                 {
@@ -340,7 +315,6 @@ int main(const int argc, const char** argv)
                 }
               }
             } //If passed all non-sideband-related cuts
-            weightForCuts = 0; //Only fill the Cut table for the CV
           } //For each error band
         } //For each entry in the MC tree
 
@@ -375,21 +349,14 @@ int main(const int argc, const char** argv)
             cv->SetEntry(entry);
             weights.SetEntry(*cv);
 
-            const double truthWeight = ::getWeight(reweighters, *cv).in<events>();
-            truthTotal += truthWeight;
-
-            //Use number of events in efficiency denominator for efficiencies in Cut table.
-            if(::requireAll(truthPhaseSpace, *cv) && ::requireAll(truthSignal, *cv))
-            {
-              truthSumSignal += truthWeight;
-            }
+            const double truthCVWeightForCuts = ::getWeight(reweighters, *cv).in<events>();
 
             for(const auto& compat: groupedUnivs)
             {
               auto& event = *compat.front(); //All compatible universes pass the same cuts
-              for(auto univ: compat) univ->SetEntry(entry);
+              for(auto univ: compat) univ->SetEntry(entry); //TODO: This could be moved to the loop over compatible universes below.
 
-              if(::requireAll(truthPhaseSpace, event) && ::requireAll(truthSignal, event))
+              if(cuts->isEfficiencyDenom(event, truthCVWeightForCuts))
               {
                 for(const auto univ: compat) signal->truth(*univ, ::getWeight(reweighters, *univ));
               } //If event passes all truth cuts
@@ -400,9 +367,6 @@ int main(const int argc, const char** argv)
       else
       {
         //Data loop
-        //TODO: This data loop is looking worse and worse as I optimize the MC loop.
-        //      I'm also getting unfilled histograms from my MC jobs now.  I think
-        //      it's time to put the data loop back in its own program.
         cv->SetTree(&anaTuple);
 
         for(size_t entry = 0; entry < nEntries; ++entry)
@@ -412,16 +376,9 @@ int main(const int argc, const char** argv)
           #endif
 
           cv->SetEntry(entry);
-          if(::requireAll(recoCuts, *cv))
+          const auto passedCuts = cuts->isSelected(*cv, 1);
+          if(!passedCuts.none())
           {
-            std::bitset<64> passedCuts;
-            passedCuts.set();
-
-            for(size_t whichCut = 0; whichCut < sidebandCuts.size(); ++whichCut)
-            {
-              if(!(*sidebandCuts[whichCut])(*cv)) passedCuts.set(whichCut, false);
-            }
-
             if(passedCuts.all()) signal->data(*cv);
             else
             {
@@ -465,10 +422,7 @@ int main(const int argc, const char** argv)
   //Give Studies a chance to syncCVHistos()
   try
   {
-    events totalPassedCuts;
-    if(!sidebandCuts.empty()) totalPassedCuts = sidebandCuts.back()->totalPassed();
-    else if(!recoCuts.empty()) totalPassedCuts = recoCuts.back()->totalPassed();
-    else totalPassedCuts = anaToolTotal;
+    const events totalPassedCuts = cuts->totalWeightPassed();
 
     signal->afterAllFiles(totalPassedCuts);
     for(auto& cutGroup: sidebands)
@@ -493,83 +447,22 @@ int main(const int argc, const char** argv)
     return app::CmdLine::ExitCode::AnalysisError;
   }
 
-  //Print the cut table to STDOUT
+  //Print the cut table to STDOUT and a markdown file.
   std::string tableName = options->HistFile->GetName();
   tableName = tableName.substr(0, tableName.find('.'));
   tableName += ".md"; //Markdown
 
-  if(options->isMC() && signal->wantsTruthLoop())
-  {
-    util::Table<6> truthSummary({"Cut Name", "Events", "\% Eff", "\% Purity", "Relative \% Eff", "Relative \% All"});
+  std::ofstream tableFile(tableName);
+  tableFile << "#" << options->playlist() << "\n";
+  tableFile << "#" << pot_used << " POT\n";
+  tableFile << "#Selection:\n" << *cuts << "\n";
+  tableFile << "#Signal Definition:\n";
+  for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
+  tableFile << "\n#Phase Space Definition:\n";
+  for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["phaseSpace"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
 
-    truthSummary.appendRow("AnaTool", anaToolTotal, anaToolSignal / truthSumSignal * 100., anaToolSignal / anaToolTotal * 100., anaToolSignal / truthSumSignal * 100., anaToolTotal / truthTotal * 100.);
-
-    double prevSignal = anaToolSignal;
-    double prevTotal = anaToolTotal;
-    for(const auto& cut: recoCuts)
-    {
-      truthSummary.appendRow(cut->name(), cut->totalPassed(), cut->signalPassed() / truthSumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
-      prevSignal = cut->signalPassed();
-      prevTotal = cut->totalPassed();
-    }
-
-    for(const auto& cut: sidebandCuts)
-    {
-      truthSummary.appendRow(cut->name(), cut->totalPassed(), cut->signalPassed() / truthSumSignal * 100., cut->signalPassed() / cut->totalPassed() * 100., cut->signalPassed() / prevSignal * 100., (double)cut->totalPassed() / prevTotal * 100.);
-      prevSignal = cut->signalPassed();
-      prevTotal = cut->totalPassed();
-    }
-
-    std::ofstream tableFile(tableName);
-    tableFile << "#" << options->playlist() << "\n";
-    tableFile << "#" << pot_used << " POT\n";
-    tableFile << "#Selection:\n";
-    truthSummary.print(tableFile) << "\n";
-    tableFile << "#Signal Definition:\n";
-    for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
-    tableFile << "\n#Phase Space Definition:\n";
-    for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["phaseSpace"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
-
-    std::cout << "#" << pot_used << " POT\n";
-    truthSummary.print(std::cout) << "\n";
-    std::cout << "Git commit hash: " << git::commitHash() << "\n";
-  }
-  else //I might also get here for an MC file if there's no Truth loop.  Some studies
-       //don't need the Truth loop.
-  {
-    util::Table<3> recoSummary({"Cut Name", "Total Entries", "Relative \% Sample Left"});
-
-    recoSummary.appendRow("AnaTool", nEntriesTotal, 100.);
-
-    int prevSampleLeft = nEntriesTotal;
-    for(const auto& cut: recoCuts)
-    {
-      recoSummary.appendRow(cut->name(), cut->totalPassed(), (double)cut->totalPassed() / prevSampleLeft * 100.);
-      prevSampleLeft = cut->totalPassed();
-    }
-
-    for(const auto& cut: sidebandCuts)
-    {
-      recoSummary.appendRow(cut->name(), cut->totalPassed(), (double)cut->totalPassed() / prevSampleLeft * 100.);
-      prevSampleLeft = cut->totalPassed();
-    }
-
-    std::ofstream tableFile(tableName);
-    tableFile << "#" << options->playlist() << "\n";
-    tableFile << "#" << pot_used << " POT\n";
-    tableFile << "#Selection:\n";
-    recoSummary.print(tableFile) << "\n";
-    if(options->isMC())
-    {
-      tableFile << "#Signal Definition:\n";
-      for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
-      //Phase space definition is only applied in the Truth loop
-    }
-
-    std::cout << "#" << pot_used << " POT\n";
-    recoSummary.print(std::cout) << "\n";
-    std::cout << "Git commit hash: " << git::commitHash() << "\n";
-  }
+  std::cout << "#" << pot_used << " POT\n" << *cuts << "\n";
+  std::cout << "Git commit hash: " << git::commitHash() << "\n";
 
   //Final Write()s to output file
   options->HistFile->cd();
