@@ -125,7 +125,7 @@ int main(const int argc, const char** argv)
   evt::CVUniverse* cv;
   std::vector<std::unique_ptr<ana::Background>> backgrounds;
   std::unique_ptr<ana::Study> signal;
-  std::unique_ptr<util::Cutter<evt::CVUniverse, PlotUtils::detail::empty>> cuts;
+  std::unique_ptr<PlotUtils::Cutter<evt::CVUniverse, PlotUtils::detail::empty>> cuts;
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands;
   std::vector<std::unique_ptr<model::Model>> reweighters;
 
@@ -168,7 +168,7 @@ int main(const int argc, const char** argv)
     auto recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
     decltype(recoCuts) sidebandCuts;
     sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
-    cuts.reset(new util::Cutter<evt::CVUniverse, PlotUtils::detail::empty>(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
+    cuts.reset(new PlotUtils::Cutter<evt::CVUniverse, PlotUtils::detail::empty>(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
 
     cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
