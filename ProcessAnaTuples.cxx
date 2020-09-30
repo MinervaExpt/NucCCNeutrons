@@ -279,7 +279,7 @@ int main(const int argc, const char** argv)
 
             //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
             //for sidebands defined by multiple cuts.
-            const auto passedReco = cuts->isSelected(event, shared, cvWeightForCuts);
+            const auto passedReco = cuts->isMCSelected(compat, shared, cvWeightForCuts);
             if(!passedReco.none())
             {
               //Look up the sideband, if any, by which reco cuts failed.
@@ -387,7 +387,7 @@ int main(const int argc, const char** argv)
           cv->SetEntry(entry);
 
           PlotUtils::detail::empty shared;
-          const auto passedCuts = cuts->isSelected(*cv, shared, 1);
+          const auto passedCuts = cuts->isDataSelected(*cv, shared);
           if(!passedCuts.none())
           {
             if(passedCuts.all()) signal->data(*cv);
