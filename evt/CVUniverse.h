@@ -16,6 +16,27 @@
 //c++ includes
 #include <numeric>
 
+namespace
+{
+  template <class UNIT>
+  struct baseType
+  {
+    using result_t = typename UNIT::floating_point;
+  };
+
+  template <>
+  struct baseType<int>
+  {
+    using result_t = int;
+  };
+
+  template <>
+  struct baseType<double>
+  {
+    using result_t = double;
+  };
+}
+
 //Preprocessor macros so that I have only one point of maintenance for
 //replacing ChainWrapper.
 //TODO: I'd have to extend TreeWrapper to have a template Get<>()
@@ -24,19 +45,22 @@
 #define blobReco(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    return GetVec<TYPE>((blobAlg + "_" #BRANCH).c_str());\
+    const auto toConvert = GetVec<typename baseType<TYPE>::result_t>((blobAlg + "_" #BRANCH).c_str());\
+    return std::vector<TYPE>(toConvert.begin(), toConvert.end());\
   }
 
 #define blobTruth(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    return GetVec<TYPE>(("truth_" + blobAlg + "_" #BRANCH).c_str());\
+    const auto toConvert = GetVec<typename baseType<TYPE>::result_t>(("truth_" + blobAlg + "_" #BRANCH).c_str());\
+    return std::vector<TYPE>(toConvert.begin(), toConvert.end());\
   }
 
 #define truthMatched(BRANCH, TYPE)\
   virtual std::vector<TYPE> GetTruthMatched##BRANCH() const\
   {\
-    return GetVec<TYPE>("truth_FS_" #BRANCH);\
+    const auto toConvert = GetVec<typename baseType<TYPE>::result_t>("truth_FS_" #BRANCH);\
+    return std::vector<TYPE>(toConvert.begin(), toConvert.end());\
   }
 
 namespace evt
@@ -178,7 +202,7 @@ namespace evt
       blobReco(blob_zPos, mm)
       blobReco(blob_first_muon_long, mm)
       blobReco(blob_earliest_time, ns)
-      blobReco(blob_nViews, size_t)
+      blobReco(blob_nViews, int)
       blobReco(blob_n_clusters, int)
       blobReco(blob_n_digits, int)
       blobReco(blob_highest_digit_E, MeV)
@@ -196,15 +220,16 @@ namespace evt
 
       virtual std::vector<units::LorentzVector<MeV>> GetFSMomenta() const
       {
-        return Get<units::LorentzVector<MeV>>(GetVec<MeV>("mc_FSPartPx"),
-                                              GetVec<MeV>("mc_FSPartPy"),
-                                              GetVec<MeV>("mc_FSPartPz"),
-                                              GetVec<MeV>("mc_FSPartE"));
+        return Get<units::LorentzVector<MeV>>(GetVec<double>("mc_FSPartPx"),
+                                              GetVec<double>("mc_FSPartPy"),
+                                              GetVec<double>("mc_FSPartPz"),
+                                              GetVec<double>("mc_FSPartE"));
       }
 
       virtual std::vector<MeV> GetFSEnergies() const
       {
-        return GetVec<MeV>("mc_FSPartE");
+        const auto toConvert = GetVec<double>("mc_FSPartE");
+        return std::vector<MeV>(toConvert.begin(), toConvert.end());
       }
 
       //Truth-matched branches for FS neutron energy loss study.
