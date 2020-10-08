@@ -37,6 +37,23 @@ namespace
   };
 }
 
+//A quantity is just a label on top of a Plain Old Data type
+//to help me keep track of units when programming.
+//Convince PlotUtils::TreeWrapper to put POD types into matching
+//quantities.
+//I think this saves me some memory allocations down the line.
+namespace PlotUtils
+{
+  namespace detail
+  {
+    template <class BASE_TAG, class PREFIX, class FLOATING_POINT>
+    struct typeName<units::quantity<BASE_TAG, PREFIX, FLOATING_POINT>>
+    {
+      static const char* name; // = typeName<FLOATING_POINT>::name;
+    };
+  }
+}
+
 //Preprocessor macros so that I have only one point of maintenance for
 //replacing ChainWrapper.
 //TODO: I'd have to extend TreeWrapper to have a template Get<>()
@@ -45,22 +62,19 @@ namespace
 #define blobReco(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    const auto toConvert = GetVec<typename baseType<TYPE>::result_t>((blobAlg + "_" #BRANCH).c_str());\
-    return std::vector<TYPE>(toConvert.begin(), toConvert.end());\
+    return GetVec<TYPE>((blobAlg + "_" #BRANCH).c_str());\
   }
 
 #define blobTruth(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    const auto toConvert = GetVec<typename baseType<TYPE>::result_t>(("truth_" + blobAlg + "_" #BRANCH).c_str());\
-    return std::vector<TYPE>(toConvert.begin(), toConvert.end());\
+    return GetVec<TYPE>(("truth_" + blobAlg + "_" #BRANCH).c_str());\
   }
 
 #define truthMatched(BRANCH, TYPE)\
   virtual std::vector<TYPE> GetTruthMatched##BRANCH() const\
   {\
-    const auto toConvert = GetVec<typename baseType<TYPE>::result_t>("truth_FS_" #BRANCH);\
-    return std::vector<TYPE>(toConvert.begin(), toConvert.end());\
+    return GetVec<TYPE>("truth_FS_" #BRANCH);\
   }
 
 namespace evt

@@ -15,6 +15,17 @@
 #include "Math/AxisAngle.h"
 #include "Math/Vector3D.h"
 
+//Convince PlotUtils::TreeWrapper that a quantity can be read from a POD type.
+//See CVUniverse.h for a more detailed explanation.
+namespace PlotUtils
+{
+  namespace detail
+  {
+    template <class BASE_TAG, class PREFIX, class FLOATING_POINT>
+    const char* typeName<units::quantity<BASE_TAG, PREFIX, FLOATING_POINT>>::name = typeName<FLOATING_POINT>::name;
+  }
+}
+
 namespace evt
 {
   std::string CVUniverse::blobAlg = "mergedTejinBlobs";
