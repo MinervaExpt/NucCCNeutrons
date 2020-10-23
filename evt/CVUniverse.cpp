@@ -91,4 +91,17 @@ namespace evt
 
     return id;
   }
+
+  MnvH1D* CVUniverse::GetFluxIntegral(PlotUtils::HistWrapper<CVUniverse>& crossSectionHist, const GeV Emin, const GeV Emax) const
+  {
+    bool useMuonCorrelations = true;
+
+    if(GetAnalysisNuPDG() < 0)
+    {
+      std::cerr << "Muon momentum correlations are not yet ready for ME antineutrino analyses.  Turning them off for flux integral metadata.\n";
+      useMuonCorrelations = false;
+    }
+
+    return PlotUtils::flux_reweighter(GetPlaylist(), GetAnalysisNuPDG(), UseNuEConstraint(), GetNFluxUniverses()).GetIntegratedFluxReweighted<MnvH1D, TH1D>(GetAnalysisNuPDG(), crossSectionHist.hist, Emin.in<GeV>(), Emax.in<GeV>(), useMuonCorrelations);
+  }
 }

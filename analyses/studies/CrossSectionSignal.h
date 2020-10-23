@@ -71,6 +71,15 @@ namespace ana
                                           binning, universes);
         fSelectedMCEvents = dir.make<HIST>("SelectedMCEvents", ("Selected Signal Events;Reco " + fVar.name() + ";entries").c_str(),
                                            binning, universes);
+
+        //Write out the flux integral.  I want to have each bin in my variable filled
+        //in with the total flux integral so I can just MnvH1D::Divide() by it.
+        auto cv = universes["cv"].front();
+        if(cv) //Only case I can think of where this fails is debugging a specific error band.
+        {
+          auto fluxIntegral = universes["cv"].front()->GetFluxIntegral(*fSelectedMCEvents);
+          dir.mv(fluxIntegral);
+        }
       }
 
       virtual ~CrossSectionSignal() = default;

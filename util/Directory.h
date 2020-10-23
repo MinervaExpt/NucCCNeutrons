@@ -17,6 +17,7 @@
 
 //ROOT includes
 #include "TFile.h"
+#include "TH1.h"
 
 //PlotUtils includes
 //No junk from PlotUtils please!  I already
@@ -102,6 +103,10 @@ namespace util
       }
 
       Directory mkdir(const std::string& name);
+
+      //Move a TH1 into this Directory.
+      //Only TH1-derived classes have SetDirectory().
+      void mv(TH1* obj);
        
     private:
       TFile& fBaseDir; //Base directory in which this 

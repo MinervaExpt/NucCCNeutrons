@@ -10,6 +10,13 @@
 //PlotUtils includes
 #include "PlotUtils/DefaultCVUniverse.h"
 
+//TODO: Someone who maintains this code should deal with these warnings
+#pragma GCC diagnostic push //Learned to use these GCC-specific preprocessor macros from 
+                            //https://stackoverflow.com/questions/6321839/how-to-disable-warnings-for-particular-include-files 
+                            #pragma GCC diagnostic ignored "-Woverloaded-virtual"
+#include "PlotUtils/HistWrapper.h"
+#pragma GCC diagnostic pop
+
 //Get the unit definitions for my analysis
 #include "util/units.h"
 
@@ -262,6 +269,13 @@ namespace evt
       truthMatched(capture_energy, GeV)
       truthMatched(edep_before_birks, GeV)
       truthMatched(passive_loss, GeV)
+
+      //Metadata using CVUniverse constructor
+      //Getting the flux integral in an MnvH1D is useful for the end of cross section extraction.
+      //I want to get the integral for each flux universe individually and the CV integral for all
+      //universes that do not vary the flux.  The flux integrals need to match the error bands and
+      //binning of crossSectionHist.
+      PlotUtils::MnvH1D* GetFluxIntegral(PlotUtils::HistWrapper<CVUniverse>& crossSectionHist, const GeV Emin = 0_GeV, const GeV Emax = 100_GeV) const;
 
       //Unpack several related vector<> branches into an Analysis-specific struct called CAND.
       //One function to rule them all; one function to find them.

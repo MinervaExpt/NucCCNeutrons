@@ -33,4 +33,10 @@ namespace util
                                                                     fName(parent.fName+name+Separator)
   {
   }
+
+  void Directory::mv(TH1* obj)
+  {
+    obj->SetName((fName + obj->GetName()).c_str());
+    obj->SetDirectory(&fBaseDir);
+  }
 }
