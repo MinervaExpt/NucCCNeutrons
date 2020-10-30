@@ -10,7 +10,7 @@
 
 namespace truth
 {
-  Q3Range::Q3Range(const YAML::Node& config): Cut(config), fCalc(config), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>())
+  Q3Range::Q3Range(const YAML::Node& config, const std::string& name): Cut(config, name), fCalc(config), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>())
   {
   }
 

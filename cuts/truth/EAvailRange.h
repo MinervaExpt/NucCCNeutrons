@@ -21,7 +21,7 @@ namespace truth
   class EAvailRange: public Cut
   {
     public:
-      EAvailRange(const YAML::Node& config);
+      EAvailRange(const YAML::Node& config, const std::string& name);
       virtual ~EAvailRange() = default;
 
     protected:

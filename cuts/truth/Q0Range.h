@@ -21,7 +21,7 @@ namespace truth
   class Q0Range: public Cut
   {
     public:
-      Q0Range(const YAML::Node& config);
+      Q0Range(const YAML::Node& config, const std::string& name);
       virtual ~Q0Range() = default;
 
     protected:

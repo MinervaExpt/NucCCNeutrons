@@ -12,7 +12,7 @@ using namespace units;
 
 namespace truth
 {
-  Apothem::Apothem(const YAML::Node& config): Cut(config), fApothem(config["apothem"].as<mm>())
+  Apothem::Apothem(const YAML::Node& config, const std::string& name): Cut(config, name), fApothem(config["apothem"].as<mm>())
   {
   }
 

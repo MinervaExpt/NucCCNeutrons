@@ -26,11 +26,11 @@ namespace truth
   class Cut: public PlotUtils::SignalConstraint<evt::CVUniverse>
   {
     public:
-      Cut(const YAML::Node& /*config*/): PlotUtils::SignalConstraint<evt::CVUniverse>("FIXME") {}
+      Cut(const YAML::Node& /*config*/, const std::string name): PlotUtils::SignalConstraint<evt::CVUniverse>(name) {}
       virtual ~Cut() = default;
       
       template <class DERIVED>
-      using Registrar = plgn::Registrar<truth::Cut, DERIVED>;
+      using Registrar = plgn::Registrar<truth::Cut, DERIVED, std::string&>;
 
     protected:
       //Your concrete Cut class must override these methods.

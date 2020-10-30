@@ -28,9 +28,9 @@ namespace ana
                      std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
                                                                                        fVar(config["variable"])
       {
-        fTrueVersusReco = dir.make<HIST2D>("True" + fVar.name() + "VersusReco", "True " + fVar.name() + " versus Reco;Reco " + fVar.name() + ";True " + fVar.name(),
+        fTrueVersusReco = dir.make<HIST2D>("True" + fVar.name() + "VersusReco", ("True " + fVar.name() + " versus Reco;Reco " + fVar.name() + ";True " + fVar.name()).c_str(),
                                            config["binning"].as<std::vector<double>>(), config["binning"].as<std::vector<double>>(), universes);
-        fResolution = dir.make<HIST>(fVar.name() + "Resolution", fVar.name() + " Resolution;#frac{Reco " + fVar.name() + " - True " + fVar.name() + "}{True " + fVar.name() + "};events",
+        fResolution = dir.make<HIST>(fVar.name() + "Resolution", (fVar.name() + " Resolution;#frac{Reco " + fVar.name() + " - True " + fVar.name() + "}{True " + fVar.name() + "};events").c_str(),
                                      100, -2, 2, universes);
       }
 

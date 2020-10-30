@@ -20,7 +20,7 @@ namespace truth
   class Current: public Cut
   {
     public:
-      Current(const YAML::Node& config): Cut(config) {}
+      Current(const YAML::Node& config, const std::string& name): Cut(config, name) {}
       virtual ~Current() = default;
 
     protected:

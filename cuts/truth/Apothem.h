@@ -19,7 +19,7 @@ namespace truth
   class Apothem: public Cut
   {
     public:
-      Apothem(const YAML::Node& config);
+      Apothem(const YAML::Node& config, const std::string& name);
       virtual ~Apothem() = default;
 
     protected:

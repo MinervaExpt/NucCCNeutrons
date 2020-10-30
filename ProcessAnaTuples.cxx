@@ -14,6 +14,9 @@
 //local includes
 #include "gitVersion.h"
 
+//fiducials includes
+#include "fiducials/Fiducial.h"
+
 //evt includes
 #include "evt/CVUniverse.h"
 
@@ -123,52 +126,64 @@ int main(const int argc, const char** argv)
   //Components I need for the event loop
   std::vector<std::vector<evt::CVUniverse*>> groupedUnivs;
   evt::CVUniverse* cv;
-  std::vector<std::unique_ptr<ana::Background>> backgrounds;
-  std::unique_ptr<ana::Study> signal;
-  std::unique_ptr<PlotUtils::Cutter<evt::CVUniverse, PlotUtils::detail::empty>> cuts;
-  std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands;
   std::vector<std::unique_ptr<model::Model>> reweighters;
+  std::vector<std::unique_ptr<fid::Fiducial>> fiducials;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
   std::unique_ptr<app::CmdLine> options;
 
   try
   {
-    //TODO: Options' HistFile is getting deleted when options goes out of scope!
     options.reset(new app::CmdLine(argc, argv)); //Parses the command line for input and configuration file, assembles a
-                                            //list of files to process, prepares a file for histograms, and puts the configuration
-                                            //file together.  See CmdLine.h for more details.
-
-    //The file where I will put histrograms I produce.
-    //TODO: I learned when helping Christian that I can't use TFile::Write() to write
-    //      MnvH1Ds' plots because MnvH1D insists on deleteing its own TH1Ds.  I've got
-    //      to either Write() each TH1D or convince TFile not to delete the objects it
-    //      owns.  I think there's a flag for the latter in TObject.
-    util::Directory histDir(*options->HistFile);
+                                                 //list of files to process, prepares a file for histograms, and puts the configuration
+                                                 //file together.  See CmdLine.h for more details.
 
     auto universes = app::getSystematics(nullptr, *options, options->isMC());
-    backgrounds = app::setupBackgrounds(options->ConfigFile()["backgrounds"]);
-
-    try
-    {
-      signal = app::setupSignal(options->ConfigFile()["signal"], histDir, backgrounds, universes);
-    }
-    catch(const std::runtime_error& e)
-    {
-      throw std::runtime_error(std::string("Failed to set up the signal Study:\n") + e.what());
-    }
 
     //Send whatever noise PlotUtils makes during setup to a file in the current working directory
     #ifdef NDEBUG
       util::StreamRedirection silencePlotUtils(std::cout, "NSFNoise.txt");
     #endif
 
-    auto truthPhaseSpace = ::toBase<PlotUtils::SignalConstraint<evt::CVUniverse>>(plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"])); //TODO: Tell the user which Cut failed
-    auto truthSignal = ::toBase<PlotUtils::SignalConstraint<evt::CVUniverse>>(plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"])); //TODO: Tell the user which Cut failed
-    auto recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
-    decltype(recoCuts) sidebandCuts;
-    sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], histDir, backgrounds, universes, recoCuts, sidebandCuts);
-    cuts.reset(new PlotUtils::Cutter<evt::CVUniverse, PlotUtils::detail::empty>(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
+    //The file where I will put histrograms I produce.
+    util::Directory histDir(*options->HistFile);
+
+    //Assemble Fiducials
+    auto& fiducialFactory = plgn::Factory<fid::Fiducial>::instance();
+    for(auto& config: options->ConfigFile()["fiducials"])
+    {
+      auto dirForFid = histDir.mkdir(config.first.as<std::string>());
+
+      auto fid = fiducialFactory.Get(config.second);
+      fid->backgrounds = app::setupBackgrounds(options->ConfigFile()["backgrounds"]);
+
+      dirForFid.make<TParameter<double>>("FiducialNucleons", fid->NNucleons());
+
+      try
+      {
+        fid->study = app::setupSignal(options->ConfigFile()["signal"], dirForFid, fid->backgrounds, universes);
+      } 
+      catch(const std::runtime_error& e)
+      {
+        throw std::runtime_error(std::string("Failed to set up the signal Study:\n") + e.what());
+      }
+
+      auto truthPhaseSpace = ::toBase<PlotUtils::SignalConstraint<evt::CVUniverse>>(plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"])); //TODO: Tell the user which Cut failed
+      auto truthSignal = ::toBase<PlotUtils::SignalConstraint<evt::CVUniverse>>(plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"])); //TODO: Tell the user which Cut failed
+      auto recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
+
+      //Merge with Fiducial-specific Cuts
+      for(auto constraint: fid->phaseSpace) truthPhaseSpace.emplace_back(constraint);
+      for(auto sig: fid->signalDef) truthSignal.emplace_back(sig);
+      for(auto cut: fid->recoCuts) recoCuts.emplace_back(cut);
+
+      decltype(recoCuts) sidebandCuts;
+      fid->sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], dirForFid, fid->backgrounds, universes, recoCuts, sidebandCuts);
+
+      fid->selection.reset(new PlotUtils::Cutter<evt::CVUniverse, PlotUtils::detail::empty>(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
+
+      fiducials.push_back(std::move(fid));
+    }
 
     cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
@@ -179,6 +194,8 @@ int main(const int argc, const char** argv)
     std::cerr << e.what() << "\n";
     return app::CmdLine::YAMLError;
   }
+
+  const bool anyoneWantsTruth = std::any_of(fiducials.begin(), fiducials.end(), [](const auto& fid) { return fid->study->wantsTruthLoop(); });
 
   //Name of the AnaTuple to read
   const auto anaTupleName = options->ConfigFile()["app"]["AnaTupleName"].as<std::string>("NucCCNeutron");
@@ -194,7 +211,7 @@ int main(const int argc, const char** argv)
   }
 
   //Loop over files
-  LOG_DEBUG("Beginning loop over files!")
+  LOG_DEBUG("Beginning loop over files.")
   try
   {
     for(const auto& fName: options->TupleFileNames())
@@ -279,56 +296,59 @@ int main(const int argc, const char** argv)
 
             //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
             //for sidebands defined by multiple cuts.
-            const auto passedReco = cuts->isMCSelected(compat, shared, cvWeightForCuts);
-            if(!passedReco.none())
+            for(auto& fid: fiducials)
             {
-              //Look up the sideband, if any, by which reco cuts failed.
-              //I might not find any sideband if this event is reconstructed signal
-              //or just isn't in a sideband I'm interested in.
-              //Putting the code here just makes it easier to maintain.
-              const auto relevantSidebands = sidebands.find(passedReco);
-              ana::Study* sideband = nullptr;
-              if(relevantSidebands != sidebands.end())
+              const auto passedReco = fid->selection->isMCSelected(compat, shared, cvWeightForCuts);
+              if(!passedReco.none())
               {
-                const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
-                                                [&event](const auto& whichSideband)
-                                                { return whichSideband->passesCuts(event); });
-                if(found != relevantSidebands->second.end()) sideband = found->get();
-              }
+                //Look up the sideband, if any, by which reco cuts failed.
+                //I might not find any sideband if this event is reconstructed signal
+                //or just isn't in a sideband I'm interested in.
+                //Putting the code here just makes it easier to maintain.
+                const auto relevantSidebands = fid->sidebands.find(passedReco);
+                ana::Study* sideband = nullptr;
+                if(relevantSidebands != fid->sidebands.end())
+                {
+                  const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
+                                                  [&event](const auto& whichSideband)
+                                                  { return whichSideband->passesCuts(event); });
+                  if(found != relevantSidebands->second.end()) sideband = found->get();
+                }
 
-              //Categorize by whether this is signal or some background
-              if(cuts->isSignal(event))
-              {
-                if(passedReco.all())
+                //Categorize by whether this is signal or some background
+                if(fid->selection->isSignal(event))
                 {
-                  for(const auto univ: compat) signal->mcSignal(*univ, ::getWeight(reweighters, *univ));
+                  if(passedReco.all())
+                  {
+                    for(const auto univ: compat) fid->study->mcSignal(*univ, ::getWeight(reweighters, *univ));
+                  }
+                  else if(sideband) //If this is a sideband I'm interested in
+                  {
+                    for(const auto univ: compat) sideband->mcSignal(*univ, ::getWeight(reweighters, *univ));
+                  }
                 }
-                else if(sideband) //If this is a sideband I'm interested in
+                else //If not truthSignal
                 {
-                  for(const auto univ: compat) sideband->mcSignal(*univ, ::getWeight(reweighters, *univ));
-                }
-              }
-              else //If not truthSignal
-              {
-                const auto foundBackground = std::find_if(backgrounds.begin(), backgrounds.end(),
-                                                          [&event](const auto& background)
-                                                          { return ::requireAll(background->passes, event); });
+                  const auto foundBackground = std::find_if(fid->backgrounds.begin(), fid->backgrounds.end(),
+                                                            [&event](const auto& background)
+                                                            { return ::requireAll(background->passes, event); });
 
-                if(passedReco.all())
-                {
-                  for(const auto univ: compat) signal->mcBackground(*univ, ::derefOrNull(foundBackground, backgrounds.end()), ::getWeight(reweighters, *univ));
+                  if(passedReco.all())
+                  {
+                    for(const auto univ: compat) fid->study->mcBackground(*univ, ::derefOrNull(foundBackground, fid->backgrounds.end()), ::getWeight(reweighters, *univ));
+                  }
+                  else if(sideband)
+                  {
+                    for(const auto univ: compat) sideband->mcBackground(*univ, ::derefOrNull(foundBackground, fid->backgrounds.end()), ::getWeight(reweighters, *univ));
+                  }
                 }
-                else if(sideband)
-                {
-                  for(const auto univ: compat) sideband->mcBackground(*univ, ::derefOrNull(foundBackground, backgrounds.end()), ::getWeight(reweighters, *univ));
-                }
-              }
-            } //If passed all non-sideband-related cuts
+              } //If passed all non-sideband-related cuts
+            } //For each Fiducial
           } //For each error band
         } //For each entry in the MC tree
 
         //Truth loop
-        if(signal->wantsTruthLoop())
+        if(anyoneWantsTruth)
         {
           auto truthTree = dynamic_cast<TTree*>(tupleFile->Get("Truth"));
           if(!truthTree)
@@ -365,15 +385,19 @@ int main(const int argc, const char** argv)
               auto& event = *compat.front(); //All compatible universes pass the same cuts
               for(auto univ: compat) univ->SetEntry(entry); //TODO: This could be moved to the loop over compatible universes below.
 
-              if(cuts->isEfficiencyDenom(event, truthCVWeightForCuts))
+              for(auto& fid: fiducials)
               {
-                for(const auto univ: compat) signal->truth(*univ, ::getWeight(reweighters, *univ));
-              } //If event passes all truth cuts
+                if(fid->selection->isEfficiencyDenom(event, truthCVWeightForCuts))
+                {
+                  for(const auto univ: compat) fid->study->truth(*univ, ::getWeight(reweighters, *univ));
+                } //If event passes all truth cuts
+              } //For each Fiducial
             } //For each error band
           } //For each entry in Truth tree
         } //If wantsTruthLoop
       } //If isThisJobMC
-      else
+      else //TODO: Also run the Data loop for MC files?  I'd rather mix its code into the MC loop than loop each file twice.
+           //      Or, I could build in a way to force isMC to be false.  That seems easier now that I'm looking at the code.
       {
         //Data loop
         cv->SetTree(&anaTuple);
@@ -387,22 +411,26 @@ int main(const int argc, const char** argv)
           cv->SetEntry(entry);
 
           PlotUtils::detail::empty shared;
-          const auto passedCuts = cuts->isDataSelected(*cv, shared);
-          if(!passedCuts.none())
+
+          for(auto& fid: fiducials)
           {
-            if(passedCuts.all()) signal->data(*cv);
-            else
+            const auto passedCuts = fid->selection->isDataSelected(*cv, shared);
+            if(!passedCuts.none())
             {
-              const auto foundSidebands = sidebands.find(passedCuts);
-              if(foundSidebands != sidebands.end())
+              if(passedCuts.all()) fid->study->data(*cv);
+              else
               {
-                const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
-                                                        [&cv](const auto& sideband)
-                                                        { return sideband->passesCuts(*cv); });
-                if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(*cv);
-              } //If found a sideband and passed all of its reco constraints
-            } //If not passed all sideband-related cuts
-          } //If passed all cuts not related to sidebands
+                const auto foundSidebands = fid->sidebands.find(passedCuts);
+                if(foundSidebands != fid->sidebands.end())
+                {
+                  const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
+                                                          [&cv](const auto& sideband)
+                                                          { return sideband->passesCuts(*cv); });
+                  if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(*cv);
+                } //If found a sideband and passed all of its reco constraints
+              } //If not passed all sideband-related cuts
+            } //If passed all cuts not related to sidebands
+          } //For each Fiducial
         } //For each entry in data tree
       } //If not isThisJobMC
 
@@ -430,15 +458,19 @@ int main(const int argc, const char** argv)
     return app::CmdLine::ExitCode::AnalysisError;
   }
 
+  //TODO: For each Fiducial
   //Give Studies a chance to syncCVHistos()
   try
   {
-    const events totalPassedCuts = cuts->totalWeightPassed();
-
-    signal->afterAllFiles(totalPassedCuts);
-    for(auto& cutGroup: sidebands)
+    for(auto& fid: fiducials)
     {
-      for(auto& sideband: cutGroup.second) sideband->afterAllFiles(totalPassedCuts);
+      const events totalPassedCuts = fid->selection->totalWeightPassed();
+
+      fid->study->afterAllFiles(totalPassedCuts);
+      for(auto& cutGroup: fid->sidebands)
+      {
+        for(auto& sideband: cutGroup.second) sideband->afterAllFiles(totalPassedCuts);
+      }
     }
   }
   catch(const ROOT::warning& e)
@@ -458,22 +490,30 @@ int main(const int argc, const char** argv)
     return app::CmdLine::ExitCode::AnalysisError;
   }
 
-  //Print the cut table to STDOUT and a markdown file.
+  //Print the cut table for the first Fiducial to STDOUT
+  std::cout << "#" << pot_used << " POT\n" << *fiducials.front()->selection << "\n";
+  std::cout << "Git commit hash: " << git::commitHash() << "\n";
+
+  //Print each Fiducial's full summary to a file
   std::string tableName = options->HistFile->GetName();
   tableName = tableName.substr(0, tableName.find('.'));
   tableName += ".md"; //Markdown
-
   std::ofstream tableFile(tableName);
+  //TODO: Different tableName for each Fiducial
+
   tableFile << "#" << options->playlist() << "\n";
   tableFile << "#" << pot_used << " POT\n";
-  tableFile << "#Selection:\n" << *cuts << "\n";
-  tableFile << "#Signal Definition:\n";
-  for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
-  tableFile << "\n#Phase Space Definition:\n";
-  for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["phaseSpace"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
 
-  std::cout << "#" << pot_used << " POT\n" << *cuts << "\n";
-  std::cout << "Git commit hash: " << git::commitHash() << "\n";
+  for(const auto& fid: fiducials)
+  {
+    //TODO: At least print Fiducial's name?  If I have that, I might as well make a separate file for each though.
+    tableFile << "#Selection:\n" << *fid->selection << "\n";
+    tableFile << "#Signal Definition:\n";
+    //TODO: I have to get this summary from fid now
+    for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
+    tableFile << "\n#Phase Space Definition:\n";
+    for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["phaseSpace"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
+  }
 
   //Final Write()s to output file
   options->HistFile->cd();

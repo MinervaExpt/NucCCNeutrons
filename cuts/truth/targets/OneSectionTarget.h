@@ -48,7 +48,7 @@ namespace truth
   class OneSectionTarget: public Cut
   {
     public:
-      OneSectionTarget(const YAML::Node& config): Cut(config)
+      OneSectionTarget(const YAML::Node& config, const std::string& name): Cut(config, name)
       {
       }
 

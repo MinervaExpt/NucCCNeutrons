@@ -19,7 +19,7 @@ namespace truth
       using UNIT = decltype(std::declval<VARIABLE>().truth(std::declval<evt::CVUniverse>()));
 
     public:
-      UpperLimit(const YAML::Node& config): Cut(config), fMax(config["max"].as<UNIT>()), fVar(config["variable"])
+      UpperLimit(const YAML::Node& config, const std::string& name): Cut(config, name), fMax(config["max"].as<UNIT>()), fVar(config["variable"])
       {
       }
 

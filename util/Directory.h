@@ -40,10 +40,11 @@ namespace util
   //histogram.
   namespace detail
   {
-    template <class HIST>
+    template <class TOBJ>
     struct set
     {
-      static void dir(HIST& hist, TDirectory& dir) { hist.SetDirectory(&dir); }
+      static void dir(TOBJ& /*obj*/, TDirectory& /*dir*/) {}
+      static void dir(TH1& hist, TDirectory& dir) { hist.SetDirectory(&dir); }
     };
 
     //Specialization for HistWrapper<>
@@ -87,7 +88,7 @@ namespace util
       //      cd() function and a virtual prefix() function.
       //Implementation of TFileDirectory-like contract.  
       template <class TOBJECT, class ...ARGS>
-      TOBJECT* make(const std::string& name, const std::string& title, ARGS... args)
+      TOBJECT* make(const std::string& name, /*const std::string& title,*/ ARGS... args)
       {
         //TODO: Figure out which parameter(s) will set obj's name 
         //      without actually creating an object with that name.  
@@ -95,7 +96,7 @@ namespace util
         //      would occur with a "real" TDirectory.  
         sentry dirSentry;
         fBaseDir.cd();
-        auto obj = new TOBJECT((fName + name).c_str(), title.c_str(), args...);
+        auto obj = new TOBJECT((fName + name).c_str(), /*title.c_str(),*/ args...);
         detail::set<TOBJECT>::dir(*obj, fBaseDir); //This is redundant for normal TH1Ds, but it's necessary for
                                                    //PlotUtils::HistWrapper<> because HistWrapper<> calls SetDirectory(0)
                                                    //in its constructor.

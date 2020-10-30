@@ -10,7 +10,7 @@
 
 namespace truth
 {
-  Q0Range::Q0Range(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>())
+  Q0Range::Q0Range(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>(0_GeV)), fMax(config["max"].as<GeV>())
   {
   }
 

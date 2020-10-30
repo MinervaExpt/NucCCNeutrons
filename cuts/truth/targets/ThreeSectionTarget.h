@@ -62,7 +62,7 @@ namespace truth
       const mm mmToDivide = 0_mm;
 
     public:
-      ThreeSectionTarget(const YAML::Node& config): Cut(config), fRotation(ROOT::Math::XYZVector(0., 0., 1.), rotationAngle)
+      ThreeSectionTarget(const YAML::Node& config, const std::string& name): Cut(config, name), fRotation(ROOT::Math::XYZVector(0., 0., 1.), rotationAngle)
       {
       }
 

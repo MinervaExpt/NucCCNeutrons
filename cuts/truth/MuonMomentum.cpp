@@ -10,7 +10,7 @@
 
 namespace truth
 {
-  MuonMomentum::MuonMomentum(const YAML::Node& config): Cut(config), fMin(config["min"].as<GeV>()), fMax(config["max"].as<GeV>())
+  MuonMomentum::MuonMomentum(const YAML::Node& config, const std::string& name): Cut(config, name), fMin(config["min"].as<GeV>()), fMax(config["max"].as<GeV>())
   {
   }
 

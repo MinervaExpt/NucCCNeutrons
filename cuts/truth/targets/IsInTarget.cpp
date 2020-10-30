@@ -10,9 +10,9 @@
 
 namespace truth
 {
-  IsInTarget::IsInTarget(const YAML::Node& config): Cut(config),
-                                                    fZMin(config["truth"]["min"].as<mm>()),
-                                                    fZMax(config["truth"]["max"].as<mm>())
+  IsInTarget::IsInTarget(const YAML::Node& config, const std::string& name): Cut(config, name),
+                                                                             fZMin(config["truth"]["min"].as<mm>()),
+                                                                             fZMax(config["truth"]["max"].as<mm>())
   {
   }
 

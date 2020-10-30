@@ -13,7 +13,7 @@ namespace truth
   class MuonMomentum: public Cut
   {
     public:
-      MuonMomentum(const YAML::Node& config);
+      MuonMomentum(const YAML::Node& config, const std::string& name);
       virtual ~MuonMomentum() = default;
 
     protected:

@@ -21,7 +21,7 @@ namespace truth
   class TwoSectionTarget: public Cut
   {
     public:
-      TwoSectionTarget(const YAML::Node& config): Cut(config) {}
+      TwoSectionTarget(const YAML::Node& config, const std::string& name): Cut(config, name) {}
 
       virtual ~TwoSectionTarget() = default;
 

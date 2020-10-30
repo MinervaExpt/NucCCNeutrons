@@ -11,9 +11,9 @@
 
 namespace truth
 {
-  Between::Between(const YAML::Node& config): Cut(config),
-                                              fZMin(config["us"]["truth"]["max"].as<mm>()),
-                                              fZMax(config["ds"]["truth"]["min"].as<mm>())
+  Between::Between(const YAML::Node& config, const std::string& name): Cut(config, name),
+                                                                       fZMin(config["us"]["truth"]["max"].as<mm>()),
+                                                                       fZMax(config["ds"]["truth"]["min"].as<mm>())
   {
   }
 
