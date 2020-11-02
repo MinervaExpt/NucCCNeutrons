@@ -37,6 +37,8 @@ namespace fid
       virtual ~Fiducial() = default;
 
       virtual double NNucleons() const = 0;
+
+      std::string name;
       std::vector<PlotUtils::Cut<evt::CVUniverse>*> recoCuts;
       std::vector<PlotUtils::SignalConstraint<evt::CVUniverse>*> signalDef;
       std::vector<PlotUtils::SignalConstraint<evt::CVUniverse>*> phaseSpace;

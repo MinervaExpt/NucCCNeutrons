@@ -24,6 +24,7 @@
 #include "util/Factory.cpp"
 #include "util/Table.h"
 #include "util/StreamRedirection.h"
+#include "util/SafeROOTName.h"
 
 //analysis includes
 #include "analyses/base/Study.h"
@@ -155,6 +156,7 @@ int main(const int argc, const char** argv)
       auto dirForFid = histDir.mkdir(config.first.as<std::string>());
 
       auto fid = fiducialFactory.Get(config.second);
+      fid->name = config.first.as<std::string>();
       fid->backgrounds = app::setupBackgrounds(options->ConfigFile()["backgrounds"]);
 
       dirForFid.make<TParameter<double>>("FiducialNucleons", fid->NNucleons());
@@ -491,22 +493,21 @@ int main(const int argc, const char** argv)
   }
 
   //Print the cut table for the first Fiducial to STDOUT
-  std::cout << "#" << pot_used << " POT\n" << *fiducials.front()->selection << "\n";
+  std::cout << "#" << pot_used << " POT\n" << fiducials.front()->name << "\n" << *fiducials.front()->selection << "\n";
   std::cout << "Git commit hash: " << git::commitHash() << "\n";
-
-  //Print each Fiducial's full summary to a file
-  std::string tableName = options->HistFile->GetName();
-  tableName = tableName.substr(0, tableName.find('.'));
-  tableName += ".md"; //Markdown
-  std::ofstream tableFile(tableName);
-  //TODO: Different tableName for each Fiducial
-
-  tableFile << "#" << options->playlist() << "\n";
-  tableFile << "#" << pot_used << " POT\n";
 
   for(const auto& fid: fiducials)
   {
-    //TODO: At least print Fiducial's name?  If I have that, I might as well make a separate file for each though.
+    std::string tableName = options->HistFile->GetName();
+    tableName = tableName.substr(0, tableName.find('.'));
+    tableName += util::SafeROOTName(fid->name);
+    tableName += ".md"; //Markdown
+    std::ofstream tableFile(tableName);
+
+    tableFile << "#" << fid->name << "\n";
+    tableFile << "#" << options->playlist() << "\n";
+    tableFile << "#" << pot_used << " POT\n";
+
     tableFile << "#Selection:\n" << *fid->selection << "\n";
     tableFile << "#Signal Definition:\n";
     //TODO: I have to get this summary from fid now
