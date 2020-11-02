@@ -237,6 +237,26 @@ namespace app
     return recoCuts;
   }
 
+  std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::CVUniverse>>> setupTruthConstraints(const YAML::Node& config)
+  {
+    std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::CVUniverse>>> constraints;
+    auto& constraintFactory = plgn::Factory<truth::Cut, std::string&>::instance();
+    for(auto constrain: config)
+    {
+      auto name = constrain.first.as<std::string>();
+      try
+      {
+        constraints.emplace_back(constraintFactory.Get(constrain.second, name));
+      }
+      catch(const std::runtime_error& e)
+      {
+        throw std::runtime_error(std::string("Failed to set up a PlotUtils::SignalConstraint named " + name + ":\n") + e.what());
+      }
+    }
+
+    return constraints;
+  }
+
   std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
   {
     std::map<std::string, std::vector<evt::CVUniverse*>> result;

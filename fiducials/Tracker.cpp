@@ -20,18 +20,18 @@ namespace fid
     public:
       Tracker(const YAML::Node& config): Fiducial(config)
       {
-        const mm zMin = config["reco"]["min"].as<mm>(),
-                 zMax = config["reco"]["max"].as<mm>(),
-                 apothem = config["apothem"].as<mm>();
+        const mm zMin = config["zRange"]["reco"]["min"].as<mm>(),
+                 zMax = config["zRange"]["reco"]["max"].as<mm>(),
+                 apothem = config["apothem"]["apothem"].as<mm>();
 
         PlotUtils::TargetUtils targetInfo;
         fNNucleons = targetInfo.GetTrackerNNucleons(zMin.in<mm>(), zMax.in<mm>(), false, apothem.in<mm>());
 
-        recoCuts.push_back(new reco::Apothem(config, "Apothem"));
-        recoCuts.push_back(new reco::IsInTarget(config, "Tracker"));
+        recoCuts.push_back(new reco::Apothem(config["apothem"], "Apothem"));
+        recoCuts.push_back(new reco::IsInTarget(config["zRange"], "Tracker"));
 
-        phaseSpace.push_back(new truth::Apothem(config, "Apothem"));
-        phaseSpace.push_back(new truth::IsInTarget(config, "Tracker"));
+        phaseSpace.push_back(new truth::Apothem(config["apothem"], "Apothem"));
+        phaseSpace.push_back(new truth::IsInTarget(config["zRange"], "Tracker"));
       }
 
       virtual double NNucleons() const override

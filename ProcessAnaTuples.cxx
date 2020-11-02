@@ -170,14 +170,40 @@ int main(const int argc, const char** argv)
         throw std::runtime_error(std::string("Failed to set up the signal Study:\n") + e.what());
       }
 
-      auto truthPhaseSpace = ::toBase<PlotUtils::SignalConstraint<evt::CVUniverse>>(plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["phaseSpace"])); //TODO: Tell the user which Cut failed
-      auto truthSignal = ::toBase<PlotUtils::SignalConstraint<evt::CVUniverse>>(plgn::loadPlugins<truth::Cut>(options->ConfigFile()["cuts"]["truth"]["signal"])); //TODO: Tell the user which Cut failed
-      auto recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
+      PlotUtils::constraints_t<evt::CVUniverse> truthPhaseSpace, truthSignal;
+      PlotUtils::cuts_t<evt::CVUniverse> recoCuts;
+
+      try
+      {
+        truthPhaseSpace = app::setupTruthConstraints(options->ConfigFile()["cuts"]["truth"]["phaseSpace"]);
+      }
+      catch(const std::runtime_error& e)
+      {
+        throw std::runtime_error(std::string("Failed to set up a phase space constraint:\n") + e.what());
+      }
+
+      try
+      {
+        truthSignal = app::setupTruthConstraints(options->ConfigFile()["cuts"]["truth"]["signal"]);
+      }
+      catch(const std::runtime_error& e)
+      {
+        throw std::runtime_error(std::string("Failed to set up a signal definition constraint:\n") + e.what());
+      }
+
+      try
+      {
+        recoCuts = app::setupRecoCuts(options->ConfigFile()["cuts"]["reco"]);
+      }
+      catch(const std::runtime_error& e)
+      {
+        throw std::runtime_error(std::string("Failed to set up a reco Cut:\n") + e.what());
+      }
 
       //Merge with Fiducial-specific Cuts
-      for(auto constraint: fid->phaseSpace) truthPhaseSpace.emplace_back(constraint);
-      for(auto sig: fid->signalDef) truthSignal.emplace_back(sig);
-      for(auto cut: fid->recoCuts) recoCuts.emplace_back(cut);
+      for(auto constraint: fid->phaseSpace) truthPhaseSpace.emplace(truthPhaseSpace.begin(), constraint);
+      for(auto sig: fid->signalDef) truthSignal.emplace(truthSignal.begin(), sig);
+      for(auto cut: fid->recoCuts) recoCuts.emplace(recoCuts.begin(), cut);
 
       decltype(recoCuts) sidebandCuts;
       fid->sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], dirForFid, fid->backgrounds, universes, recoCuts, sidebandCuts);
@@ -194,6 +220,13 @@ int main(const int argc, const char** argv)
   catch(const std::runtime_error& e)
   {
     std::cerr << e.what() << "\n";
+    return app::CmdLine::YAMLError;
+  }
+
+  //End the job and warn the user if there are no Fiducials to process.  Yes, the event loop still runs in this case :(
+  if(fiducials.empty())
+  {
+    std::cerr << "No fiducials to process.  Write a \"fiducials\" block in your YAML file and try again.\n";
     return app::CmdLine::YAMLError;
   }
 
@@ -493,8 +526,9 @@ int main(const int argc, const char** argv)
   }
 
   //Print the cut table for the first Fiducial to STDOUT
-  std::cout << "#" << pot_used << " POT\n" << fiducials.front()->name << "\n" << *fiducials.front()->selection << "\n";
-  std::cout << "Git commit hash: " << git::commitHash() << "\n";
+  assert(fiducials.size() > 0 && "No Fiducials to print at the end of the event loop!");
+  std::cout << "#" << pot_used << " POT\n" << fiducials.front()->name << "\n#Selection:\n" << *fiducials.front()->selection << "\n\n";
+  std::cout << "#Git commit hash: " << git::commitHash() << "\n";
 
   for(const auto& fid: fiducials)
   {
@@ -509,11 +543,6 @@ int main(const int argc, const char** argv)
     tableFile << "#" << pot_used << " POT\n";
 
     tableFile << "#Selection:\n" << *fid->selection << "\n";
-    tableFile << "#Signal Definition:\n";
-    //TODO: I have to get this summary from fid now
-    for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["signal"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
-    tableFile << "\n#Phase Space Definition:\n";
-    for(const auto& cut: options->ConfigFile()["cuts"]["truth"]["phaseSpace"]) tableFile << "* " << cut.first.as<std::string>() << "\n";
   }
 
   //Final Write()s to output file

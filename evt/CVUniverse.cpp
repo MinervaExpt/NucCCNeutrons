@@ -102,6 +102,6 @@ namespace evt
       useMuonCorrelations = false;
     }
 
-    return PlotUtils::flux_reweighter(GetPlaylist(), GetAnalysisNuPDG(), UseNuEConstraint(), GetNFluxUniverses()).GetIntegratedFluxReweighted<MnvH1D, TH1D>(GetAnalysisNuPDG(), crossSectionHist.hist, Emin.in<GeV>(), Emax.in<GeV>(), useMuonCorrelations);
+    return PlotUtils::flux_reweighter(GetPlaylist(), GetAnalysisNuPDG(), UseNuEConstraint(), GetNFluxUniverses()).GetIntegratedFluxReweighted(GetAnalysisNuPDG(), crossSectionHist.hist, Emin.in<GeV>(), Emax.in<GeV>(), useMuonCorrelations);
   }
 }

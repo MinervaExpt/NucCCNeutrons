@@ -60,6 +60,9 @@ namespace app
   //Set up reco::Cuts that define an event selection.
   std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>> setupRecoCuts(const YAML::Node& config);
 
+  //Set up truth::Cuts that make up a signal definition
+  std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::CVUniverse>>> setupTruthConstraints(const YAML::Node& config);
+
   //Load the set of systematics I'm going to process this event with.
   std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC);
 
