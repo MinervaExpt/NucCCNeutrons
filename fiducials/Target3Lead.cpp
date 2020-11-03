@@ -25,18 +25,18 @@ namespace fid
     public:
       Target3Lead(const YAML::Node& config): Fiducial(config)
       {
-        const mm apothem = config["apothem"].as<mm>();
+        const mm apothem = config["apothem"]["apothem"].as<mm>();
 
         PlotUtils::TargetUtils targetInfo;
         fNNucleons = targetInfo.GetPassiveTargetNNucleons(3, targetZ, false, apothem.in<mm>());
 
-        recoCuts.push_back(new reco::Apothem(config, "Apothem"));
-        recoCuts.push_back(new reco::IsInTarget(config, "Target3"));
-        recoCuts.push_back(new reco::ThreeSectionTarget<targetZ>(config, "Lead"));
+        recoCuts.push_back(new reco::Apothem(config["apothem"], "Apothem"));
+        recoCuts.push_back(new reco::IsInTarget(config["zRange"], "Target3"));
+        recoCuts.push_back(new reco::ThreeSectionTarget<targetZ>(config["zRange"], "Lead"));
 
-        phaseSpace.push_back(new truth::Apothem(config, "Apothem"));
-        signalDef.push_back(new truth::IsInTarget(config, "Target3"));
-        phaseSpace.push_back(new truth::ThreeSectionTarget<targetZ>(config, "Lead"));
+        phaseSpace.push_back(new truth::Apothem(config["apothem"], "Apothem"));
+        signalDef.push_back(new truth::IsInTarget(config["zRange"], "Target3"));
+        phaseSpace.push_back(new truth::ThreeSectionTarget<targetZ>(config["zRange"], "Lead"));
       }
 
       virtual double NNucleons() const override

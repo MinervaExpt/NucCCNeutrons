@@ -25,18 +25,18 @@ namespace fid
     public:
       Target3Iron(const YAML::Node& config): Fiducial(config)
       {
-        const mm apothem = config["apothem"].as<mm>();
+        const mm apothem = config["apothem"]["apothem"].as<mm>();
 
         PlotUtils::TargetUtils targetInfo;
         fNNucleons = targetInfo.GetPassiveTargetNNucleons(3, targetZ, false, apothem.in<mm>());
 
-        recoCuts.push_back(new reco::Apothem(config, "Apothem"));
-        recoCuts.push_back(new reco::IsInTarget(config, "Target3"));
-        recoCuts.push_back(new reco::ThreeSectionTarget<targetZ>(config, "Iron"));
+        recoCuts.push_back(new reco::Apothem(config["apothem"], "Apothem"));
+        recoCuts.push_back(new reco::IsInTarget(config["zRange"], "Target3"));
+        recoCuts.push_back(new reco::ThreeSectionTarget<targetZ>(config["zRange"], "Iron"));
 
-        phaseSpace.push_back(new truth::Apothem(config, "Apothem"));
-        signalDef.push_back(new truth::IsInTarget(config, "Target3"));
-        phaseSpace.push_back(new truth::ThreeSectionTarget<targetZ>(config, "Iron"));
+        phaseSpace.push_back(new truth::Apothem(config["apothem"], "Apothem"));
+        signalDef.push_back(new truth::IsInTarget(config["zRange"], "Target3"));
+        phaseSpace.push_back(new truth::ThreeSectionTarget<targetZ>(config["zRange"], "Iron"));
       }
 
       virtual double NNucleons() const override
