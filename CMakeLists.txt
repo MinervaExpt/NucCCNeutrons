@@ -54,6 +54,10 @@ find_package(PlotUtils REQUIRED)
 include_directories(${PlotUtils_INCLUDE_DIR})
 message("Included PlotUtils from ${PlotUtils_INCLUDE_DIR}")
 
+find_package(UnfoldUtils REQUIRED)
+include_directories(${UnfoldUtils_INCLUDE_DIR})
+message("Included UnfoldUtils from ${UnfoldUtils_INCLUDE_DIR}")
+
 #Set up OBJECT libraries for plugins first
 add_subdirectory(analyses)
 add_subdirectory(cuts)
@@ -65,6 +69,7 @@ add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $
 #This TARGET_OBJECTS song and dance solves the problem of the compiler
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library
+add_executable(ExtractCrossSection ExtractCrossSection.cpp)
 
 #Build libraries that main executables depend on
 add_subdirectory(units)
@@ -74,10 +79,11 @@ add_subdirectory(config)
 add_subdirectory(app)
 
 add_dependencies(ProcessAnaTuples generateGitVersion)
-#target_include_directories(ProcessAnaTuples PRIVATE ${CMAKE_CURRENT_BINARY_DIR}) #for gitVersion.h
 target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
+target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} PlotUtils UnfoldUtils)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
+install(TARGETS ExtractCrossSection DESTINATION bin)
 
 configure_file(setup.sh.in setup.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup.sh DESTINATION bin)
