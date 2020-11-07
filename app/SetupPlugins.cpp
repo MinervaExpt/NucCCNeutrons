@@ -206,7 +206,9 @@ namespace app
     {
       try
       {
-        backgrounds.emplace_back(new ana::Background(background.first.as<std::string>(), background.second));
+        auto plugin = new ana::Background(background.first.as<std::string>(), background.second);
+        plugin->passes = std::move(setupTruthConstraints(background.second));
+        backgrounds.emplace_back(plugin);
       }
       catch(const std::runtime_error& e)
       {

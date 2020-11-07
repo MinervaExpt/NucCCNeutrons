@@ -5,6 +5,9 @@
 #ifndef ANA_BACKGROUND_H
 #define ANA_BACKGROUND_H
 
+//PlotUtils includes
+#include "PlotUtils/Cut.h"
+
 //yaml-cpp include for configuration
 #include "yaml-cpp/yaml.h"
 
@@ -17,17 +20,12 @@ namespace evt
   class CVUniverse;
 }
 
-namespace truth
-{
-  class Cut;
-}
-
 namespace ana
 {
   struct Background
   {
     public:
-      using cuts_t = std::vector<std::unique_ptr<truth::Cut>>;
+      using cuts_t = std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::CVUniverse>>>;
 
       //Configuration from a YAML::Node
       Background(const std::string& name, const YAML::Node& config);

@@ -14,8 +14,8 @@
 
 namespace ana
 {
-  Background::Background(const std::string& nodeName, const YAML::Node& config): passes(plgn::loadPlugins<truth::Cut>(config)),
-                                                                                 fName(nodeName)
+  Background::Background(const std::string& nodeName, const YAML::Node& /*config*/): passes(),
+                                                                                     fName(nodeName)
   {
   }
 }
