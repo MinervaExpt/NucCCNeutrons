@@ -5,6 +5,7 @@
 //analyses includes
 #include "analyses/studies/CrossSectionSignal.h"
 #include "analyses/studies/CrossSectionSideband.h"
+#include "analyses/studies/BackgroundsByPionContent.h"
 
 //c++ includes
 #include <string>
@@ -88,6 +89,7 @@ namespace
 {
   static ana::CrossSectionSignal<ana::NeutronMultiplicity>::Registrar NeutronMultiplicitySignal_reg("NeutronMultiplicitySignal");
   static ana::CrossSectionSideband<ana::NeutronMultiplicity>::Registrar NeutronMultiplicitySideband_reg("NeutronMultiplicitySideband");
+  static ana::BackgroundsByPionContent<ana::NeutronMultiplicity>::Registrar NeutronMultiplicityPionContent_reg("NeutronMultiplicityByPionContent");
 }
 
 #endif //ANA_NEUTRONMULTIPLICITY_CPP

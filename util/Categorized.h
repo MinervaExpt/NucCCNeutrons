@@ -96,6 +96,20 @@ namespace util
         fOther = dir.make<HIST>((baseName + "_Other"), ("Other;" + axes).c_str(), args...);
       }
 
+      //TODO: Why can't I put the string arguments first to let Categorized<> be nested?
+      //CATEGORY is a pointer to an object with a name() member variable
+      template <class ...HISTARGS>
+      Categorized(const std::string& baseName, const std::string& axes,
+                  const std::vector<CATEGORY>& categories, Directory& dir, HISTARGS... args)
+      {
+        for(const auto& catPtr: categories)
+        {
+          fCatToHist[catPtr] = dir.make<HIST>(SafeROOTName(baseName + "_" + catPtr->name()).c_str(), (catPtr->name() + ";" + axes).c_str(), args...);
+        }
+
+        fOther = dir.make<HIST>((baseName + "_Other"), ("Other;" + axes).c_str(), args...);
+      }
+
       //Use a std::map<> instead of CATEGORIES
       template <class ...HISTARGS>
       Categorized(const std::map<CATEGORY, std::string> categories, Directory& dir, const std::string& baseName,
