@@ -261,6 +261,7 @@ int main(const int argc, const char** argv)
       unfolded->Divide(unfolded, flux);
       unfolded->Scale(1./nNucleons->GetVal()/dataPOT);
       unfolded->Scale(1., "width");
+      unfolded->Scale(1e-4); //Flux histogram is in m^-2, but convention is to report cm^2
       Plot(*unfolded, "crossSection", prefix);
     }
     catch(const std::runtime_error& e)
