@@ -224,7 +224,7 @@ int main(const int argc, const char** argv)
     return app::CmdLine::YAMLError;
   }
 
-  //End the job and warn the user if there are no Fiducials to process.  Yes, the event loop still runs in this case :(
+  //End the job and warn the user if there are no Fiducials to process.
   if(fiducials.empty())
   {
     std::cerr << "No fiducials to process.  Write a \"fiducials\" block in your YAML file and try again.\n";
@@ -260,16 +260,6 @@ int main(const int argc, const char** argv)
       {
         std::cerr << fName << ": No such file or directory.  Skipping this "
                   << "file name.\n";
-        continue; //TODO: Don't use break if I can help it
-      }
-  
-      //TODO: Doesn't my ROOT error checking function throw an exception here?
-      if(app::IsMC(fName) != options->isMC())
-      {
-        std::cerr << "This job " << (options->isMC()?"is":"is not")
-                  << " processing MC files, but " << fName << " is a "
-                  << (app::IsMC(fName)?"MC":"data")
-                  << "file.  Skipping this file!\n";
         continue; //TODO: Don't use break if I can help it
       }
   
@@ -494,7 +484,6 @@ int main(const int argc, const char** argv)
     return app::CmdLine::ExitCode::AnalysisError;
   }
 
-  //TODO: For each Fiducial
   //Give Studies a chance to syncCVHistos()
   try
   {

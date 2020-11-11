@@ -197,7 +197,7 @@ int main(const int argc, const char** argv)
   }
 
   const double mcPOT = GetIngredient<TParameter<double>>(*mcFile, "POTUsed")->GetVal(),
-               dataPOT = GetIngredient<TParameter<double>>(*mcFile, "POTUsed")->GetVal();
+               dataPOT = GetIngredient<TParameter<double>>(*dataFile, "POTUsed")->GetVal();
 
   for(const auto& prefix: crossSectionPrefixes)
   {

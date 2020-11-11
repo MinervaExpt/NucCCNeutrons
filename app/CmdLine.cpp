@@ -121,33 +121,11 @@ namespace app
       throw exception(binName, "No *.root AnaTuple files found on the command line.\n", ExitCode::BadCommandLine);
     }
 
-    fIsMC = app::IsMC(fTupleFileNames.front());
-    fPlaylist = app::GetPlaylist(fTupleFileNames.front(), fIsMC); //TODO: Generalize hard-coded AnaTuple name
-    #ifndef NDEBUG
-      //std::cout << "Am I processing MC?  " << std::boolalpha << fIsMC << "\n";
-    #endif
-
     if(configFile.empty())
     {
       throw exception(binName, "No *.yaml configuration files found on the command line.\n", ExitCode::BadCommandLine);
     }
 
-    //Try to create a TFile to write the produced histograms.  Quit without
-    //doing anything if I fail.
-    outFileName.erase(outFileName.find("."));
-    outFileName.erase(0, outFileName.rfind("/") + 1);
-    outFileName += std::string((fIsMC?"MC":"Data")) + ".root";
-
-    try
-    {
-      HistFile.reset(TFile::Open(outFileName.c_str(), "CREATE"));
-    }
-    catch(const ROOT::exception& e)
-    {
-      //Print some extra information if I failed to create the output file.
-      throw exception(binName, "Couldn't create a TFile named " + outFileName + " in the current directory.  If it already exists, I refuse to overwrite it!\n", ExitCode::BadOutputFile);
-    }
-    
     //Write the assembled configuration file to a file in the current
     //directory.  Makes sure I know exactly what parameters I ran with.
     {
@@ -162,6 +140,39 @@ namespace app
     catch(const YAML::Exception& e)
     {
       throw exception(binName, std::string("YAML error from yaml-cpp:\n") + e.what() + "\n", ExitCode::YAMLError);
+    }
+
+    fIsMC = app::IsMC(fTupleFileNames.front());
+
+    //For a closure test, I want to treat the MC as if it were data and try to get the truth cross section back.
+    //This is called "fake data".  So override fIsMC here to do that.
+    const bool isFakeData = (*fConfigFile)["app"]["fakeData"];
+    if(fIsMC && isFakeData)
+    {
+      std::cerr << "Treating an MC file as data.  Only do this for closure tests.\n";
+      fIsMC = false;
+    }
+
+    fPlaylist = app::GetPlaylist(fTupleFileNames.front(), fIsMC);
+    #ifndef NDEBUG
+      //std::cout << "Am I processing MC?  " << std::boolalpha << fIsMC << "\n";
+    #endif
+
+    //Try to create a TFile to write the produced histograms.  Quit without
+    //doing anything if I fail.
+    outFileName.erase(outFileName.find("."));
+    outFileName.erase(0, outFileName.rfind("/") + 1);
+    if(isFakeData) outFileName += "Fake";
+    outFileName += std::string((fIsMC?"MC":"Data")) + ".root";
+
+    try
+    {
+      HistFile.reset(TFile::Open(outFileName.c_str(), "CREATE"));
+    }
+    catch(const ROOT::exception& e)
+    {
+      //Print some extra information if I failed to create the output file.
+      throw exception(binName, "Couldn't create a TFile named " + outFileName + " in the current directory.  If it already exists, I refuse to overwrite it!\n", ExitCode::BadOutputFile);
     }
   }
 
