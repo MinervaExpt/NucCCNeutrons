@@ -263,6 +263,9 @@ int main(const int argc, const char** argv)
       unfolded->Scale(1., "width");
       unfolded->Scale(1.e4); //Flux histogram is in m^-2, but convention is to report cm^2
       Plot(*unfolded, "crossSection", prefix);
+
+      auto outFile = TFile::Open((prefix + "_crossSection.root").c_str(), "CREATE");
+      unfolded->Write();
     }
     catch(const std::runtime_error& e)
     {
