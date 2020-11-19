@@ -174,14 +174,14 @@ int main(const int argc, const char** argv)
   }
 
   const int nIterations = std::stoi(argv[1]);
-  auto dataFile = TFile::Open(argv[2]);
+  auto dataFile = TFile::Open(argv[2], "READ");
   if(!dataFile)
   {
     std::cerr << "Failed to open data file " << argv[2] << ".\n";
     return 2;
   }
 
-  auto mcFile = TFile::Open(argv[3]);
+  auto mcFile = TFile::Open(argv[3], "READ");
   if(!mcFile)
   {
     std::cerr << "Failed to open MC file " << argv[3] << ".\n";
@@ -237,19 +237,29 @@ int main(const int argc, const char** argv)
       //Basing my unfolding procedure for a differential cross section on Alex's MINERvA 101 talk at https://minerva-docdb.fnal.gov/cgi-bin/private/RetrieveFile?docid=27438&filename=whatsACrossSection.pdf&version=1
 
       //TODO: How to tie in sideband constraints?
-      //TODO: Scale backgrounds by ratio of data POT to MC POT?
-      auto bkgSubtracted = std::accumulate(backgrounds.begin(), backgrounds.end(), folded,
+      auto bkgSubtracted = std::accumulate(backgrounds.begin(), backgrounds.end(), folded->Clone(),
                                            [mcPOT, dataPOT](auto sum, const auto hist)
                                            {
+                                             std::cout << "Subtracting " << hist->GetName() << " scaled by " << -dataPOT/mcPOT << " from " << sum->GetName() << "\n";
                                              sum->Add(hist, -dataPOT/mcPOT);
                                              return sum;
                                            });
       Plot(*bkgSubtracted, "backgroundSubtracted", prefix);
 
+      auto outFile = TFile::Open((prefix + "_crossSection.root").c_str(), "CREATE");
+      if(!outFile)
+      {
+        std::cerr << "Could not create a file called " << prefix + "_crossSection.root" << ".  Does it already exist?\n";
+        return 5;
+      }
+
+      bkgSubtracted->Write("backgroundSubtracted");
+
       //d'Aogstini unfolding
       auto unfolded = UnfoldHist(bkgSubtracted, migration, nIterations);
       if(!unfolded) throw std::runtime_error(std::string("Failed to unfold ") + folded->GetName() + " using " + migration->GetName());
       Plot(*unfolded, "unfolded", prefix);
+      unfolded->Clone()->Write("unfolded");
 
       effNum->Divide(effNum, effDenom); //Only the 2 parameter version of MnvH1D::Divide()
                                         //handles systematics correctly.
@@ -264,8 +274,7 @@ int main(const int argc, const char** argv)
       unfolded->Scale(1.e4); //Flux histogram is in m^-2, but convention is to report cm^2
       Plot(*unfolded, "crossSection", prefix);
 
-      auto outFile = TFile::Open((prefix + "_crossSection.root").c_str(), "CREATE");
-      unfolded->Write();
+      unfolded->Clone()->Write("crossSection");
     }
     catch(const std::runtime_error& e)
     {

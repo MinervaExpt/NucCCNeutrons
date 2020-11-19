@@ -317,8 +317,8 @@ int main(const int argc, const char** argv)
           for(const auto& compat: groupedUnivs)
           {
             auto& event = *compat.front(); //All compatible universes pass the same cuts
-            PlotUtils::detail::empty shared;
-            for(const auto univ: compat) univ->SetEntry(entry); //I still need to GetWeight() for entry
+	    PlotUtils::detail::empty shared;
+	    for(const auto univ: compat) univ->SetEntry(entry); //I still need to GetWeight() for entry
 
             //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
             //for sidebands defined by multiple cuts.
