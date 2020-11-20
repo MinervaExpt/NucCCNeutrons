@@ -33,7 +33,7 @@ namespace ana
 
       //Do nothing for Truth tree and data
       virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
-      virtual void data(const evt::CVUniverse& /*event*/) override {};
+      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
 
       //No Truth loop needed
       virtual bool wantsTruthLoop() const override { return false; }

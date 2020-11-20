@@ -105,9 +105,9 @@ namespace ana
         fEfficiencyDenom->Fill(&event, fXVar.truth(event), fYVar.truth(event), weight);
       }
 
-      virtual void data(const evt::CVUniverse& event) override
+      virtual void data(const evt::CVUniverse& event, const events weight) override
       {
-        fSignalEvents->Fill(&event, fXVar.reco(event), fYVar.reco(event)); //No weight applied to data
+        fSignalEvents->Fill(&event, fXVar.reco(event), fYVar.reco(event), weight);
       }
 
       virtual void mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight) override

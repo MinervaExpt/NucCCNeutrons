@@ -31,7 +31,7 @@ namespace ana
       //Do nothing for backgrounds, the Truth tree, and data
       virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
       virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
-      virtual void data(const evt::CVUniverse& /*event*/) override {}; //TODO: Do I want to plot candidate observables in data?
+      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}; //TODO: Do I want to plot candidate observables in data?
 
       //I don't need the Truth loop
       virtual bool wantsTruthLoop() const override { return false; }

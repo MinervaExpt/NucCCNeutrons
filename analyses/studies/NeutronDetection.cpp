@@ -62,13 +62,13 @@ namespace ana
     fCandsPerFSNeutron = dir.make<units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, neutrons, events>>("CandsPerFSNeutron", "Candidates per FS Neutron;N Candidates;Events", 4, 0, 4, univs);
   }
 
-  void NeutronDetection::data(const evt::CVUniverse& event)
+  void NeutronDetection::data(const evt::CVUniverse& event, const events weight)
   {
     const auto cands = event.Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time());
     const auto vertex = event.GetVtx();
     for(const auto& cand: cands)
     {
-      if(fCuts.countAsReco(cand, vertex)) fDataCands->Fill(event, 1_neutrons, cand, vertex);
+      if(fCuts.countAsReco(cand, vertex)) fDataCands->Fill(event, weight.in<events>(), cand, vertex);
     }
   }
 

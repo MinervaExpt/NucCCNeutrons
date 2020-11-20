@@ -62,9 +62,9 @@ namespace ana
 
       virtual ~CrossSectionSideband() = default;
 
-      virtual void data(const evt::CVUniverse& event) override
+      virtual void data(const evt::CVUniverse& event, const events weight) override
       {
-        fData->Fill(&event, fVar.reco(event)); //No weight applied to data
+        fData->Fill(&event, fVar.reco(event), weight);
       }
 
       virtual void mcSignal(const evt::CVUniverse& event, const events weight) override

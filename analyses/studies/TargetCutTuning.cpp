@@ -31,9 +31,9 @@ namespace ana
     fZPositionsByTarget[background].Fill(&event, event.GetVtx().z(), weight);
   }
 
-  /*void TargetCutTuning::data(const evt::CVUniverse& event)
+  /*void TargetCutTuning::data(const evt::CVUniverse& event, const events weight)
   {
-    fSelectedZPositions->Fill(&event, event.GetVtx().z(), 1_events);
+    fSelectedZPositions->Fill(&event, event.GetVtx().z(), weight);
   }
   */
 

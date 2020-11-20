@@ -116,13 +116,13 @@ namespace
   }
 
   //Given a cut map, passedCuts, find the Study that this event fits in.
-  ana::Study* findSelectedOrSideband(const std::bitset<64> passedCuts, const events weight, fid::Fiducial& fid, evt::CVUniverse& univ)
+  ana::Study* findSelectedOrSideband(const std::bitset<64> passedCuts, fid::Fiducial& fid, evt::CVUniverse& univ)
   {
-    if(passedCuts.all()) return fid->study.get();
+    if(passedCuts.all()) return fid.study.get();
     else if(!passedCuts.none())
     {
-      const auto foundSidebands = fid->sidebands.find(passedCuts);
-      if(foundSidebands != fid->sidebands.end())
+      const auto foundSidebands = fid.sidebands.find(passedCuts);
+      if(foundSidebands != fid.sidebands.end())
       {
         const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
                                                 [&univ](const auto& sideband)
@@ -337,8 +337,9 @@ int main(const int argc, const char** argv)
 
             //Fill "fake data" by treating MC exactly like data but using a weight.
             //This is useful for closure tests and warping studies.
-            const auto CVPassedReco = fid->selection->isMCSelected(*cv, shared, cvWeight);
-            const auto CVStudy = findSelectedOrSideband(passedCuts, fid, compat.front());
+            PlotUtils::detail::empty CVShared;
+            const auto CVPassedReco = fid->selection->isMCSelected(*cv, CVShared, cvWeight);
+            const auto CVStudy = findSelectedOrSideband(CVPassedReco, *fid, *cv);
             if(CVStudy) CVStudy->data(*cv, cvWeight); //TODO: data() callback now takes weight
 
             for(const auto& compat: groupedUnivs)
@@ -349,10 +350,10 @@ int main(const int argc, const char** argv)
 
               //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
               //for sidebands defined by multiple cuts.
-              const auto passedReco = fid->selection->isDataSelected(compat.front(), shared);
+              const auto passedReco = fid->selection->isDataSelected(*compat.front(), shared);
 
               //All compatible universes are in the same selected/sideband region because they pass the same Cuts
-              auto whichStudy = findSelectedOrSideband(passedCuts, fid, compat.front()); 
+              auto whichStudy = findSelectedOrSideband(passedReco, *fid, *compat.front()); 
               if(whichStudy)
               {
                 //Categorize by whether this is signal or some background
@@ -438,7 +439,7 @@ int main(const int argc, const char** argv)
           for(auto& fid: fiducials)
           {
             const auto passedCuts = fid->selection->isDataSelected(*cv, shared);
-            auto whichStudy = findSelectedOrSideband(passedCuts, fid, *cv);
+            auto whichStudy = findSelectedOrSideband(passedCuts, *fid, *cv);
             if(whichStudy) whichStudy->data(*cv);
           } //For each Fiducial
         } //For each entry in data tree

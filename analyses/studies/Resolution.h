@@ -49,7 +49,7 @@ namespace ana
                                                                                                                         
       //Data AnaTuple with only reco information.  These events passed all reco Cuts. 
       //Truth branches may be in an undefined state here, so be very careful not to use them.
-      virtual void data(const evt::CVUniverse& /*event*/) override {}
+      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}
                                                                                                                         
       //Optional function called once per job after the last file in the event loop.
       //This is a good place to call syncCVHistos() or Scale() by numbers besides POT.

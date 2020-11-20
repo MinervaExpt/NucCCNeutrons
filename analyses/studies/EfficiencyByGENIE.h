@@ -32,7 +32,7 @@ namespace ana
 
       //Do nothing for backgrounds, the Truth tree, and data
       virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
-      virtual void data(const evt::CVUniverse& /*event*/) override {};
+      virtual void data(const evt::CVUniverse& /*event*/, const events weight) override {};
 
     private:
       //VARIABLES in whic I'll report efficiency

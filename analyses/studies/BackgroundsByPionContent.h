@@ -84,7 +84,7 @@ namespace ana
       //Functions I don't plan to use
       virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}
 
-      virtual void data(const evt::CVUniverse& /*event*/) override {}
+      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}
 
       using Registrar = Study::Registrar<BackgroundsByPionContent<VARIABLE>>;
 

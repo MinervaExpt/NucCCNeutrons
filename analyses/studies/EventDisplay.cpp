@@ -47,7 +47,7 @@ namespace ana
                                                                                                                         
       //Data AnaTuple with only reco information.  These events passed all reco Cuts. 
       //Truth branches may be in an undefined state here, so be very careful not to use them.
-      virtual void data(const evt::CVUniverse& event) override
+      virtual void data(const evt::CVUniverse& event, const events /*weight*/) override
       {
         std::clog << util::arachne(event.GetEventID(true), true) << "\n";
       }
