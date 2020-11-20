@@ -114,6 +114,27 @@ namespace
   {
     return std::accumulate(models.begin(), models.end(), 1., [&event](const double product, const auto& model) { return product * model->GetWeight(event).template in<events>(); });
   }
+
+  //Given a cut map, passedCuts, find the Study that this event fits in.
+  ana::Study* findSelectedOrSideband(const std::bitset<64> passedCuts, const events weight, fid::Fiducial& fid, evt::CVUniverse& univ)
+  {
+    if(passedCuts.all()) return fid->study;
+    else if(!passedCuts.none())
+    {
+      const auto foundSidebands = fid->sidebands.find(passedCuts);
+      if(foundSidebands != fid->sidebands.end())
+      {
+        const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
+                                                [&univ](const auto& sideband)
+                                                { return sideband->passesCuts(univ); });
+        if(firstSideband != foundSidebands->second.end())
+        {
+          return (*firstSideband);
+        }
+      } //If found a sideband and passed all of its reco constraints
+    } //If passed all cuts not related to sidebands
+    return nullptr;
+  }
 }
 
 int main(const int argc, const char** argv)
@@ -325,50 +346,26 @@ int main(const int argc, const char** argv)
             for(auto& fid: fiducials)
             {
               const auto passedReco = fid->selection->isMCSelected(compat, shared, cvWeightForCuts);
-              if(!passedReco.none())
+
+              //All compatible universes are in the same selected/sideband region because they pass the same Cuts
+              auto whichStudy = findSelectedOrSideband(passedCuts, fid, compat.front(), 1.); 
+              if(whichStudy)
               {
-                //Look up the sideband, if any, by which reco cuts failed.
-                //I might not find any sideband if this event is reconstructed signal
-                //or just isn't in a sideband I'm interested in.
-                //Putting the code here just makes it easier to maintain.
-                const auto relevantSidebands = fid->sidebands.find(passedReco);
-                ana::Study* sideband = nullptr;
-                if(relevantSidebands != fid->sidebands.end())
-                {
-                  const auto found = std::find_if(relevantSidebands->second.begin(), relevantSidebands->second.end(),
-                                                  [&event](const auto& whichSideband)
-                                                  { return whichSideband->passesCuts(event); });
-                  if(found != relevantSidebands->second.end()) sideband = found->get();
-                }
+                //Fill "fake data" by treating MC exactly like data but using a weight.
+                //This is useful for closure tests and warping studies.
+                for(const auto univ: compat) whichStudy->data(*cv, ::getWeight(reweighters, *univ)); //TODO: Only fill the CV?
 
                 //Categorize by whether this is signal or some background
-                if(fid->selection->isSignal(event))
-                {
-                  if(passedReco.all())
-                  {
-                    for(const auto univ: compat) fid->study->mcSignal(*univ, ::getWeight(reweighters, *univ));
-                  }
-                  else if(sideband) //If this is a sideband I'm interested in
-                  {
-                    for(const auto univ: compat) sideband->mcSignal(*univ, ::getWeight(reweighters, *univ));
-                  }
-                }
+                if(fid->selection->isSignal(event)) for(const auto univ: compat) whichStudy->mcSignal(*univ, ::getWeight(reweighters, *univ));
                 else //If not truthSignal
                 {
                   const auto foundBackground = std::find_if(fid->backgrounds.begin(), fid->backgrounds.end(),
                                                             [&event](const auto& background)
                                                             { return ::requireAll(background->passes, event); });
 
-                  if(passedReco.all())
-                  {
-                    for(const auto univ: compat) fid->study->mcBackground(*univ, ::derefOrNull(foundBackground, fid->backgrounds.end()), ::getWeight(reweighters, *univ));
-                  }
-                  else if(sideband)
-                  {
-                    for(const auto univ: compat) sideband->mcBackground(*univ, ::derefOrNull(foundBackground, fid->backgrounds.end()), ::getWeight(reweighters, *univ));
-                  }
-                }
-              } //If passed all non-sideband-related cuts
+                  for(const auto univ: compat) whichStudy->mcBackground(*univ, ::derefOrNull(foundBackground, fid->backgrounds.end()), ::getWeight(reweighters, *univ));
+                } //If not truthSignal
+              } //If found a Study to fill.  Could be either signal or sideband.  Means that at least some cuts passed.
             } //For each Fiducial
           } //For each error band
         } //For each entry in the MC tree
@@ -441,21 +438,8 @@ int main(const int argc, const char** argv)
           for(auto& fid: fiducials)
           {
             const auto passedCuts = fid->selection->isDataSelected(*cv, shared);
-            if(!passedCuts.none())
-            {
-              if(passedCuts.all()) fid->study->data(*cv);
-              else
-              {
-                const auto foundSidebands = fid->sidebands.find(passedCuts);
-                if(foundSidebands != fid->sidebands.end())
-                {
-                  const auto firstSideband = std::find_if(foundSidebands->second.begin(), foundSidebands->second.end(),
-                                                          [&cv](const auto& sideband)
-                                                          { return sideband->passesCuts(*cv); });
-                  if(firstSideband != foundSidebands->second.end()) (*firstSideband)->data(*cv);
-                } //If found a sideband and passed all of its reco constraints
-              } //If not passed all sideband-related cuts
-            } //If passed all cuts not related to sidebands
+            auto whichStudy = findSelectedOrSideband(passedCuts, fid, *cv);
+            if(whichStudy) whichStudy->data(*cv);
           } //For each Fiducial
         } //For each entry in data tree
       } //If not isThisJobMC
