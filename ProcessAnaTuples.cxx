@@ -283,6 +283,16 @@ int main(const int argc, const char** argv)
                   << "file name.\n";
         continue; //TODO: Don't use break if I can help it
       }
+
+      //TODO: Doesn't my ROOT error checking function throw an exception here?
+      if(app::IsMC(fName) != options->isMC())
+      {
+        std::cerr << "This job " << (options->isMC()?"is":"is not")
+                  << " processing MC files, but " << fName << " is a "
+                  << (app::IsMC(fName)?"MC":"data")
+                  << "file.  Skipping this file!\n";
+        continue; //TODO: Don't use break if I can help it
+      }
   
       auto metaTree = dynamic_cast<TTree*>(tupleFile->Get("Meta"));
       if(!metaTree)

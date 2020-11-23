@@ -144,15 +144,6 @@ namespace app
 
     fIsMC = app::IsMC(fTupleFileNames.front());
 
-    //For a closure test, I want to treat the MC as if it were data and try to get the truth cross section back.
-    //This is called "fake data".  So override fIsMC here to do that.
-    const bool isFakeData = (*fConfigFile)["app"]["fakeData"];
-    if(fIsMC && isFakeData)
-    {
-      std::cerr << "Treating an MC file as data.  Only do this for closure tests.\n";
-      fIsMC = false;
-    }
-
     fPlaylist = app::GetPlaylist(fTupleFileNames.front(), fIsMC);
     #ifndef NDEBUG
       //std::cout << "Am I processing MC?  " << std::boolalpha << fIsMC << "\n";
@@ -162,7 +153,6 @@ namespace app
     //doing anything if I fail.
     outFileName.erase(outFileName.find("."));
     outFileName.erase(0, outFileName.rfind("/") + 1);
-    if(isFakeData) outFileName += "Fake";
     outFileName += std::string((fIsMC?"MC":"Data")) + ".root";
 
     try
