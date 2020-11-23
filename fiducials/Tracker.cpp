@@ -18,8 +18,10 @@ namespace fid
   class Tracker: public Fiducial
   {
     public:
-      Tracker(const YAML::Node& config): Fiducial(config), fZMin(config["zRange"]["reco"]["min"].as<mm>()),
-                                                           fZMax(config["zRange"]["reco"]["max"].as<mm>()),
+      Tracker(const YAML::Node& config): Fiducial(config), fRecoZMin(config["zRange"]["reco"]["min"].as<mm>()),
+                                                           fRecoZMax(config["zRange"]["reco"]["max"].as<mm>()),
+                                                           fTruthZMin(config["zRange"]["truth"]["min"].as<mm>()),
+                                                           fTruthZMax(config["zRange"]["truth"]["max"].as<mm>()),
                                                            fApothem(config["apothem"]["apothem"].as<mm>())
       {
         recoCuts.push_back(new reco::Apothem(config["apothem"], "Apothem"));
@@ -32,12 +34,14 @@ namespace fid
       virtual double NNucleons(const bool isMC) const override
       {
         PlotUtils::TargetUtils targetInfo;
-        return targetInfo.GetTrackerNNucleons(fZMin.in<mm>(), fZMax.in<mm>(), isMC, fApothem.in<mm>());
+        return targetInfo.GetTrackerNNucleons((isMC?fTruthZMin:fRecoZMin).in<mm>(), (isMC?fTruthZMax:fRecoZMax).in<mm>(), isMC, fApothem.in<mm>());
       }
 
     private:
-      mm fZMin;
-      mm fZMax;
+      mm fRecoZMin;
+      mm fRecoZMax;
+      mm fTruthZMin;
+      mm fTruthZMax;
       mm fApothem;
   };
 }
