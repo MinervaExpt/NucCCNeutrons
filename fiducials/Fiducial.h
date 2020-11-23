@@ -36,7 +36,7 @@ namespace fid
                
       virtual ~Fiducial() = default;
 
-      virtual double NNucleons() const = 0;
+      virtual double NNucleons(const bool isMC) const = 0;
 
       std::string name;
       std::vector<PlotUtils::Cut<evt::CVUniverse>*> recoCuts;

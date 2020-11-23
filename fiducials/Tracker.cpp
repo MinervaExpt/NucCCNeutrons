@@ -18,15 +18,10 @@ namespace fid
   class Tracker: public Fiducial
   {
     public:
-      Tracker(const YAML::Node& config): Fiducial(config)
+      Tracker(const YAML::Node& config): Fiducial(config), fZMin(config["zRange"]["reco"]["min"].as<mm>()),
+                                                           fZMax(config["zRange"]["reco"]["max"].as<mm>()),
+                                                           fApothem(config["apothem"]["apothem"].as<mm>())
       {
-        const mm zMin = config["zRange"]["reco"]["min"].as<mm>(),
-                 zMax = config["zRange"]["reco"]["max"].as<mm>(),
-                 apothem = config["apothem"]["apothem"].as<mm>();
-
-        PlotUtils::TargetUtils targetInfo;
-        fNNucleons = targetInfo.GetTrackerNNucleons(zMin.in<mm>(), zMax.in<mm>(), false, apothem.in<mm>());
-
         recoCuts.push_back(new reco::Apothem(config["apothem"], "Apothem"));
         recoCuts.push_back(new reco::IsInTarget(config["zRange"], "Tracker"));
 
@@ -34,13 +29,16 @@ namespace fid
         phaseSpace.push_back(new truth::IsInTarget(config["zRange"], "Tracker"));
       }
 
-      virtual double NNucleons() const override
+      virtual double NNucleons(const bool isMC) const override
       {
-        return fNNucleons;
+        PlotUtils::TargetUtils targetInfo;
+        return targetInfo.GetTrackerNNucleons(fZMin.in<mm>(), fZMax.in<mm>(), isMC, fApothem.in<mm>());
       }
 
     private:
-      double fNNucleons;
+      mm fZMin;
+      mm fZMax;
+      mm fApothem;
   };
 }
 

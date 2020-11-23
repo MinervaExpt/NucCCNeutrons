@@ -23,13 +23,8 @@ namespace fid
     static constexpr int targetZ = 6;
 
     public:
-      Target3Carbon(const YAML::Node& config): Fiducial(config)
+      Target3Carbon(const YAML::Node& config): Fiducial(config), fApothem(config["apothem"]["apothem"].as<mm>())
       {
-        const mm apothem = config["apothem"]["apothem"].as<mm>();
-
-        PlotUtils::TargetUtils targetInfo;
-        fNNucleons = targetInfo.GetPassiveTargetNNucleons(3, targetZ, false, apothem.in<mm>());
-
         recoCuts.push_back(new reco::Apothem(config["apothem"], "Apothem"));
         recoCuts.push_back(new reco::IsInTarget(config["zRange"], "Target3"));
         recoCuts.push_back(new reco::ThreeSectionTarget<targetZ>(config["zRange"], "Carbon"));
@@ -39,13 +34,14 @@ namespace fid
         phaseSpace.push_back(new truth::ThreeSectionTarget<targetZ>(config["zRange"], "Carbon"));
       }
 
-      virtual double NNucleons() const override
+      virtual double NNucleons(const bool isMC) const override
       {
-        return fNNucleons;
+        PlotUtils::TargetUtils targetInfo;
+        return targetInfo.GetPassiveTargetNNucleons(3, targetZ, isMC, fApothem.in<mm>());
       }
 
     private:
-      double fNNucleons;
+      mm fApothem;
   };
 }
 
