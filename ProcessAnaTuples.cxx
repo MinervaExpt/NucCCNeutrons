@@ -350,7 +350,7 @@ int main(const int argc, const char** argv)
             PlotUtils::detail::empty CVShared;
             const auto CVPassedReco = fid->selection->isMCSelected(*cv, CVShared, cvWeight);
             const auto CVStudy = findSelectedOrSideband(CVPassedReco, *fid, *cv);
-            if(CVStudy) CVStudy->data(*cv, cvWeight); //TODO: data() callback now takes weight
+            if(CVStudy) CVStudy->data(*cv, cvWeight);
 
             for(const auto& compat: groupedUnivs)
             {
@@ -430,8 +430,7 @@ int main(const int argc, const char** argv)
           } //For each entry in Truth tree
         } //If wantsTruthLoop
       } //If isThisJobMC
-      else //TODO: Also run the Data loop for MC files?  I'd rather mix its code into the MC loop than loop each file twice.
-           //      Or, I could build in a way to force isMC to be false.  That seems easier now that I'm looking at the code.
+      else
       {
         //Data loop
         cv->SetTree(&anaTuple);
