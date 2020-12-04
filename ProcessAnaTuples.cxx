@@ -348,7 +348,8 @@ int main(const int argc, const char** argv)
             //Fill "fake data" by treating MC exactly like data but using a weight.
             //This is useful for closure tests and warping studies.
             PlotUtils::detail::empty CVShared;
-            const auto CVPassedReco = fid->selection->isMCSelected(*cv, CVShared, cvWeight);
+            //const auto CVPassedReco = fid->selection->isMCSelected(*cv, CVShared, cvWeight);
+            const auto CVPassedReco = fid->selection->isMCSelectedCV(*cv, CVShared, cvWeight);
             const auto CVStudy = findSelectedOrSideband(CVPassedReco, *fid, *cv);
             if(CVStudy) CVStudy->data(*cv, cvWeight);
 
@@ -360,7 +361,7 @@ int main(const int argc, const char** argv)
 
               //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
               //for sidebands defined by multiple cuts.
-              const auto passedReco = fid->selection->isDataSelected(*compat.front(), shared);
+              const auto passedReco = fid->selection->isSelectedWithNoStats(compat, shared); //fid->selection->isDataSelected(*compat.front(), shared);
 
               //All compatible universes are in the same selected/sideband region because they pass the same Cuts
               auto whichStudy = findSelectedOrSideband(passedReco, *fid, *compat.front()); 
