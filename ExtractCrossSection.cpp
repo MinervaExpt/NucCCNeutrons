@@ -219,7 +219,7 @@ int main(const int argc, const char** argv)
                                               });
       if(fiducialFound == mcFile->GetListOfKeys()->end()) throw std::runtime_error("Failed to find a number of nucleons that matches prefix " + prefix);
 
-      auto nNucleons = GetIngredient<TParameter<double>>(*mcFile, (*fiducialFound)->GetName());
+      auto nNucleons = GetIngredient<TParameter<double>>(*dataFile, (*fiducialFound)->GetName());
 
       //Look for backgrounds with <prefix>_<analysis>_Background_<name>
       std::vector<PlotUtils::MnvH1D*> backgrounds;
