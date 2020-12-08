@@ -1,0 +1,19 @@
+#!/usr/bin/env ProcessAnaTuples
+#Models commonly used in MINERvA results
+
+MnvGENIEv1: &MnvGENIEv1
+  Flux: !FluxAndCV
+  GENIE: !GENIE
+    UseNonResonantPion: true
+  MINOSEfficiency: !MINOSEfficiency
+  RPASuppression: !RPA
+  Valencia2p2h: !2p2h
+
+ForgotToReweight: &ForgotToReweight
+
+#TODO: Is there a better name for this?
+DefaultGENIE: &DefaultGENIE
+  Flux: !FluxAndCV
+  GENIE: !GENIE
+    UseNonResonantPion: false
+  MINOSEfficiency: !MINOSEfficiency

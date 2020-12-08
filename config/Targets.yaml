@@ -1,0 +1,110 @@
+#File: Targets.yaml
+#Brief: Z ranges of MINERvA's nuclear targets in truth and reconstruction.
+#       Reco cuts taken from Jeffrey's analysis in the Fall of 2019.
+#       See here for Jeffrey's reco cuts: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/AnalysisFramework/Ana/NukeCCQE/scripts/code_templates/target_cuts.cpp
+#       Truth cuts taken from Jeffrey's analysis in January 2020.
+#       See here for Jeffrey's truth cuts: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/AnalysisFramework/Ana/NukeCCQE/scripts/code_templates/true_target_cuts.cpp
+#       
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+OneTrack:
+  "Target 1": &OneTrackTarget1 !IsInTarget 
+    truth:
+      min: !mm 4465
+      max: !mm 4500
+    reco:
+      min: !mm 4500
+      max: !mm 4520
+  "Target 2": &OneTrackTarget2 !IsInTarget
+    truth:
+      min: !mm 4680
+      max: !mm 4720
+    reco:
+      min: !mm 4720
+      max: !mm 4740
+  "Target 3": &OneTrackTarget3 !IsInTarget
+    truth:
+      min: !mm 4900
+      max: !mm 4990 #TODO: Jeffrey has a smaller range for the other materials!  He uses 4950 when target Z is not 6.  Does this doom me to per-section z cuts?  I guess anything in the lead section (for example) between 4950 and 4990 is in air.  Decided to just check target Z for target 3 iron and lead.
+    reco:
+      min: !mm 4980
+      max: !mm 5010
+  "Water Target": &OneTrackWaterTarget !IsInTarget
+    truth:
+      min: !mm 5170
+      max: !mm 5440
+    reco:
+      min: !mm 5450
+      max: !mm 5460
+  "Target 4": &OneTrackTarget4 !IsInTarget
+    truth:
+      min: !mm 5635
+      max: !mm 5650
+    reco:
+      min: !mm 5660
+      max: !mm 5690
+  "Target 5": &OneTrackTarget5 !IsInTarget
+    truth:
+      min: !mm 5765
+      max: !mm 5790
+    reco:
+      min: !mm 5800
+      max: !mm 5820
+  "Tracker": &OneTrackTracker !IsInTarget
+    truth:
+      min: !mm 5890
+      max: !mm 8467
+    reco:
+      min: !mm 6000
+      max: !mm 8500
+
+MultiTrack:
+  "Target 1": &MultiTrackTarget1 !IsInTarget
+    truth:
+      min: !mm 4465
+      max: !mm 4500
+    reco:
+      min: !mm 4500
+      max: !mm 4530
+  "Target 2": &MultiTrackTarget2 !IsInTarget
+    truth:
+      min: !mm 4680
+      max: !mm 4720
+    reco:
+      min: !mm 4685
+      max: !mm 4730
+  "Target 3": &MultiTrackTarget3 !IsInTarget
+    truth:
+      min: !mm 4900
+      max: !mm 4990
+    reco:
+      min: !mm 4910
+      max: !mm 4980
+  "Water Target": &MultiTrackWaterTarget !IsInTarget
+    truth:
+      min: !mm 5170
+      max: !mm 5440
+    reco:
+      min: !mm 5200
+      max: !mm 5420
+  "Target 4": &MultiTrackTarget4 !IsInTarget
+    truth:
+      min: !mm 5635
+      max: !mm 5650
+    reco:
+      min: !mm 5635
+      max: !mm 5660
+  "Target 5": &MultiTrackTarget5 !IsInTarget
+    truth:
+      min: !mm 5765
+      max: !mm 5790
+    reco:
+      min: !mm 5760
+      max: !mm 5795
+  "Tracker": &MultiTrackTracker !IsInTracker
+    truth:
+      min: !mm 5890
+      max: !mm 8467
+    reco:
+      min: !mm 6000
+      max: !mm 8500

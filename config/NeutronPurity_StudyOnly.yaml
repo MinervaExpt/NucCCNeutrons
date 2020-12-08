@@ -1,0 +1,15 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: NeutronPurity_StudyOnly.yaml
+#Brief: Study new cuts that could help me select a more pure sample of neutrons.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+signal: !NeutronPurity
+  name: "Neutron Purity"
+  variable: &Variable
+    truth:
+      MinKE: !MeV 10 #Not many detectable candidates below this threshold
+    reco:
+      MinEDep: !MeV 1.5 #Just above cross-talk
+      MaxZDist: !mm 1500 #roughly tuned for tracker
+  binning:
+    edep: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 220, 240, 260, 280, 300, 350, 400, 500]
+    nClusters: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30]

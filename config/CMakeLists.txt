@@ -1,0 +1,3 @@
+install(FILES InclusivePzPT.yaml InclusivePzPTWithCCQENu.yaml NSFValidation.yaml EAvailableResolution_StudyOnly.yaml NeutronDetection_StudyOnly.yaml NeutronMultiplicity_StudyOnly.yaml q3Resolution.yaml q3Resolution_StudyOnly.yaml NeutronPurity_StudyOnly.yaml DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+install(FILES Targets.yaml CommonModels.yaml AllNSFSystematics.yaml CVOnly.yaml NucCCNeutronsAntineutrinoStandard.yaml LowRecoilNeutronsAntineutrino.yaml InclsiveAntineutrino.yaml DESTINATION bin)

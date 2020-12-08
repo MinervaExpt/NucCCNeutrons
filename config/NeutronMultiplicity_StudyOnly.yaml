@@ -1,0 +1,14 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: NeutronMultiplicity_StudyOnly.yaml
+#Brief: Cross section extraction plots in number of FS neutrons.  Needs to be used with an event selection.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+signal: !NeutronMultiplicitySignal
+  name: "Neutron Multiplicity"
+  variable: &Variable
+    truth:
+      MinKE: !MeV 10 #Not many detectable candidates below this threshold
+    reco:
+      MinEDep: !MeV 1.5 #Just above cross-talk
+      MaxZDist: !mm 1500 #roughly tuned for tracker
+  binning: &bins [ 0, 1, 2, 4, 10] #TODO: Accept any number of neutrons in last bin and label as > 4 

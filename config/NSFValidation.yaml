@@ -1,0 +1,39 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: NSFValidation.yaml
+#Brief: Compare to Rob's NSF validation suite in PlotUtils.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+model: *MnvGENIEv1
+
+app:
+  AnaTupleName: &TupleName "CCQENu"
+  HypothesisName: *TupleName
+  useNuEConstraint: true
+  nFluxUniverses: 100 #To match Rob
+
+signal: !NSFValidation
+  name: "h_inclusive" #Match Rob's histogram naming convention
+
+cuts:
+  truth:
+    phaseSpace: #I'm processing CCQENu AnaTuples, so a fiducial phse space cut is implied
+    signal:
+      Neutrino: !IsNeutrino
+      CC: !IsCC
+  reco:
+    TrackAngle: !TrackAngle
+      max: !degrees 19.996227
+    Neutrino: !IsNeutrino
+    DeadTime: !DeadDiscriminators
+      max: 1
+    HasMuon: !HasInteractionVertex
+
+#Names in sidebands' "fails" blocks refer to truth cuts by block name.
+#Backgrounds are well-constrained in the original (LE) inclusive 2D
+#analysis.
+sidebands:
+
+#Backgrounds are defined by the truth::Cuts they pass in addition to
+#failing some regular truth cut.  So, these cuts had better be mutually
+#exclusive with regular truth::Cuts.
+backgrounds:

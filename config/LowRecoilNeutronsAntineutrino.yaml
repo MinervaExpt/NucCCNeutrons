@@ -1,0 +1,67 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: LowRecoilNeutronsAntineutrino.yaml
+#Brief: Analysis cuts to emulate the low recoil neutron analysis from the Low Energy era.
+#       You still have to plug in a "signal" block and a systematics block from another YAML file
+#       on the command line.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+#MnvGENIEv1
+model:
+  Flux: !FluxAndCV
+  GENIE: !GENIE
+    UseNonResonantPion: true
+  MINOSEfficiency: !MINOSEfficiency
+  RPASuppression: !RPA
+  Valencia2p2h: !2p2h
+
+#nu-e constraint doesn't work in antineutrino data yet as of 6/4/2020.
+#100 flux universes matches the NSF validation suite.
+app:
+  useNuEConstraint: false
+  nFluxUniverses: 100
+
+#Basically, Amy/Dan's inclusive Cuts (adapted for my AnaTool) + available energy.
+cuts:
+  truth:
+    phaseSpace:
+      LowQ3: &q3Cut !Q3Range
+        min: !GeV -1e-3
+        max: !GeV 0.4
+        caloTune: "NukeCC_AntiNu_Tracker"
+      Apothem: !Apothem
+        apothem: !mm 850
+      Tracker: *OneTrackTracker
+      MuonMomentum: !MuonMomentum
+        min: !GeV 2
+      TrackAngle: !TrackAngle
+        max: !degrees 20
+    signal:
+      Antineutrino: !IsAntineutrino
+      CC: !IsCC
+  reco:
+    LowQ3: *q3Cut
+    Apothem: !Apothem
+      apothem: !mm 850
+    Tracker: *OneTrackTracker
+    MinosDeltaT: !MinosDeltaT
+      min: !ns -40
+      max: !ns 110
+    TrackAngle: !TrackAngle
+      max: !degrees 20
+    MuonMomentum: !MuonMomentum
+      min: !GeV 2
+    Antineutrino: !IsAntineutrino
+    DeadTime: !DeadDiscriminators
+      max: 1
+
+#Names in sidebands' "fails" blocks refer to truth cuts by block name.
+#None yet!
+sidebands:
+
+#TODO: I'll want these some day
+backgrounds:
+#  NeutralCurrent:
+#    NC: !IsNC
+#  WrongSignMuon:
+#    Antineutrino: !IsAntineutrino
+
