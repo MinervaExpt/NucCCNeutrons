@@ -29,19 +29,19 @@ namespace ana
   {
     public:
       NeutronPurity(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
-                       std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::CVUniverse*>>& universes);
+                       std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::Universe*>>& universes);
       virtual ~NeutronPurity() = default;
 
       //Do this study only for MC signal events.
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override;
+      virtual void mcSignal(const evt::Universe& event, const events weight) override;
 
       //Normalize and syncCVHistos()
       virtual void afterAllFiles(const events passedSelection) override;
 
       //Do nothing for backgrounds, the Truth tree, and data
-      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
-      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
-      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
+      virtual void mcBackground(const evt::Universe& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
+      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override {};
+      virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override {};
 
       //No Truth loop needed
       virtual bool wantsTruthLoop() const override { return false; }
@@ -86,15 +86,15 @@ namespace ana
       static mm distToVertex(const MCCandidate& cand, const units::LorentzVector<mm>& vertex);
 
       template <class XUNIT, class YUNIT, class WUNIT>
-      using HIST2D = units::WithUnits<PlotUtils::Hist2DWrapper<evt::CVUniverse>, XUNIT, YUNIT, WUNIT>;
+      using HIST2D = units::WithUnits<PlotUtils::Hist2DWrapper<evt::Universe>, XUNIT, YUNIT, WUNIT>;
       //template <class XUNIT, class WUNIT>
-      //using HIST = PlotUtils::HistWrapper<evt::CVUniverse>; //units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, XUNIT, WUNIT>;
-      using LOGHIST2D = PlotUtils::Hist2DWrapper<evt::CVUniverse>;
+      //using HIST = PlotUtils::HistWrapper<evt::Universe>; //units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, XUNIT, WUNIT>;
+      using LOGHIST2D = PlotUtils::Hist2DWrapper<evt::Universe>;
 
       util::Categorized<HIST2D<Clusters, MeV, neutrons>, int> fPDGToEDepVersusNClusters; //Can I isolate candidates from pi0s by cutting in the energy deposited-number of Clusters plane?
       util::Categorized<HIST2D<Digits, MeV, neutrons>, int> fPDGToEDepVersusNDigits;
 
-      util::Categorized<units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, MeV, neutrons>, int> fPDGToHighestDigitE;
+      util::Categorized<units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, MeV, neutrons>, int> fPDGToHighestDigitE;
 
       util::Categorized<HIST2D<Digits, MeV, neutrons>, int> fPDGToHighestEVersusNDigits;
 

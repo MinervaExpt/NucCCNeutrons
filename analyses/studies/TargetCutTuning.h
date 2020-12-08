@@ -20,30 +20,30 @@ namespace ana
   {
     public:
       TargetCutTuning(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
-                       std::vector<background_t>& /*backgrounds*/, std::map<std::string, std::vector<evt::CVUniverse*>>& universes);
+                       std::vector<background_t>& /*backgrounds*/, std::map<std::string, std::vector<evt::Universe*>>& universes);
       virtual ~TargetCutTuning() = default;
 
       //Do this study only for MC signal events.
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override;
+      virtual void mcSignal(const evt::Universe& event, const events weight) override;
 
       //syncCVHistos()
       virtual void afterAllFiles(const events passedSelection) override;
 
-      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override;
+      virtual void mcBackground(const evt::Universe& /*event*/, const background_t& /*background*/, const events /*weight*/) override;
 
       //Do nothing for Truth tree and data
-      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
-      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
+      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override {};
+      virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override {};
 
       //No Truth loop needed
       virtual bool wantsTruthLoop() const override { return false; }
 
     private:
-      util::Categorized<units::WithUnits<HistWrapper<evt::CVUniverse>, mm, events>, background_t> fZPositionsByTarget; //Event z positions by truth target
+      util::Categorized<units::WithUnits<HistWrapper<evt::Universe>, mm, events>, background_t> fZPositionsByTarget; //Event z positions by truth target
 
-      units::WithUnits<HistWrapper<evt::CVUniverse>, mm, events>* fSelectedSignalZPositions;
+      units::WithUnits<HistWrapper<evt::Universe>, mm, events>* fSelectedSignalZPositions;
 
-      //units::WithUnits<HistWrapper<evt::CVUniverse>, mm, events>* fSelectedZPositions; //Event z positions in data.  Compare to stack of fZPositionsByTarget.
+      //units::WithUnits<HistWrapper<evt::Universe>, mm, events>* fSelectedZPositions; //Event z positions in data.  Compare to stack of fZPositionsByTarget.
   };
 }
 

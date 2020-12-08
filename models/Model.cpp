@@ -6,7 +6,7 @@
 #include "models/Model.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 namespace model
 {

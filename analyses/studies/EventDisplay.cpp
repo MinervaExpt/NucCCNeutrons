@@ -10,7 +10,7 @@
 #include "util/WithUnits.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 #include "evt/arachne.h"
 #include "evt/EventID.h"
 
@@ -28,26 +28,26 @@ namespace ana
       //TODO: A feature to use the Rodriges instance of Arachne might be cool
       EventDisplay(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
                      const std::vector<background_t>& backgrounds,
-                     std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes)
+                     std::map<std::string, std::vector<evt::Universe*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes)
       {
       }
 
-      virtual void mcSignal(const evt::CVUniverse& event, const events /*weight*/) override
+      virtual void mcSignal(const evt::Universe& event, const events /*weight*/) override
       {
         std::clog << util::arachne(event.GetEventID(false), false) << "\n";
       }
 
       //TODO: A feature to show just background events of a specific type might be cool.
       //mcBackground failed the truth signal selection.
-      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {}
+      virtual void mcBackground(const evt::Universe& /*event*/, const background_t& /*background*/, const events /*weight*/) override {}
                                                                                                                         
       //TODO: If truth-only studies ever work, I need to do some printing here
       //Truth tree with truth information.  Passes truth signal definition and phase space.
-      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}
+      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override {}
                                                                                                                         
       //Data AnaTuple with only reco information.  These events passed all reco Cuts. 
       //Truth branches may be in an undefined state here, so be very careful not to use them.
-      virtual void data(const evt::CVUniverse& event, const events /*weight*/) override
+      virtual void data(const evt::Universe& event, const events /*weight*/) override
       {
         std::clog << util::arachne(event.GetEventID(true), true) << "\n";
       }

@@ -1,6 +1,6 @@
 //File: TwoSectionTarget.h
 //Brief: Some of MINERvA's nuclear targets are split into 2 sections of different
-//       materials.  A TwoSectionTarget Cut removes CVUniverses that are not in
+//       materials.  A TwoSectionTarget Cut removes Universes that are not in
 //       a specific section of a given target.  Since I don't need to change
 //       MINERvA's geometry, this is just an implementation detail that I use
 //       to define specific target sections.
@@ -18,7 +18,7 @@
 
 namespace evt
 {
-  class CVUniverse;
+  class Universe;
 }
 
 namespace reco
@@ -56,7 +56,7 @@ namespace reco
       virtual ~TwoSectionTarget() = default;
 
     protected:
-      virtual bool checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const override
+      virtual bool checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override
       {
         const mm distToCenter = (fRotation * event.GetVtx().p().in<mm>()).y();
         return detail::impl<isTop>::check(distToCenter - mmToDivide);

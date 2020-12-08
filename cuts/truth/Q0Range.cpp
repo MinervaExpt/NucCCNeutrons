@@ -14,7 +14,7 @@ namespace truth
   {
   }
 
-  bool Q0Range::passesCut(const evt::CVUniverse& event) const
+  bool Q0Range::passesCut(const evt::Universe& event) const
   {
     return event.GetTruthQ0() > fMin && event.GetTruthQ0() < fMax;
   }

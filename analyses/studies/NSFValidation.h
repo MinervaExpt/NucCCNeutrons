@@ -19,29 +19,29 @@ namespace ana
   {
     public:
       NSFValidation(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
-                       std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::CVUniverse*>>& universes);
+                       std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::Universe*>>& universes);
       virtual ~NSFValidation() = default;
 
       //Do this study only for MC signal events.
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override;
+      virtual void mcSignal(const evt::Universe& event, const events weight) override;
 
       //Normalize fPDGToObservables and syncCVHistos()
       virtual void afterAllFiles(const events /*passedSelection*/) override;
 
       //Do nothing for backgrounds, the Truth tree, and data
-      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
-      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
-      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}; //TODO: Do I want to plot candidate observables in data?
+      virtual void mcBackground(const evt::Universe& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
+      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override {};
+      virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override {}; //TODO: Do I want to plot candidate observables in data?
 
       //I don't need the Truth loop
       virtual bool wantsTruthLoop() const override { return false; }
 
     private:
       template <class UNIT>
-      using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;
+      using HIST = units::WithUnits<HistWrapper<evt::Universe>, UNIT, events>;
 
       template <class UNIT>
-      using HIST2D = units::WithUnits<Hist2DWrapper<evt::CVUniverse>, UNIT, events, entries>;
+      using HIST2D = units::WithUnits<Hist2DWrapper<evt::Universe>, UNIT, events, entries>;
 
       HIST<GeV>* fEMu; //Muon energy
       HIST<GeV>* fPTMu; //Muon transverse momentum

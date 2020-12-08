@@ -12,7 +12,7 @@
 
 namespace reco
 {
-  template <class UNIT, UNIT(evt::CVUniverse::*reco)() const>
+  template <class UNIT, UNIT(evt::Universe::*reco)() const>
   class UpperLimit: public Cut
   {
     public:
@@ -27,15 +27,15 @@ namespace reco
       class Plotter: public Cut::Plotter
       {
         private:
-          using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;
+          using HIST = units::WithUnits<HistWrapper<evt::Universe>, UNIT, events>;
 
         public:
-          Plotter(VARIABLE& var, const YAML::Node& binning, util::Directory& dir, std::map<std::string, std::vector<evt::CVUniverse*>>& universes): fVar(var)
+          Plotter(VARIABLE& var, const YAML::Node& binning, util::Directory& dir, std::map<std::string, std::vector<evt::Universe*>>& universes): fVar(var)
           {
             fCutValues = dir.make<HIST>(util::safeROOTName(fVar.name()), fVar.name() + ";Reco " + fVar.name() + ";", binning.as<std::vector<double>>());
           }
 
-          virtual void Fill(const evt::CVUniverse& event, const events weight) override
+          virtual void Fill(const evt::Universe& event, const events weight) override
           {
             fCutValues->Fill(&event, fVar.reco(event));
           }
@@ -51,13 +51,13 @@ namespace reco
           HIST* fCutValues; //Value this Cut would have selected on
       };
 
-      virtual std::unique_ptr<Cut::Plotter> getPlotter(util::Directory& dir, const YAML::Node& binning, std::map<std::string, std::vector<evt::CVUniverse*>>& universes) override
+      virtual std::unique_ptr<Cut::Plotter> getPlotter(util::Directory& dir, const YAML::Node& binning, std::map<std::string, std::vector<evt::Universe*>>& universes) override
       {
         return new Plotter(fVar, binning, dir, universes);
       }*/
 
     protected:
-      virtual bool checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const override
+      virtual bool checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override
       {
         return (event.*reco)() <= fMax;
       }

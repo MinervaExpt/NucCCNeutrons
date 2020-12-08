@@ -18,7 +18,7 @@ using namespace units;
 namespace ana
 {
   PerCandidateTree::PerCandidateTree(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
-                                     std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
+                                     std::map<std::string, std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                                                    fCuts(config["variable"])
   {
     fMCTree = dir.make<TTree>("MCPerCandidateTree", "One entry for each truth-matched neutron candidate");
@@ -40,7 +40,7 @@ namespace ana
     fMCTree->Branch("EventWeight", &fEventWeight);
   }
 
-  void PerCandidateTree::mcSignal(const evt::CVUniverse& event, const events weight)
+  void PerCandidateTree::mcSignal(const evt::Universe& event, const events weight)
   {
     fEventWeight = weight.in<events>();
 

@@ -16,7 +16,7 @@ namespace truth
   {
   }
 
-  bool Apothem::passesCut(const evt::CVUniverse& event) const
+  bool Apothem::passesCut(const evt::Universe& event) const
   {
     const auto vertex = event.GetTruthVtx();
     return (fabs(vertex.y()) < mm(fSlope*fabs(vertex.x().in<mm>()) + 2.*fApothem.in<mm>()/sqrt(3.)))

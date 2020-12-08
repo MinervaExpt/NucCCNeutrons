@@ -35,6 +35,11 @@ namespace model
   class Model;
 }
 
+namespace evt
+{
+  class WeightCache;
+}
+
 namespace app
 {
   class CmdLine;
@@ -43,32 +48,32 @@ namespace app
   //and a list of systematic universes to process.
   std::unique_ptr<ana::Study> setupSignal(const YAML::Node& config, util::Directory& histDir,
                                           std::vector<std::unique_ptr<ana::Background>>& backgrounds,
-                                          std::map<std::string, std::vector<evt::CVUniverse*>>& universes);
+                                          std::map<std::string, std::vector<evt::Universe*>>& universes);
 
   //Set up a map from Cut hash to Study for physics in sidebands.  Moves cuts from recoCuts to
   //sidebandCuts that are related to how one or more sidebands are defined.  See hashCuts() in
   //SetupPlugins.cpp for an explanation of how the std::bitset<> key to this map works.
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> setupSidebands(const YAML::Node& sidebands, util::Directory& histDir,
                                                                                                std::vector<std::unique_ptr<ana::Background>>& backgrounds,
-                                                                                               std::map<std::string, std::vector<evt::CVUniverse*>>& universes,
-                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& recoCuts,
-                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& sidebandCuts);
+                                                                                               std::map<std::string, std::vector<evt::Universe*>>& universes,
+                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>>& recoCuts,
+                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>>& sidebandCuts);
   //Set up Background categories.  Signal and sideband Studies will categorize histograms
   //by these Backgrounds' names.
   std::vector<std::unique_ptr<ana::Background>> setupBackgrounds(const YAML::Node& config);
 
   //Set up reco::Cuts that define an event selection.
-  std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>> setupRecoCuts(const YAML::Node& config);
+  std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>> setupRecoCuts(const YAML::Node& config);
 
   //Set up truth::Cuts that make up a signal definition
-  std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::CVUniverse>>> setupTruthConstraints(const YAML::Node& config);
+  std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::Universe>>> setupTruthConstraints(const YAML::Node& config);
 
   //Load the set of systematics I'm going to process this event with.
-  std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC);
+  std::map<std::string, std::vector<evt::Universe*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC, evt::WeightCache& weights);
 
   //Group together systematic universes that always pass the same set of Cuts.  For now, that
   //just means IsVerticalOnly() universes grouped with the CV.
-  std::vector<std::vector<evt::CVUniverse*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::CVUniverse*>> bands);
+  std::vector<std::vector<evt::Universe*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::Universe*>> bands);
 
   //Set up models to modify the weight of each CV event.
   std::vector<std::unique_ptr<model::Model>> setupModels(const YAML::Node& config);

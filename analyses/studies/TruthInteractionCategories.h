@@ -41,7 +41,7 @@ namespace ana
 
       const std::string& name() const { return fName; }
 
-      bool operator ()(const evt::CVUniverse& univ) const
+      bool operator ()(const evt::Universe& univ) const
       {
         for(const int pdg: univ.GetFSPDGCodes())
         {

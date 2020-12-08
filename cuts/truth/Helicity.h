@@ -14,7 +14,7 @@
 //TODO: Do I need any includes for YAML::Node?
 namespace evt
 {
-  class CVUniverse;
+  class Universe;
 }
 
 namespace truth
@@ -28,7 +28,7 @@ namespace truth
 
     protected:
       //Your concrete Cut class must override these methods.
-      virtual bool passesCut(const evt::CVUniverse& event) const override
+      virtual bool passesCut(const evt::Universe& event) const override
       {
         return event.GetTruthNuPDG() == neutrinoPDG;
       }

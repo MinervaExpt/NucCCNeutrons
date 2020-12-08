@@ -16,7 +16,7 @@ namespace truth
   class UpperLimit: public Cut
   {
     private:
-      using UNIT = decltype(std::declval<VARIABLE>().truth(std::declval<evt::CVUniverse>()));
+      using UNIT = decltype(std::declval<VARIABLE>().truth(std::declval<evt::Universe>()));
 
     public:
       UpperLimit(const YAML::Node& config, const std::string& name): Cut(config, name), fMax(config["max"].as<UNIT>()), fVar(config["variable"])
@@ -26,7 +26,7 @@ namespace truth
       virtual ~UpperLimit() = default;
 
     protected:
-      virtual bool passesCut(const evt::CVUniverse& event) const override
+      virtual bool passesCut(const evt::Universe& event) const override
       {
         return fVar.truth(event) <= fMax;
       }

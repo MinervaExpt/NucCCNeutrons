@@ -1,6 +1,6 @@
 //File: ThreeSectionTarget.h
 //Brief: One of MINERvA's nuclear targets is split into 3 sections of different
-//       materials.  A ThreeSectionTarget Cut removes CVUniverses that are not in
+//       materials.  A ThreeSectionTarget Cut removes Universes that are not in
 //       a specific section of a given target.  Since I don't need to change
 //       MINERvA's geometry, this is just an implementation detail that I use
 //       to define specific target sections.
@@ -18,7 +18,7 @@
 
 namespace evt
 {
-  class CVUniverse;
+  class Universe;
 }
 
 namespace reco
@@ -74,7 +74,7 @@ namespace reco
       virtual ~ThreeSectionTarget() = default;
 
     protected:
-      virtual bool checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const override
+      virtual bool checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override
       {
         return detail::impl<MaterialZ>::check(event.GetVtx(), fRotation, mmToDivide);
       }

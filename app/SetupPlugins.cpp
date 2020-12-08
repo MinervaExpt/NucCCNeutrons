@@ -15,15 +15,15 @@
 //models includes
 #include "models/Model.h"
 
-//evt includes
-#include "evt/CVUniverse.h"
-
 //util includes
 #include "util/Directory.h"
 #include "util/Factory.cpp"
 
 //app includes
 #include "app/CmdLine.h"
+
+//evt includes
+#include "evt/WeightCachedUniverse.h"
 
 //PlotUtils includes
 #include "PlotUtils/ChainWrapper.h"
@@ -34,7 +34,7 @@
 #include "PlotUtils/MinosEfficiencySystematics.h"
 #include "PlotUtils/MuonResolutionSystematics.h"
 #include "PlotUtils/MuonSystematics.h"
-#include "PlotUtils/ResponseSystematics.h"
+//#include "PlotUtils/ResponseSystematics.h"
 
 //c++ includes
 #include <algorithm>
@@ -45,7 +45,7 @@ namespace
   //Since I'm dealing with a map<string, vector<>>, just merge with the existing vector<> if the string already exists.
   //To better match what Ben's example for the MasterAnaMacro does, I'm going to map universes to their ShortName()s.
   //This means that the standard that the user sees is the same as the error band names that appear in an output MnvH1D.
-  std::map<std::string, std::vector<evt::CVUniverse*>>& merge(const std::map<std::string, std::vector<evt::CVUniverse*>>& from, std::map<std::string, std::vector<evt::CVUniverse*>>& to)
+  std::map<std::string, std::vector<evt::WeightCachedUniverse*>>& merge(const std::map<std::string, std::vector<evt::WeightCachedUniverse*>>& from, std::map<std::string, std::vector<evt::WeightCachedUniverse*>>& to)
   {
     for(const auto& group: from)
     {
@@ -59,7 +59,7 @@ namespace
   //Given the names of cuts for a sideband, all reco cuts, and the cuts already associated with sidebands,
   //create a hash code that describes which cuts an event must fail to be
   //in this sideband and move any needed cuts from allCuts to sidebandCuts.
-  std::bitset<64> hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& allCuts, std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& sidebandCuts)
+  std::bitset<64> hashCuts(const std::vector<std::string>& cutNames, std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>>& allCuts, std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>>& sidebandCuts)
   {
     std::bitset<64> result;
     result.set(); //Sets result to all true
@@ -88,27 +88,27 @@ namespace
   }
 
   //An exhaustive list of all error bands in the NSF
-  std::map<std::string, std::vector<evt::CVUniverse*>> getStandardSystematics(PlotUtils::ChainWrapper* chain)
+  std::map<std::string, std::vector<evt::WeightCachedUniverse*>> getStandardSystematics(PlotUtils::ChainWrapper* chain)
   {
     //TODO: Keep this list up to date
-    auto allErrorBands = PlotUtils::GetAngleSystematicsMap<evt::CVUniverse>(chain); //TODO: What if I want to change beam angle uncertainties?
-    ::merge(PlotUtils::GetFluxSystematicsMap<evt::CVUniverse>(chain, PlotUtils::DefaultCVUniverse::GetNFluxUniverses()), allErrorBands);
-    ::merge(PlotUtils::GetGenieSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetMinosEfficiencySystematicsMap<evt::CVUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::Get2p2hSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetRPASystematicsMap<evt::CVUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetLowQ2PiSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetMuonResolutionSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetMinervaMuonSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetMinosMuonSystematicsMap<evt::CVUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetResponseSystematicsMap<evt::CVUniverse>(chain, true), allErrorBands); //TODO: flag to turn off neutron response?
+    auto allErrorBands = PlotUtils::GetAngleSystematicsMap<evt::WeightCachedUniverse>(chain); //TODO: What if I want to change beam angle uncertainties?
+    ::merge(PlotUtils::GetFluxSystematicsMap<evt::WeightCachedUniverse>(chain, evt::Universe::GetNFluxUniverses()), allErrorBands);
+    ::merge(PlotUtils::GetGenieSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinosEfficiencySystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::Get2p2hSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetRPASystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetLowQ2PiSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMuonResolutionSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinervaMuonSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinosMuonSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    //::merge(PlotUtils::GetResponseSystematicsMap<evt::WeightCachedUniverse>(chain, true), allErrorBands); //TODO: flag to turn off neutron response?
 
     return allErrorBands;
   }
 
   //Pick systematic universes based on a vector<string>.  A curated list of
   //all systematic universes in the NSF.
-  std::map<std::string, std::vector<evt::CVUniverse*>> chooseSystematics(const std::vector<std::string>& bandsToChoose, PlotUtils::ChainWrapper* chain)
+  std::map<std::string, std::vector<evt::WeightCachedUniverse*>> chooseSystematics(const std::vector<std::string>& bandsToChoose, PlotUtils::ChainWrapper* chain)
   {
     //First, make an exhaustive list of standard error bands in the NSF
     //TODO: Keep this list up to date
@@ -138,9 +138,9 @@ namespace app
 {
   std::unique_ptr<ana::Study> setupSignal(const YAML::Node& config, util::Directory& histDir,
                                           std::vector<std::unique_ptr<ana::Background>>& backgrounds,
-                                          std::map<std::string, std::vector<evt::CVUniverse*>>& universes)
+                                          std::map<std::string, std::vector<evt::Universe*>>& universes)
   {
-    auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<ana::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
+    auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<ana::Background>>&, std::map<std::string, std::vector<evt::Universe*>>&>::instance();
     auto signalDir = histDir.mkdir(config["name"].as<std::string>());
     ana::Study::cuts_t noCuts = {};
 
@@ -157,11 +157,11 @@ namespace app
 
   std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> setupSidebands(const YAML::Node& sidebands, util::Directory& histDir,
                                                                                                std::vector<std::unique_ptr<ana::Background>>& backgrounds,
-                                                                                               std::map<std::string, std::vector<evt::CVUniverse*>>& universes,
-                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& recoCuts,
-                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>>& sidebandCuts)
+                                                                                               std::map<std::string, std::vector<evt::Universe*>>& universes,
+                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>>& recoCuts,
+                                                                                               std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>>& sidebandCuts)
   {
-    auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<ana::Background>>&, std::map<std::string, std::vector<evt::CVUniverse*>>&>::instance();
+    auto& studyFactory = plgn::Factory<ana::Study, util::Directory&, ana::Study::cuts_t&&, std::vector<std::unique_ptr<ana::Background>>&, std::map<std::string, std::vector<evt::Universe*>>&>::instance();
     auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
     std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> result;
 
@@ -219,9 +219,9 @@ namespace app
     return backgrounds;
   }
 
-  std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>> setupRecoCuts(const YAML::Node& config)
+  std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>> setupRecoCuts(const YAML::Node& config)
   {
-    std::vector<std::unique_ptr<PlotUtils::Cut<evt::CVUniverse, PlotUtils::detail::empty>>> recoCuts;
+    std::vector<std::unique_ptr<PlotUtils::Cut<evt::Universe, PlotUtils::detail::empty>>> recoCuts;
     auto& cutFactory = plgn::Factory<reco::Cut, std::string&>::instance();
     for(auto cut: config)
     {
@@ -239,9 +239,9 @@ namespace app
     return recoCuts;
   }
 
-  std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::CVUniverse>>> setupTruthConstraints(const YAML::Node& config)
+  std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::Universe>>> setupTruthConstraints(const YAML::Node& config)
   {
-    std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::CVUniverse>>> constraints;
+    std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::Universe>>> constraints;
     auto& constraintFactory = plgn::Factory<truth::Cut, std::string&>::instance();
     for(auto constrain: config)
     {
@@ -259,23 +259,23 @@ namespace app
     return constraints;
   }
 
-  std::map<std::string, std::vector<evt::CVUniverse*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
+  std::map<std::string, std::vector<evt::Universe*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC, evt::WeightCache& weights)
   {
-    std::map<std::string, std::vector<evt::CVUniverse*>> result;
-    result["cv"].push_back(new evt::CVUniverse(chw));
+    std::map<std::string, std::vector<evt::WeightCachedUniverse*>> result;
+    result["cv"].push_back(new evt::WeightCachedUniverse(chw));
 
-    //"global" configuration for all DefaultCVUniverses
+    //"global" configuration for all MinervaUniverses
     //TODO: Maybe rename the "app" YAML block "physics"?  But everything in the YAML file is physics!  It still needs a better name.
-    DefaultCVUniverse::SetPlaylist(options.playlist());
-    DefaultCVUniverse::SetAnalysisNuPDG(DefaultCVUniverse::isFHC()?14:-14);
-    DefaultCVUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>()); //No nu-e constraint for antineutrino mode yet
+    MinervaUniverse::SetPlaylist(options.playlist());
+    MinervaUniverse::SetAnalysisNuPDG(MinervaUniverse::isFHC()?14:-14);
+    MinervaUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>()); //No nu-e constraint for antineutrino mode yet
 
     //"global" configuration for algorithms specific to my analysis
-    evt::CVUniverse::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));
+    evt::Universe::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));
 
     if(isMC)
     {
-      DefaultCVUniverse::SetNFluxUniverses(options.ConfigFile()["app"]["nFluxUniverses"].as<int>());
+      MinervaUniverse::SetNFluxUniverses(options.ConfigFile()["app"]["nFluxUniverses"].as<int>());
 
       const auto errorBands = ::chooseSystematics(options.ConfigFile()["systematics"].as<std::vector<std::string>>(), chw);
       result.insert(errorBands.begin(), errorBands.end());
@@ -285,19 +285,29 @@ namespace app
     const auto hypothesisName = options.ConfigFile()["app"]["HypothesisName"].as<std::string>("CCNeutrons");
     for(auto& band: result)
     {
-      for(auto& univ: band.second) univ->SetHypothesisName(hypothesisName);
+      for(auto& univ: band.second)
+      {
+        univ->SetHypothesisName(hypothesisName);
+        univ->setWeightCache(weights);
+      }
     }
 
-    return result;
+    //Physics code doesn't need to know about WeightCachedUniverse, so cast it away.
+    //This is not automatic because, while WeightCachedUniverse does derive from Universe,
+    //std::vector<WeightCachedUniverse*> does not derive from std::vector<Universe*>.
+    std::map<std::string, std::vector<evt::Universe*>> asBase; //(result.begin(), result.end());
+    for(auto& band: result) asBase.insert(std::make_pair(band.first, std::vector<evt::Universe*>(band.second.begin(), band.second.end())));
+
+    return asBase;
   }
 
   //Some systematic universes return true from IsVerticalOnly().  Those universes are guaranteed by the NS Framework to
   //return the same physics variables as the CV EXCEPT FOR GETWEIGHT().  So, group them together to save on
   //evaluating cuts and physics variables.
-  std::vector<std::vector<evt::CVUniverse*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::CVUniverse*>> bands)
+  std::vector<std::vector<evt::Universe*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::Universe*>> bands)
   {
-    std::vector<std::vector<evt::CVUniverse*>> groupedUnivs;
-    std::vector<evt::CVUniverse*> vertical;
+    std::vector<std::vector<evt::Universe*>> groupedUnivs;
+    std::vector<evt::Universe*> vertical;
 
     for(const auto& band: bands)
     {
@@ -307,7 +317,7 @@ namespace app
         for(const auto univ: band.second)
         {
           if(univ->IsVerticalOnly()) vertical.push_back(univ);
-          else groupedUnivs.push_back(std::vector<evt::CVUniverse*>{univ});
+          else groupedUnivs.push_back(std::vector<evt::Universe*>{univ});
         }
       }
     }
@@ -327,7 +337,7 @@ namespace app
                 << "I'm going to assume that's what you're doing and keep "
                 << "going with a weight of 1 for every event.\n"
                 << "YOU HAVE BEEN WARNED!\n";
-      DefaultCVUniverse::SetNonResPiReweight(false); //I have to give this a default value if the GENIE reweight isn't set up.  It's an error to run without setting up either a GENIE reweight or no reweights at all.
+      MinervaUniverse::SetNonResPiReweight(false); //I have to give this a default value if the GENIE reweight isn't set up.  It's an error to run without setting up either a GENIE reweight or no reweights at all.
     }
 
     std::vector<std::unique_ptr<model::Model>> models;

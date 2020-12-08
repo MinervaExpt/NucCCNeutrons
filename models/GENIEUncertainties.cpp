@@ -7,16 +7,16 @@
 #include "models/GENIEUncertainties.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 namespace model
 {
   GENIEUncertainties::GENIEUncertainties(const YAML::Node& config): Model(config)
   {
-    PlotUtils::DefaultCVUniverse::SetNonResPiReweight(config["UseNonResonantPion"].as<bool>());
+    PlotUtils::MinervaUniverse::SetNonResPiReweight(config["UseNonResonantPion"].as<bool>());
   }
 
-  events GENIEUncertainties::GetWeight(const evt::CVUniverse& univ) const
+  events GENIEUncertainties::GetWeight(const evt::Universe& univ) const
   {
     return univ.GetGenieWeight();
   }

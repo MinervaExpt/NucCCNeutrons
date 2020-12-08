@@ -1,5 +1,5 @@
 //File: Between.cpp
-//Brief: Require that a CVUniverse has a vertex reconstructed between 2 nuclear targets.
+//Brief: Require that a Universe has a vertex reconstructed between 2 nuclear targets.
 //       Useful for defining the plastic sideband.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
@@ -14,7 +14,7 @@ namespace reco
   {
   }
 
-  bool Between::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
+  bool Between::checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const
   {
     return event.GetVtx().z() > fZMin && event.GetVtx().z() < fZMax;
   }

@@ -11,7 +11,7 @@
 #include "analyses/base/Study.h"
 #include "analyses/base/Background.h"
 #include "util/Factory.cpp"
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //c++ includes
 #include <vector>
@@ -24,8 +24,8 @@ namespace fid
   /*class Target
   {
     public:
-      virtual std::unique_ptr<Fiducial>& findRecoSection(const evt::CVUniverse& univ) = 0;
-      virtual std::unique_ptr<Fiducial>& findTruthSection(const evt::CVUniverse& univ) = 0;
+      virtual std::unique_ptr<Fiducial>& findRecoSection(const evt::Universe& univ) = 0;
+      virtual std::unique_ptr<Fiducial>& findTruthSection(const evt::Universe& univ) = 0;
   };*/
 
   //TODO: Rename Fiducial as Section?
@@ -39,12 +39,12 @@ namespace fid
       virtual double NNucleons(const bool isMC) const = 0;
 
       std::string name;
-      std::vector<PlotUtils::Cut<evt::CVUniverse>*> recoCuts;
-      std::vector<PlotUtils::SignalConstraint<evt::CVUniverse>*> signalDef;
-      std::vector<PlotUtils::SignalConstraint<evt::CVUniverse>*> phaseSpace;
+      std::vector<PlotUtils::Cut<evt::Universe>*> recoCuts;
+      std::vector<PlotUtils::SignalConstraint<evt::Universe>*> signalDef;
+      std::vector<PlotUtils::SignalConstraint<evt::Universe>*> phaseSpace;
 
       std::unique_ptr<ana::Study> study;
-      std::unique_ptr<PlotUtils::Cutter<evt::CVUniverse>> selection;
+      std::unique_ptr<PlotUtils::Cutter<evt::Universe>> selection;
       std::unordered_map<std::bitset<64>, std::vector<std::unique_ptr<ana::Study>>> sidebands;
       std::vector<std::unique_ptr<ana::Background>> backgrounds;
 

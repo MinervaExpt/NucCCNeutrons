@@ -1,5 +1,5 @@
 //File: Cut.h
-//Brief: A Cut decides whether a CVUniverse should be considered
+//Brief: A Cut decides whether a Universe should be considered
 //       reco signal.  Cuts can be used to define
 //       Signals, Sidebands, and Backgrounds.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
@@ -14,7 +14,7 @@
 #include "yaml-cpp/yaml.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -23,14 +23,14 @@
 #include "PlotUtils/Cut.h"
 
 //TODO: Don't need this once debugging is done
-using PCut = PlotUtils::Cut<evt::CVUniverse>;
+using PCut = PlotUtils::Cut<evt::Universe>;
 
 namespace reco
 {
   class Cut: public PCut
   {
     public:
-      Cut(const YAML::Node& /*config*/, const std::string& name): PlotUtils::Cut<evt::CVUniverse>(name) {}
+      Cut(const YAML::Node& /*config*/, const std::string& name): PlotUtils::Cut<evt::Universe>(name) {}
       virtual ~Cut() = default;
       
       template <class DERIVED>

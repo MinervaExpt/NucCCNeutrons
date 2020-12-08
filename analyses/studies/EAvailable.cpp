@@ -12,7 +12,7 @@
 #include <string>
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //utility includes
 #include "util/Factory.cpp"
@@ -29,12 +29,12 @@ namespace ana
 
     inline std::string name() const { return "E_available"; }
 
-    GeV truth(const evt::CVUniverse& event) const
+    GeV truth(const evt::Universe& event) const
     {
       return event.GetTruthEAvailable(); 
     }
 
-    GeV reco(const evt::CVUniverse& event) const
+    GeV reco(const evt::Universe& event) const
     {
       const auto cands = event.Get<Candidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_calo_edep(), event.Getblob_n_clusters());
       const auto neutronE = std::accumulate(cands.begin(), cands.end(), 0_MeV,

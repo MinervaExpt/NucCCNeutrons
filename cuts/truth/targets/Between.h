@@ -1,5 +1,5 @@
 //File: Between.h
-//Brief: Require that a CVUniverse has a vertex truthnstructed between 2 nuclear targets.
+//Brief: Require that a Universe has a vertex truthnstructed between 2 nuclear targets.
 //       Useful for defining the plastic sideband.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
@@ -21,7 +21,7 @@ namespace truth
       virtual ~Between() = default;
 
     protected:
-      virtual bool passesCut(const evt::CVUniverse& event) const override;
+      virtual bool passesCut(const evt::Universe& event) const override;
 
     private:
       const mm fZMin;

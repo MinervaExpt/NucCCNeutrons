@@ -15,7 +15,7 @@ namespace truth
   {
   }
 
-  bool TrackAngle::passesCut(const evt::CVUniverse& event) const
+  bool TrackAngle::passesCut(const evt::Universe& event) const
   {
     return event.GetTruthPmu().p().theta() <= fMax;
   }

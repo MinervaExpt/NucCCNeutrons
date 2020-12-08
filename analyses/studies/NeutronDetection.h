@@ -24,19 +24,19 @@ namespace ana
   {
     public:
       NeutronDetection(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
-                       std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::CVUniverse*>>& universes);
+                       std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::Universe*>>& universes);
       virtual ~NeutronDetection() = default;
 
       //Do this study only for MC signal events.
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override;
+      virtual void mcSignal(const evt::Universe& event, const events weight) override;
 
       //Normalize fPDGToObservables and syncCVHistos()
       virtual void afterAllFiles(const events passedSelection) override;
 
       //Do nothing for backgrounds, the Truth tree, and data
-      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
-      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {};
-      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override;
+      virtual void mcBackground(const evt::Universe& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
+      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override {};
+      virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override;
 
       //No Truth loop needed
       //virtual bool wantsTruthLoop() const override { return false; }
@@ -77,12 +77,12 @@ namespace ana
       //TODO: Maybe move CandidateObservables into its own header.  That's what I eventually did last time.
       struct Observables
       {
-        Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
+        Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::Universe*>>& univs,
                     const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& zBins,
                     const std::vector<double>& betaBins);
 
         template <class CANDIDATE>
-        void Fill(const evt::CVUniverse& event, const neutrons weightPerNeutron, const CANDIDATE& cand, const units::LorentzVector<mm>& vertex)
+        void Fill(const evt::Universe& event, const neutrons weightPerNeutron, const CANDIDATE& cand, const units::LorentzVector<mm>& vertex)
         {
           const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
           const mm dist = sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ));
@@ -99,26 +99,26 @@ namespace ana
         void SyncCVHistos();
         void Scale(const double value, const char* option = "");
 
-        units::WithUnits<HistWrapper<evt::CVUniverse>, MeV, neutrons> fEDeps;
-        HistWrapper<evt::CVUniverse> fAngles;
-        HistWrapper<evt::CVUniverse> fBeta;
-        units::WithUnits<HistWrapper<evt::CVUniverse>, mm, neutrons> fZDistFromVertex;
+        units::WithUnits<HistWrapper<evt::Universe>, MeV, neutrons> fEDeps;
+        HistWrapper<evt::Universe> fAngles;
+        HistWrapper<evt::Universe> fBeta;
+        units::WithUnits<HistWrapper<evt::Universe>, mm, neutrons> fZDistFromVertex;
       };
 
       struct Efficiency
       {
-        Efficiency(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
+        Efficiency(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::Universe*>>& univs,
                    const std::vector<double>& energyBins, const std::vector<double>& angleBins, const std::vector<double>& betaBins);
 
-        void Fill(const evt::CVUniverse& event, const neutrons weight, const FSPart& fs);
+        void Fill(const evt::Universe& event, const neutrons weight, const FSPart& fs);
 
         void SetDirectory(TDirectory* dir);
         void SyncCVHistos();
         void Scale(const double value, const char* option = "");
 
-        units::WithUnits<HistWrapper<evt::CVUniverse>, MeV, neutrons> fEnergies;
-        HistWrapper<evt::CVUniverse> fAngles;
-        HistWrapper<evt::CVUniverse> fBeta;
+        units::WithUnits<HistWrapper<evt::Universe>, MeV, neutrons> fEnergies;
+        HistWrapper<evt::Universe> fAngles;
+        HistWrapper<evt::Universe> fBeta;
       };
 
       util::Categorized<Observables, int> fPDGToObservables; //Map FS PDG code to Candidate observables
@@ -128,7 +128,7 @@ namespace ana
 
       Observables* fDataCands; //Neutron candidate observables in data
 
-      units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, neutrons, events>* fCandsPerFSNeutron;
+      units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, neutrons, events>* fCandsPerFSNeutron;
   };
 }
 

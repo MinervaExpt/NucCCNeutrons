@@ -17,7 +17,7 @@ namespace model
       Flux(const YAML::Node& config);
       virtual ~Flux() = default;
 
-      virtual events GetWeight(const evt::CVUniverse& univ) const override;
+      virtual events GetWeight(const evt::Universe& univ) const override;
   };
 }
 

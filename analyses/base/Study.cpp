@@ -19,7 +19,7 @@ namespace ana
 {
   Study::Study(const YAML::Node& /*config*/, util::Directory& /*dir*/, cuts_t&& mustPass,
                const std::vector<background_t>& /*backgrounds*/,
-               std::map<std::string, std::vector<evt::CVUniverse*>>& /*universes*/): fPasses(std::move(mustPass))
+               std::map<std::string, std::vector<evt::Universe*>>& /*universes*/): fPasses(std::move(mustPass))
   {
   }
 
@@ -27,7 +27,7 @@ namespace ana
   {
   }
 
-  bool Study::passesCuts(const evt::CVUniverse& event)
+  bool Study::passesCuts(const evt::Universe& event)
   {
     PlotUtils::detail::empty dummy;
     return std::all_of(fPasses.begin(), fPasses.end(), [&event, &dummy](auto& cut) { return cut->passesCut(event, dummy); });

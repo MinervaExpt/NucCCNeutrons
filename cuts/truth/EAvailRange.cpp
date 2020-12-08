@@ -14,7 +14,7 @@ namespace truth
   {
   }
 
-  bool EAvailRange::passesCut(const evt::CVUniverse& event) const
+  bool EAvailRange::passesCut(const evt::Universe& event) const
   {
     const GeV EAvail = event.GetTruthEAvailable();
     return EAvail > fMin && EAvail < fMax;

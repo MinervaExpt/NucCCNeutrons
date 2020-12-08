@@ -1,5 +1,5 @@
 //File: IsInTarget.cpp
-//Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z cut in truth.
+//Brief: Require that a Universe is in a given nuclear target.  Just makes a vertex z cut in truth.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //targets includes
@@ -16,7 +16,7 @@ namespace truth
   {
   }
 
-  bool IsInTarget::passesCut(const evt::CVUniverse& event) const
+  bool IsInTarget::passesCut(const evt::Universe& event) const
   {
     return event.GetTruthVtx().z() > fZMin && event.GetTruthVtx().z() < fZMax;
   }

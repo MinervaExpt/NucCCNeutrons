@@ -11,7 +11,7 @@
 #include <string>
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //utility includes
 #include "util/Factory.cpp"
@@ -28,12 +28,12 @@ namespace ana
 
     inline std::string name() const { return "Muon Momentum"; }
 
-    GeV truth(const evt::CVUniverse& event)
+    GeV truth(const evt::Universe& event)
     {
       return event.GetTruthPmu().p().mag();
     }
 
-    GeV reco(const evt::CVUniverse& event)
+    GeV reco(const evt::Universe& event)
     {
       return event.GetMuonP().p().mag();
     }
@@ -46,12 +46,12 @@ namespace ana
 
     inline std::string name() const { return "Muon p_z"; }
 
-    GeV truth(const evt::CVUniverse& event)
+    GeV truth(const evt::Universe& event)
     {
       return event.GetTruthPmu().z();
     }
 
-    GeV reco(const evt::CVUniverse& event)
+    GeV reco(const evt::Universe& event)
     {
       return event.GetMuonP().z();
     }
@@ -64,13 +64,13 @@ namespace ana
 
     inline std::string name() const { return "Muon p_T"; }
 
-    GeV truth(const evt::CVUniverse& event)
+    GeV truth(const evt::Universe& event)
     {
       const units::XYZVector<double> zHat{0, 0, 1};
       return event.GetTruthPmu().p().cross(zHat).mag();
     }
     
-    GeV reco(const evt::CVUniverse& event)
+    GeV reco(const evt::Universe& event)
     {
       const units::XYZVector<double> zHat{0, 0, 1};
       return event.GetMuonP().p().cross(zHat).mag();

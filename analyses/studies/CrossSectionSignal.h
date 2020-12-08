@@ -13,7 +13,7 @@
 #include "cuts/reco/Cut.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //util includes
 #include "util/WithUnits.h"
@@ -37,24 +37,24 @@ namespace ana
 {
   //A VARIABLE shall have:
   //1) A std::string name() const method that will be used to name all of the plots produced
-  //2) A UNIT reco(const CVUniverse& univ) const method
-  //3) A UNIT truth(const CVUniverse& unix) const method
+  //2) A UNIT reco(const Universe& univ) const method
+  //3) A UNIT truth(const Universe& unix) const method
   //4) The return type of reco() and truth() must match
   template <class VARIABLE>
   class CrossSectionSignal: public Study
   {
     //First, check that VARIABLE makes sense
     private:
-      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::CVUniverse>()));
-      static_assert(std::is_same<UNIT, decltype(std::declval<VARIABLE>().truth(std::declval<evt::CVUniverse>()))>::value,
+      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::Universe>()));
+      static_assert(std::is_same<UNIT, decltype(std::declval<VARIABLE>().truth(std::declval<evt::Universe>()))>::value,
                     "Reco and truth variable calculations must be in the same units!");
 
-      using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;
-      using MIGRATION = units::WithUnits<Hist2DWrapper<evt::CVUniverse>, UNIT, UNIT, events>;
+      using HIST = units::WithUnits<HistWrapper<evt::Universe>, UNIT, events>;
+      using MIGRATION = units::WithUnits<Hist2DWrapper<evt::Universe>, UNIT, UNIT, events>;
 
     public:
       CrossSectionSignal(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, const std::vector<background_t>& backgrounds,
-                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
+                   std::map<std::string, std::vector<evt::Universe*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
                                                                                      fVar(config["variable"]),
                                                                                      fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
                                                                                                   config["binning"].as<std::vector<double>>(), universes)
@@ -84,7 +84,7 @@ namespace ana
 
       virtual ~CrossSectionSignal() = default;
 
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
+      virtual void mcSignal(const evt::Universe& event, const events weight) override
       {
         const auto reco = fVar.reco(event), truth = fVar.truth(event);
 
@@ -93,17 +93,17 @@ namespace ana
         fSelectedMCEvents->Fill(&event, reco, weight);
       }
 
-      virtual void truth(const evt::CVUniverse& event, const events weight) override
+      virtual void truth(const evt::Universe& event, const events weight) override
       {
         fEfficiencyDenom->Fill(&event, fVar.truth(event), weight);
       }
 
-      virtual void data(const evt::CVUniverse& event, const events weight) override
+      virtual void data(const evt::Universe& event, const events weight) override
       {
         fSignalEvents->Fill(&event, fVar.reco(event), weight);
       }
 
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight) override
+      virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) override
       {
         fBackgrounds[background].Fill(&event, fVar.reco(event), weight);
       }

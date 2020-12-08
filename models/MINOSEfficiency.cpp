@@ -7,7 +7,7 @@
 #include "models/MINOSEfficiency.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 namespace model
 {
@@ -15,7 +15,7 @@ namespace model
   {
   }
 
-  events MINOSEfficiency::GetWeight(const evt::CVUniverse& univ) const
+  events MINOSEfficiency::GetWeight(const evt::Universe& univ) const
   {
     return univ.GetMinosEfficiencyWeight();
   }

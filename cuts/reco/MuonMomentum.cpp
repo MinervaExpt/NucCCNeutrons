@@ -11,7 +11,7 @@ namespace reco
   {
   }
 
-  bool MuonMomentum::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
+  bool MuonMomentum::checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const
   {
     const auto pMu = event.GetMuonP().p().mag();
     return pMu > fMin && pMu < fMax;

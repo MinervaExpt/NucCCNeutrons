@@ -17,7 +17,7 @@ namespace model
       GENIEUncertainties(const YAML::Node& config);
       virtual ~GENIEUncertainties() = default;
 
-      virtual events GetWeight(const evt::CVUniverse& univ) const override;
+      virtual events GetWeight(const evt::Universe& univ) const override;
   };
 }
 

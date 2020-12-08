@@ -14,24 +14,24 @@
 namespace ana
 {
   TargetCutTuning::TargetCutTuning(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
-                                     std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
+                                     std::map<std::string, std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                                                    fZPositionsByTarget(backgrounds, dir, "VertexZ", "Reco Vertex Z", config["binning"]["nBins"].as<double>(), config["binning"]["min"].as<double>(), config["binning"]["max"].as<double>(), univs)
   {
-    fSelectedSignalZPositions = dir.make<units::WithUnits<HistWrapper<evt::CVUniverse>, mm, events>>("VertexZ_SelectedSignal", "Reco Vertex Z", config["binning"]["nBins"].as<double>(), config["binning"]["min"].as<double>(), config["binning"]["max"].as<double>(), univs);
-    //fSelectedZPositions = dir.make<units::WithUnits<HistWrapper<evt::CVUniverse>, mm, events>>("VertexZ_Selected", "Reco Vertex Z", config["binning"].as<std::vector<double>>(), univs);
+    fSelectedSignalZPositions = dir.make<units::WithUnits<HistWrapper<evt::Universe>, mm, events>>("VertexZ_SelectedSignal", "Reco Vertex Z", config["binning"]["nBins"].as<double>(), config["binning"]["min"].as<double>(), config["binning"]["max"].as<double>(), univs);
+    //fSelectedZPositions = dir.make<units::WithUnits<HistWrapper<evt::Universe>, mm, events>>("VertexZ_Selected", "Reco Vertex Z", config["binning"].as<std::vector<double>>(), univs);
   }
 
-  void TargetCutTuning::mcSignal(const evt::CVUniverse& event, const events weight)
+  void TargetCutTuning::mcSignal(const evt::Universe& event, const events weight)
   {
     fSelectedSignalZPositions->Fill(&event, event.GetVtx().z(), weight);
   }
 
-  void TargetCutTuning::mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight)
+  void TargetCutTuning::mcBackground(const evt::Universe& event, const background_t& background, const events weight)
   {
     fZPositionsByTarget[background].Fill(&event, event.GetVtx().z(), weight);
   }
 
-  /*void TargetCutTuning::data(const evt::CVUniverse& event, const events weight)
+  /*void TargetCutTuning::data(const evt::Universe& event, const events weight)
   {
     fSelectedZPositions->Fill(&event, event.GetVtx().z(), weight);
   }

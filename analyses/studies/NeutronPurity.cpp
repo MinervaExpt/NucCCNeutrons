@@ -38,7 +38,7 @@ namespace ana
   }
 
   NeutronPurity::NeutronPurity(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
-                                     std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
+                                     std::map<std::string, std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                                                    fCuts(config["variable"]),
                                                                                                    fPDGToEDepVersusNClusters(pdgCategories, dir, "EDepVersusNClusters", "Number of Clusters;Visisble Candidate Energy;Number of candidates",
                                                                                                                              config["binning"]["nClusters"].as<std::vector<double>>(),
@@ -67,7 +67,7 @@ namespace ana
     fFartherEDepVersusDist = dir.make<LOGHIST2D>("FartherEDepVersusDist", "Not Closest Candidate per FS;log(Distance from Vertex/1mm);log(Candidate Visible Energy/1MeV)", nBins, 3, 9, nBins, 0.2, 6, univs);
   }
 
-  void NeutronPurity::mcSignal(const evt::CVUniverse& event, const events weight)
+  void NeutronPurity::mcSignal(const evt::Universe& event, const events weight)
   {
     //Cache weight for each universe
     const neutrons weightPerNeutron = weight.in<events>();

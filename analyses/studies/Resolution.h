@@ -17,15 +17,15 @@ namespace ana
   template <class VARIABLE>
   class Resolution: public Study
   {
-    using UNITS = decltype(std::declval<VARIABLE>().reco(std::declval<evt::CVUniverse>()));
+    using UNITS = decltype(std::declval<VARIABLE>().reco(std::declval<evt::Universe>()));
 
-    using HIST = PlotUtils::HistWrapper<evt::CVUniverse>;
-    using HIST2D = units::WithUnits<PlotUtils::Hist2DWrapper<evt::CVUniverse>, UNITS, UNITS, events>;
+    using HIST = PlotUtils::HistWrapper<evt::Universe>;
+    using HIST2D = units::WithUnits<PlotUtils::Hist2DWrapper<evt::Universe>, UNITS, UNITS, events>;
 
     public:
       Resolution(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
                      const std::vector<background_t>& backgrounds,
-                     std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
+                     std::map<std::string, std::vector<evt::Universe*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
                                                                                        fVar(config["variable"])
       {
         fTrueVersusReco = dir.make<HIST2D>("True" + fVar.name() + "VersusReco", ("True " + fVar.name() + " versus Reco;Reco " + fVar.name() + ";True " + fVar.name()).c_str(),
@@ -34,7 +34,7 @@ namespace ana
                                      100, -2, 2, universes);
       }
 
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
+      virtual void mcSignal(const evt::Universe& event, const events weight) override
       {
         const UNITS reco = fVar.reco(event), truth = fVar.truth(event);
         fTrueVersusReco->Fill(&event, reco, truth, weight);
@@ -42,14 +42,14 @@ namespace ana
       }
 
       //mcBackground failed the truth signal selection.
-      virtual void mcBackground(const evt::CVUniverse& /*event*/, const background_t& /*background*/, const events /*weight*/) override {}
+      virtual void mcBackground(const evt::Universe& /*event*/, const background_t& /*background*/, const events /*weight*/) override {}
                                                                                                                         
       //Truth tree with truth information.  Passes truth signal definition and phase space.
-      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}
+      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override {}
                                                                                                                         
       //Data AnaTuple with only reco information.  These events passed all reco Cuts. 
       //Truth branches may be in an undefined state here, so be very careful not to use them.
-      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}
+      virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override {}
                                                                                                                         
       //Optional function called once per job after the last file in the event loop.
       //This is a good place to call syncCVHistos() or Scale() by numbers besides POT.

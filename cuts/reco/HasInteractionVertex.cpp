@@ -11,7 +11,7 @@ namespace reco
   {
   }
 
-  bool HasInteractionVertex::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
+  bool HasInteractionVertex::checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const
   {
     return event.hasInteractionVertex();
   }

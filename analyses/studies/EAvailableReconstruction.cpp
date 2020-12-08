@@ -12,7 +12,7 @@
 #include "analyses/studies/TruthInteractionCategories.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 #include "evt/arachne.h"
 #include "evt/EventID.h"
 
@@ -23,7 +23,7 @@ namespace ana
 {
   EAvailableReconstruction::EAvailableReconstruction(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
                                                      std::vector<background_t>& backgrounds,
-                                                     std::map<std::string, std::vector<evt::CVUniverse*>>& univs)
+                                                     std::map<std::string, std::vector<evt::Universe*>>& univs)
                                                     :Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                      fNNeutrons(config["multiplicity"]),
                                                      fEAvailable(config["EAvailable"]),
@@ -36,7 +36,7 @@ namespace ana
     fTruthAvailWhenNoReco = dir.make<HIST<MeV>>("TruthEAvailWhenNoReco", "Truth E_{available}", 20, 0, 2*fEAvailableMax.in<MeV>(), univs);
   }
 
-  void EAvailableReconstruction::mcSignal(const evt::CVUniverse& event, const events weight)
+  void EAvailableReconstruction::mcSignal(const evt::Universe& event, const events weight)
   {
     const GeV EAvailReco = fEAvailable.reco(event),
               EAvailTruth = fEAvailable.truth(event);

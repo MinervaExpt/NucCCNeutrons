@@ -11,7 +11,7 @@
 #include <string>
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //utility includes
 #include "util/Factory.cpp"
@@ -29,12 +29,12 @@ namespace ana
 
     inline std::string name() const { return "q_3"; }
 
-    GeV truth(const evt::CVUniverse& event) const
+    GeV truth(const evt::Universe& event) const
     {
       return event.GetTruthQ3(); 
     }
 
-    GeV reco(const evt::CVUniverse& event) const
+    GeV reco(const evt::Universe& event) const
     {
       const auto q0 = fCaloSpline.eCorrection(event.GetRecoilE());
       const auto Enu = event.GetMuonP().E() + q0;

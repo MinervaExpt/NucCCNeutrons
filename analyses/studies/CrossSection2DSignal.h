@@ -13,7 +13,7 @@
 #include "cuts/reco/Cut.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //util includes
 #include "util/WithUnits.h"
@@ -43,28 +43,28 @@ namespace ana
 
   //A VARIABLE (XVAR or YVAR) shall have:
   //1) A std::string name() const method that will be used to name all of the plots produced
-  //2) A UNIT reco(const CVUniverse& univ) const method
-  //3) A UNIT truth(const CVUniverse& unix) const method
+  //2) A UNIT reco(const Universe& univ) const method
+  //3) A UNIT truth(const Universe& unix) const method
   //4) The return type of reco() and truth() must match
   template <class XVAR, class YVAR>
   class CrossSection2DSignal: public Study
   {
     //First, check that VARIABLE makes sense
     private:
-      using XUNIT = decltype(std::declval<XVAR>().reco(std::declval<evt::CVUniverse>()));
-      static_assert(std::is_same<XUNIT, decltype(std::declval<XVAR>().truth(std::declval<evt::CVUniverse>()))>::value,
+      using XUNIT = decltype(std::declval<XVAR>().reco(std::declval<evt::Universe>()));
+      static_assert(std::is_same<XUNIT, decltype(std::declval<XVAR>().truth(std::declval<evt::Universe>()))>::value,
                     "Reco and truth x variable calculations must be in the same units!");
 
-      using YUNIT = decltype(std::declval<YVAR>().reco(std::declval<evt::CVUniverse>()));
-      static_assert(std::is_same<YUNIT, decltype(std::declval<YVAR>().truth(std::declval<evt::CVUniverse>()))>::value,
+      using YUNIT = decltype(std::declval<YVAR>().reco(std::declval<evt::Universe>()));
+      static_assert(std::is_same<YUNIT, decltype(std::declval<YVAR>().truth(std::declval<evt::Universe>()))>::value,
                     "Reco and truth y variable calculations must be in the same units!");
 
-      using HIST = units::WithUnits<Hist2DWrapper<evt::CVUniverse>, XUNIT, YUNIT, events>;
-      //using MIGRATION = units::WithUnits<Hist2DWrapper<evt::CVUniverse>, XUNIT, XUNIT, YUNIT, YUNIT, events>;
+      using HIST = units::WithUnits<Hist2DWrapper<evt::Universe>, XUNIT, YUNIT, events>;
+      //using MIGRATION = units::WithUnits<Hist2DWrapper<evt::Universe>, XUNIT, XUNIT, YUNIT, YUNIT, events>;
 
     public:
       CrossSection2DSignal(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, const std::vector<background_t>& backgrounds,
-                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
+                   std::map<std::string, std::vector<evt::Universe*>>& universes): Study(config, dir, std::move(mustPass), backgrounds, universes),
                                                                                      fXVar(config["variable"]["x"]),
                                                                                      fYVar(config["variable"]["y"]),
                                                                                      fBackgrounds(backgrounds, dir, "Background", "Reco " + fXVar.name()
@@ -90,7 +90,7 @@ namespace ana
 
       virtual ~CrossSection2DSignal() = default;
 
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
+      virtual void mcSignal(const evt::Universe& event, const events weight) override
       {
         const auto recoX = fXVar.reco(event), truthX = fXVar.truth(event);
         const auto recoY = fYVar.reco(event), truthY = fYVar.truth(event);
@@ -100,17 +100,17 @@ namespace ana
         fSelectedMCEvents->Fill(&event, recoX, recoY, weight);
       }
 
-      virtual void truth(const evt::CVUniverse& event, const events weight) override
+      virtual void truth(const evt::Universe& event, const events weight) override
       {
         fEfficiencyDenom->Fill(&event, fXVar.truth(event), fYVar.truth(event), weight);
       }
 
-      virtual void data(const evt::CVUniverse& event, const events weight) override
+      virtual void data(const evt::Universe& event, const events weight) override
       {
         fSignalEvents->Fill(&event, fXVar.reco(event), fYVar.reco(event), weight);
       }
 
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight) override
+      virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) override
       {
         fBackgrounds[background].Fill(&event, fXVar.reco(event), fYVar.reco(event), weight);
       }

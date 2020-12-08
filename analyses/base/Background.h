@@ -17,7 +17,7 @@
 
 namespace evt
 {
-  class CVUniverse;
+  class Universe;
 }
 
 namespace ana
@@ -25,7 +25,7 @@ namespace ana
   struct Background
   {
     public:
-      using cuts_t = std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::CVUniverse>>>;
+      using cuts_t = std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::Universe>>>;
 
       //Configuration from a YAML::Node
       Background(const std::string& name, const YAML::Node& config);

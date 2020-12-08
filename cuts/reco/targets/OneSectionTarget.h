@@ -1,6 +1,6 @@
 //File: OneSectionTarget.h
 //Brief: Some of MINERvA's nuclear targets are a solid block of one material.
-//       A OneSectionTarget Cut removes CVUniverses that are not in
+//       A OneSectionTarget Cut removes Universes that are not in
 //       a specific section of a given target.  Since I don't need to change
 //       MINERvA's geometry, this is just an implementation detail that I use
 //       to define specific target sections.
@@ -17,7 +17,7 @@
 
 namespace evt
 {
-  class CVUniverse;
+  class Universe;
 }
 
 namespace reco
@@ -30,7 +30,7 @@ namespace reco
       virtual ~OneSectionTarget() = default;
 
     protected:
-      virtual bool checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const override;
+      virtual bool checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override;
   };
 }
 

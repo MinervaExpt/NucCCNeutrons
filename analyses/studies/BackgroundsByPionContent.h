@@ -11,7 +11,7 @@
 #include "cuts/reco/Cut.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //signal includes
 #include "analyses/base/Study.h"
@@ -41,16 +41,16 @@ namespace ana
   class BackgroundsByPionContent: public Study
   {
     private:
-      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::CVUniverse>()));
-      static_assert(std::is_same<UNIT, decltype(std::declval<VARIABLE>().truth(std::declval<evt::CVUniverse>()))>::value,
+      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::Universe>()));
+      static_assert(std::is_same<UNIT, decltype(std::declval<VARIABLE>().truth(std::declval<evt::Universe>()))>::value,
                     "Reco and truth variable calculations must be in the same units!");
 
-      using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;
+      using HIST = units::WithUnits<HistWrapper<evt::Universe>, UNIT, events>;
 
     public:
       BackgroundsByPionContent(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
                                std::vector<background_t>& backgrounds,
-                               std::map<std::string, std::vector<evt::CVUniverse*>>& univs):
+                               std::map<std::string, std::vector<evt::Universe*>>& univs):
                                Study(config, dir, std::move(mustPass), backgrounds, univs),
                                fVar(config["variable"]),
                                fSignalByPionsInVar(pionFSCategories, dir, "SignalByPionCategories", "Reco " + fVar.name(),
@@ -62,13 +62,13 @@ namespace ana
 
       virtual ~BackgroundsByPionContent() = default;
 
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
+      virtual void mcSignal(const evt::Universe& event, const events weight) override
       {
         const auto pionCat = std::find_if(pionFSCategories.begin(), pionFSCategories.end(), [&event](auto& category) { return (*category)(event); });
         fSignalByPionsInVar[*pionCat].Fill(&event, fVar.reco(event), weight);
       }
 
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight) override
+      virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) override
       {
         const auto pionCat = std::find_if(pionFSCategories.begin(), pionFSCategories.end(), [&event](auto& category) { return (*category)(event); });
         fBackgroundsByPionsInVar[background][*pionCat].Fill(&event, fVar.reco(event), weight);
@@ -82,9 +82,9 @@ namespace ana
       }
 
       //Functions I don't plan to use
-      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}
+      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override {}
 
-      virtual void data(const evt::CVUniverse& /*event*/, const events /*weight*/) override {}
+      virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override {}
 
       using Registrar = Study::Registrar<BackgroundsByPionContent<VARIABLE>>;
 

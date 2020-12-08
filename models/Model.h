@@ -15,7 +15,7 @@
 
 namespace evt
 {
-  class CVUniverse;
+  class Universe;
 }
 
 namespace model
@@ -26,7 +26,7 @@ namespace model
       Model(const YAML::Node& config);
       virtual ~Model() = default;
 
-      virtual events GetWeight(const evt::CVUniverse& univ) const = 0;
+      virtual events GetWeight(const evt::Universe& univ) const = 0;
 
     template <class DERIVED>
     using Registrar = plgn::Registrar<Model, DERIVED>;

@@ -1,5 +1,5 @@
 //File: IsInTarget.cpp
-//Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z reco in both
+//Brief: Require that a Universe is in a given nuclear target.  Just makes a vertex z reco in both
 //       reconstruction.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
@@ -14,7 +14,7 @@ namespace reco
   {
   }
 
-  bool IsInTarget::checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const
+  bool IsInTarget::checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const
   {
     return event.GetVtx().z() > fZMin && event.GetVtx().z() < fZMax;
   }

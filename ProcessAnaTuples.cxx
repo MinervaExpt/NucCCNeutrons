@@ -18,7 +18,7 @@
 #include "fiducials/Fiducial.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/WeightCachedUniverse.h"
 
 //utility includes
 #include "util/Factory.cpp"
@@ -101,7 +101,7 @@ namespace
   }
 
   template <class CUT, class ...ARGS>
-  bool requireAll(const std::vector<std::unique_ptr<CUT>>& cuts, const evt::CVUniverse& event, ARGS... args)
+  bool requireAll(const std::vector<std::unique_ptr<CUT>>& cuts, const evt::Universe& event, ARGS... args)
   {
     return std::all_of(cuts.begin(), cuts.end(),
                        [&event, args...](const auto& cut)
@@ -110,13 +110,13 @@ namespace
                        });
   }
 
-  events getWeight(const std::vector<std::unique_ptr<model::Model>>& models, const evt::CVUniverse& event)
+  events getWeight(const std::vector<std::unique_ptr<model::Model>>& models, const evt::Universe& event)
   {
     return std::accumulate(models.begin(), models.end(), 1., [&event](const double product, const auto& model) { return product * model->GetWeight(event).template in<events>(); });
   }
 
   //Given a cut map, passedCuts, find the Study that this event fits in.
-  ana::Study* findSelectedOrSideband(const std::bitset<64> passedCuts, fid::Fiducial& fid, evt::CVUniverse& univ)
+  ana::Study* findSelectedOrSideband(const std::bitset<64> passedCuts, fid::Fiducial& fid, evt::Universe& univ)
   {
     if(passedCuts.all()) return fid.study.get();
     else if(!passedCuts.none())
@@ -146,10 +146,11 @@ int main(const int argc, const char** argv)
   TH1::AddDirectory(kFALSE); //Needed so that MnvH1D gets to clean up its own MnvLatErrorBands (which are TH1Ds).
 
   //Components I need for the event loop
-  std::vector<std::vector<evt::CVUniverse*>> groupedUnivs;
-  evt::CVUniverse* cv;
+  std::vector<std::vector<evt::Universe*>> groupedUnivs;
+  evt::Universe* cv;
   std::vector<std::unique_ptr<model::Model>> reweighters;
   std::vector<std::unique_ptr<fid::Fiducial>> fiducials;
+  evt::WeightCache weights;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
   std::unique_ptr<app::CmdLine> options;
@@ -160,7 +161,7 @@ int main(const int argc, const char** argv)
                                                  //list of files to process, prepares a file for histograms, and puts the configuration
                                                  //file together.  See CmdLine.h for more details.
 
-    auto universes = app::getSystematics(nullptr, *options, options->isMC());
+    auto universes = app::getSystematics(nullptr, *options, options->isMC(), weights);
 
     //Send whatever noise PlotUtils makes during setup to a file in the current working directory
     #ifdef NDEBUG
@@ -192,8 +193,8 @@ int main(const int argc, const char** argv)
         throw std::runtime_error(std::string("Failed to set up the signal Study:\n") + e.what());
       }
 
-      PlotUtils::constraints_t<evt::CVUniverse> truthPhaseSpace, truthSignal;
-      PlotUtils::cuts_t<evt::CVUniverse> recoCuts;
+      PlotUtils::constraints_t<evt::Universe> truthPhaseSpace, truthSignal;
+      PlotUtils::cuts_t<evt::Universe> recoCuts;
 
       try
       {
@@ -230,14 +231,14 @@ int main(const int argc, const char** argv)
       decltype(recoCuts) sidebandCuts;
       fid->sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], dirForFid, fid->backgrounds, universes, recoCuts, sidebandCuts);
 
-      fid->selection.reset(new PlotUtils::Cutter<evt::CVUniverse, PlotUtils::detail::empty>(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
+      fid->selection.reset(new PlotUtils::Cutter<evt::Universe, PlotUtils::detail::empty>(std::move(recoCuts), std::move(sidebandCuts), std::move(truthSignal), std::move(truthPhaseSpace)));
 
       fiducials.push_back(std::move(fid));
     }
 
     cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
-    reweighters = app::setupModels(options->ConfigFile()["model"]); //This MUST come after setting up universes because of the static variables that DefaultCVUniverse relies on
+    reweighters = app::setupModels(options->ConfigFile()["model"]); //This MUST come after setting up universes because of the static variables that DefaultUniverse relies on
   }
   catch(const std::runtime_error& e)
   {
@@ -259,13 +260,6 @@ int main(const int argc, const char** argv)
 
   //Accumulate POT from each good file
   double pot_used = 0;
-
-  //Experimental weight cache
-  evt::weightCache weights;
-  for(auto& group: groupedUnivs)
-  {
-    for(auto univ: group) univ->setWeightCache(weights);
-  }
 
   //Loop over files
   LOG_DEBUG("Beginning loop over files.")
@@ -331,7 +325,7 @@ int main(const int argc, const char** argv)
         }
 
         //Get MINOS weights
-        PlotUtils::DefaultCVUniverse::SetTruth(false);
+        PlotUtils::MinervaUniverse::SetTruth(false);
 
         for(size_t entry = 0; entry < nMCEntries; ++entry)
         {
@@ -402,7 +396,7 @@ int main(const int argc, const char** argv)
           }
 
           //Don't try to get MINOS weights in the truth tree loop
-          PlotUtils::DefaultCVUniverse::SetTruth(true);
+          PlotUtils::MinervaUniverse::SetTruth(true);
 
           for(size_t entry = 0; entry < nTruthEntries; ++entry)
           {
@@ -410,24 +404,23 @@ int main(const int argc, const char** argv)
               if((entry % printFreq) == 0) std::cout << "Done with truth entry " << entry << "\n";
             #endif
 
-            cv->SetEntry(entry);
-            weights.SetEntry(*cv);
-
-            const double truthCVWeightForCuts = ::getWeight(reweighters, *cv).in<events>();
-
-            for(const auto& compat: groupedUnivs)
+            for(auto& fid: fiducials)
             {
-              auto& event = *compat.front(); //All compatible universes pass the same cuts
-              for(auto univ: compat) univ->SetEntry(entry); //TODO: This could be moved to the loop over compatible universes below.
+              cv->SetEntry(entry);
+              weights.SetEntry(*cv);
+              const double truthCVWeightForCuts = ::getWeight(reweighters, *cv).in<events>();
 
-              for(auto& fid: fiducials)
+              for(const auto& compat: groupedUnivs)
               {
+                auto& event = *compat.front(); //All compatible universes pass the same cuts
+                for(auto univ: compat) univ->SetEntry(entry); //TODO: This could be moved to the loop over compatible universes below.
+  
                 if(fid->selection->isEfficiencyDenom(event, truthCVWeightForCuts))
                 {
                   for(const auto univ: compat) fid->study->truth(*univ, ::getWeight(reweighters, *univ));
                 } //If event passes all truth cuts
-              } //For each Fiducial
-            } //For each error band
+              } //For each error band
+            } //For each Fiducial
           } //For each entry in Truth tree
         } //If wantsTruthLoop
       } //If isThisJobMC

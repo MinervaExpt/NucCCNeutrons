@@ -14,7 +14,7 @@ namespace truth
   {
   }
 
-  bool MuonMomentum::passesCut(const evt::CVUniverse& event) const
+  bool MuonMomentum::passesCut(const evt::Universe& event) const
   {
     const auto pMu = event.GetTruthPmu().p().mag();
     return pMu > fMin && pMu < fMax;

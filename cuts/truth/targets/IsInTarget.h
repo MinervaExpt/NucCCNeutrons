@@ -1,5 +1,5 @@
 //File: IsInTarget.h
-//Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z cut in truth.
+//Brief: Require that a Universe is in a given nuclear target.  Just makes a vertex z cut in truth.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 #ifndef TRUTH_ISINTARGET_H
@@ -20,7 +20,7 @@ namespace truth
       virtual ~IsInTarget() = default;
 
     protected:
-      virtual bool passesCut(const evt::CVUniverse& event) const override;
+      virtual bool passesCut(const evt::Universe& event) const override;
 
     private:
       const mm fZMin;

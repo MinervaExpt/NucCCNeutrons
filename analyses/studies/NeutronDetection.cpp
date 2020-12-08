@@ -39,7 +39,7 @@ namespace
 namespace ana
 {
   NeutronDetection::NeutronDetection(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
-                                     std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
+                                     std::map<std::string, std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                                                    fCuts(config["variable"]),
                                                                                                    fPDGToObservables(pdgCategories, dir, "", "Reco", univs,
                                                                                                                      config["binning"]["edep"].as<std::vector<double>>(),
@@ -59,10 +59,10 @@ namespace ana
                                        config["binning"]["zDist"].as<std::vector<double>>(),
                                        config["binning"]["beta"].as<std::vector<double>>());
 
-    fCandsPerFSNeutron = dir.make<units::WithUnits<PlotUtils::HistWrapper<evt::CVUniverse>, neutrons, events>>("CandsPerFSNeutron", "Candidates per FS Neutron;N Candidates;Events", 4, 0, 4, univs);
+    fCandsPerFSNeutron = dir.make<units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, neutrons, events>>("CandsPerFSNeutron", "Candidates per FS Neutron;N Candidates;Events", 4, 0, 4, univs);
   }
 
-  void NeutronDetection::data(const evt::CVUniverse& event, const events weight)
+  void NeutronDetection::data(const evt::Universe& event, const events weight)
   {
     const auto cands = event.Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time());
     const auto vertex = event.GetVtx();
@@ -72,7 +72,7 @@ namespace ana
     }
   }
 
-  void NeutronDetection::mcSignal(const evt::CVUniverse& event, const events weight)
+  void NeutronDetection::mcSignal(const evt::Universe& event, const events weight)
   {
     //Cache weight for each universe
     const neutrons weightPerNeutron = weight.in<events>();
@@ -134,7 +134,7 @@ namespace ana
     fEffDenominator->SyncCVHistos();
   }
 
-  NeutronDetection::Observables::Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
+  NeutronDetection::Observables::Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::Universe*>>& univs,
                                              const std::vector<double>& edepBins, const std::vector<double>& angleBins, const std::vector<double>& zBins,
                                              const std::vector<double>& betaBins): fEDeps((name + "EDeps").c_str(), (title + " Energy Deposit;candidates / event;").c_str(), edepBins, univs),
                                                                                    fAngles((name + "Angles").c_str(), (title + " Angle w.r.t. Z Axis [radians];candidates / event;").c_str(), angleBins, univs),
@@ -143,7 +143,7 @@ namespace ana
   {
   }
 
-  /*void NeutronDetection::Observables::Fill(const evt::CVUniverse& event, neutrons weightPerNeutron, const NeutronCandidate& cand, const units::LorentzVector<mm>& vertex)
+  /*void NeutronDetection::Observables::Fill(const evt::Universe& event, neutrons weightPerNeutron, const NeutronCandidate& cand, const units::LorentzVector<mm>& vertex)
   {
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
     const double dist = std::sqrt(pow<2>(cand.transverse.in<mm>()) + pow<2>(deltaZ.in<mm>()));
@@ -181,7 +181,7 @@ namespace ana
   }
 
 
-  NeutronDetection::Efficiency::Efficiency(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::CVUniverse*>>& univs,
+  NeutronDetection::Efficiency::Efficiency(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::Universe*>>& univs,
                                            const std::vector<double>& energyBins, const std::vector<double>& angleBins,
                                            const std::vector<double>& betaBins): fEnergies((name + "Energy").c_str(), (title + ";Kinetic Energy;FS Neutrons").c_str(), energyBins, univs),
                                                                                  fAngles((name + "Angles").c_str(), (title + ";Angle w.r.t. Z Axis [radians]; FS Neutrons").c_str(), angleBins, univs),
@@ -189,7 +189,7 @@ namespace ana
   {
   }
 
-  void NeutronDetection::Efficiency::Fill(const evt::CVUniverse& event, const neutrons weightPerNeutron, const FSPart& fs)
+  void NeutronDetection::Efficiency::Fill(const evt::Universe& event, const neutrons weightPerNeutron, const FSPart& fs)
   {
     const auto neutronMass = 939.6_MeV;
     const double beta = std::sqrt(1. - pow<2>(neutronMass.in<MeV>()/fs.energy.in<MeV>())); //939.6 MeV is neutron mass

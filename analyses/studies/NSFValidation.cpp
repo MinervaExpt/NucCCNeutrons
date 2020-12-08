@@ -11,7 +11,7 @@
 #include "analyses/studies/NSFValidation.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -19,7 +19,7 @@
 namespace ana
 {
   NSFValidation::NSFValidation(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
-                               std::map<std::string, std::vector<evt::CVUniverse*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs)
+                               std::map<std::string, std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs)
   {
     //Bins chosen to match the NSF_ValidationSuite
     const std::vector<double> EMuBins{0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 18, 22, 36, 50, 75, 100, 120};
@@ -43,7 +43,7 @@ namespace ana
     fEMuVersusFluxWeight = dir.make<HIST2D<GeV>>("WgtVsEmu_Flux", "Reco;Weight", 40, 0, 20, 200, 0, 2, univs);
   }
 
-  void NSFValidation::mcSignal(const evt::CVUniverse& event, const events weight)
+  void NSFValidation::mcSignal(const evt::Universe& event, const events weight)
   {
     const auto muonP = event.GetMuonP();
     const GeV muonE = muonP.E();

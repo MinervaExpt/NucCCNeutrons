@@ -13,7 +13,7 @@
 #include "cuts/reco/Cut.h"
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //util includes
 #include "util/units.h"
@@ -30,24 +30,24 @@ namespace ana
   //all other CrossSeciton headers.
   //A VARIABLE shall have:
   //1) A std::string name() const method that will be used to name all of the plots produced
-  //2) A UNIT reco(const CVUniverse& univ) const method
-  //3) A UNIT truth(const CVUniverse& unix) const method
+  //2) A UNIT reco(const Universe& univ) const method
+  //3) A UNIT truth(const Universe& unix) const method
   //4) The return type of reco() and truth() must match
   template <class VARIABLE>
   class CrossSectionSideband: public Study
   {
     //Sanity checks on VARIABLE
     private:
-      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::CVUniverse>()));
-      static_assert(std::is_same<UNIT, decltype(std::declval<VARIABLE>().truth(std::declval<evt::CVUniverse>()))>::value,
+      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::Universe>()));
+      static_assert(std::is_same<UNIT, decltype(std::declval<VARIABLE>().truth(std::declval<evt::Universe>()))>::value,
                     "Reco and truth variable calculations must be in the same units!");
 
-      using HIST = units::WithUnits<HistWrapper<evt::CVUniverse>, UNIT, events>;
+      using HIST = units::WithUnits<HistWrapper<evt::Universe>, UNIT, events>;
 
     public:
       CrossSectionSideband(const YAML::Node& config, util::Directory& dir,
                    cuts_t&& passes, const std::vector<background_t>& backgrounds,
-                   std::map<std::string, std::vector<evt::CVUniverse*>>& universes): Study(config, dir, std::move(passes), backgrounds, universes),
+                   std::map<std::string, std::vector<evt::Universe*>>& universes): Study(config, dir, std::move(passes), backgrounds, universes),
                                                                                      fVar(config["variable"]),
                                                                                      fBackgrounds(backgrounds, dir, "Background", "Reco " + fVar.name(),
                                                                                                   config["binning"].as<std::vector<double>>(), universes)
@@ -62,23 +62,23 @@ namespace ana
 
       virtual ~CrossSectionSideband() = default;
 
-      virtual void data(const evt::CVUniverse& event, const events weight) override
+      virtual void data(const evt::Universe& event, const events weight) override
       {
         fData->Fill(&event, fVar.reco(event), weight);
       }
 
-      virtual void mcSignal(const evt::CVUniverse& event, const events weight) override
+      virtual void mcSignal(const evt::Universe& event, const events weight) override
       {
         fSignal->Fill(&event, fVar.reco(event), weight);
       }
 
-      virtual void mcBackground(const evt::CVUniverse& event, const background_t& background, const events weight) override
+      virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) override
       {
         fBackgrounds[background].Fill(&event, fVar.reco(event), weight);
       }
 
       //Sidebands aren't defined in the truth tree, so do nothing
-      virtual void truth(const evt::CVUniverse& /*event*/, const events /*weight*/) override
+      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override
       {
       }
 

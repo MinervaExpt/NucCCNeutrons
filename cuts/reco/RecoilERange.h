@@ -21,7 +21,7 @@ namespace reco
 
     protected:
       //Your concrete Cut class must override these methods.
-      virtual bool checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const override;
+      virtual bool checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override;
 
     private:
       GeV fMin;

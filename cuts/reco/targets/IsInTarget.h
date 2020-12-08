@@ -1,5 +1,5 @@
 //File: IsInTarget.h
-//Brief: Require that a CVUniverse is in a given nuclear target.  Just makes a vertex z cut in both
+//Brief: Require that a Universe is in a given nuclear target.  Just makes a vertex z cut in both
 //       reconstruction.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
@@ -21,7 +21,7 @@ namespace reco
       virtual ~IsInTarget() = default;
 
     protected:
-      virtual bool checkCut(const evt::CVUniverse& event, PlotUtils::detail::empty& /*empty*/) const override;
+      virtual bool checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override;
 
     private:
       const mm fZMin;

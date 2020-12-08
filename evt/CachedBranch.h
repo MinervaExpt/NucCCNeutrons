@@ -4,11 +4,11 @@
 
 namespace evt
 {
-  template <(CVUniverse::*getBranch)()>
+  template <(Universe::*getBranch)()>
   class CachedBranch
   {
     private:
-      using TYPE = decltype((std::declval<CVUniverse>().*getBranch)());
+      using TYPE = decltype((std::declval<Universe>().*getBranch)());
 
     public:
       CachedBranch()
@@ -16,7 +16,7 @@ namespace evt
         reset();
       }
 
-      TYPE operator()(const CVUniverse& evt)
+      TYPE operator()(const Universe& evt)
       {
         return (this->*fStrategy)(evt);
       }
@@ -31,10 +31,10 @@ namespace evt
     private:
       TYPE fValue; //cached value from a branch
 
-      (CachedBranch::*fStrategy)(const CVUniverse&); //Current strategy for retrieving the number in fValue
+      (CachedBranch::*fStrategy)(const Universe&); //Current strategy for retrieving the number in fValue
 
       //Options for fStrategy are these member functions:
-      TYPE getFromAnaTuple(const CVUniverse& evt)
+      TYPE getFromAnaTuple(const Universe& evt)
       {
         fValue = (evt.*getBranch)(); //Call this before changing fStrategy for exception saftey.  If getBranch() throws an exception that is caught, the next
                                      //call to operator() will try to fill fValue again instead of reading a default-initialized value.
@@ -42,7 +42,7 @@ namespace evt
         return fValue;
       }
 
-      TYPE getFromCache(const CVUniverse& /*evt*/)
+      TYPE getFromCache(const Universe& /*evt*/)
       {
         return fValue;
       }

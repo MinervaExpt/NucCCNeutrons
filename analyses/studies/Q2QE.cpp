@@ -15,7 +15,7 @@
 #include <string>
 
 //evt includes
-#include "evt/CVUniverse.h"
+#include "evt/Universe.h"
 
 //utility includes
 #include "util/Factory.cpp"
@@ -44,12 +44,12 @@ namespace ana
 
     inline std::string name() const { return "Q^{2}_{QE}"; }
 
-    unit truth(const evt::CVUniverse& event)
+    unit truth(const evt::Universe& event)
     {
       return event.GetTruthQ2(); 
     }
 
-    unit reco(const evt::CVUniverse& event)
+    unit reco(const evt::Universe& event)
     {
       //TODO: Recalculate from recoil here to pick up dependence on systematics.
       const GeV Enu = EnuQE(event);
@@ -58,7 +58,7 @@ namespace ana
     }
 
     private:
-      GeV EnuQE(const evt::CVUniverse& event) const
+      GeV EnuQE(const evt::Universe& event) const
       {
         const GeV hadronInMass = , hadronOutMass = , leptonMass = ;
         const auto denom = 2.0 * (hadronInMass - bindingE - event.GetEmu() + event.GetPmu().z);

@@ -1,6 +1,6 @@
 //File: TwoSectionTarget.h
 //Brief: Some of MINERvA's nuclear targets are split into 2 sections of different
-//       materials.  A TwoSectionTarget Cut removes CVUniverses that are not in
+//       materials.  A TwoSectionTarget Cut removes Universes that are not in
 //       a specific section of a given target.  Since I don't need to change
 //       MINERvA's geometry, this is just an implementation detail that I use
 //       to define specific target sections.
@@ -26,7 +26,7 @@ namespace truth
       virtual ~TwoSectionTarget() = default;
 
     protected:
-      virtual bool passesCut(const evt::CVUniverse& event) const override
+      virtual bool passesCut(const evt::Universe& event) const override
       {
         return event.GetTruthTargetZ() == MaterialZ;
       }

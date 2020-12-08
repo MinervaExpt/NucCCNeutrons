@@ -11,12 +11,12 @@
 //TODO: Do I need any includes for YAML::Node?
 namespace evt
 {
-  class CVUniverse;
+  class Universe;
 }
 
 namespace truth
 {
-  //TODO: This could easily be a class template on CVUniverse
+  //TODO: This could easily be a class template on Universe
   //      for other analyses to use it.
   class Q0Range: public Cut
   {
@@ -26,7 +26,7 @@ namespace truth
 
     protected:
       //Your concrete Cut class must override these methods.
-      virtual bool passesCut(const evt::CVUniverse& event) const override;
+      virtual bool passesCut(const evt::Universe& event) const override;
 
     private:
       GeV fMin;
