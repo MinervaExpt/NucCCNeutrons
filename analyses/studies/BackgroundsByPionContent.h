@@ -75,7 +75,7 @@ namespace ana
       }
 
       //Normalize fPDGToObservables and syncCVHistos()
-      virtual void afterAllFiles(const events passedSelection) override
+      virtual void afterAllFiles(const events /*passedSelection*/) override
       {
         fSignalByPionsInVar.visit([](auto& hist) { hist.SyncCVHistos(); });
         fBackgroundsByPionsInVar.visit([](auto& category) { category.visit([](auto& hist) { hist.SyncCVHistos(); }); });
