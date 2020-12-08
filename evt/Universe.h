@@ -63,9 +63,6 @@ namespace PlotUtils
 
 //Preprocessor macros so that I have only one point of maintenance for
 //replacing ChainWrapper.
-//TODO: I'd have to extend TreeWrapper to have a template Get<>()
-//      for this to work with things like ROOT::Math::XYZTVector.
-//      Probably not the most evil thing I've ever done.
 #define blobReco(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
@@ -112,17 +109,11 @@ namespace evt
       //The user is responsible for deleting m_chw as in its normal usage.
       void SetTree(PlotUtils::TreeWrapper* chw) { m_chw = chw; }
 
-      //TODO: Some of these branches could be moved to a .cpp file.  Then, changing branch names would
-      //      only force this file's unit to recompile.
-
       //Information about this event
       SliceID GetEventID(const bool isData) const;
 
       //Hypothesis branches ported mostly from MECAnaTool
-      //TODO: Fix branches that come from derived values.  I need to calculate them from the most
-      //      basic values I can find instead for the NS Framework.
       //Reco branches
-      [[deprecated("Use analyses/studies/q3.cpp instead")]] virtual MeV GetQ3() const { return GetDouble((GetAnaToolName() + "_q3").c_str()); } //TODO: I think this branch is derived from recoilE and Q^2
       virtual MeV GetRecoilE() const { return GetRecoilEnergy(); } //Put units on the NS Framework
       //TODO: Shift q0 in the same systematic universe that shifts GetRecoilEnergy().
       //q0 is different from GetRecoilE() because GetRecoilE() makes no attempt
@@ -137,7 +128,6 @@ namespace evt
       virtual int GetHelicity() const { return GetInt((GetAnaToolName() + "_nuHelicity").c_str()); }
       virtual units::LorentzVector<MeV> GetMuonP() const { return GetMuon4V(); }
       virtual radians GetMuonTheta() const { return GetThetamu(); }
-      [[deprecated("Use analyses/studies/EAvailable.cpp instead")]] virtual MeV GetEAvailable() const;
 
       //Reco branches from CCQENu
       virtual bool hasInteractionVertex() const { return GetInt("has_interaction_vertex"); }
@@ -162,13 +152,6 @@ namespace evt
       virtual int GetTruthNuPDG() const { return GetInt("mc_incoming"); }
       virtual int GetCurrent() const { return GetInt("mc_current"); }
       virtual int GetInteractionType() const { return GetInt("mc_intType"); }
-
-      [[deprecated("Use models interface instead")]] virtual events GetWeight() const
-      {
-        //Rob told me that this is MnvGENIE v1.1 on 2/11/2020
-        //TODO: I also need the non-resonant pion reweight for MnvGENIEv1
-        return GetMinosEfficiencyWeight() * GetGenieWeight() * GetFluxAndCVWeight() * GetLowRecoil2p2hWeight() * GetRPAWeight();
-      }
 
       //Functions to retrieve per-candidate values in vector<>s.  Put them back together with get<>() in each Analysis.
       //Example: const auto cands = Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_earliest_time());
@@ -212,7 +195,6 @@ namespace evt
       //Truth-matched branches for FS neutron energy loss study.
       //They only work in the "reco" tree.  Using them in the
       //Truth tree will give inconsistent results.
-      //TODO: Put these two branches back once I've fixed all code that uses them in the Truth tree
       truthMatched(PDG_code, int)
       truthMatched(energy, MeV)
       truthMatched(angle_wrt_z, double)

@@ -45,14 +45,6 @@ namespace evt
     //return GetVecElem("recoil_summed_energy", 0); //CCQENu version
   }
 
-  MeV Universe::GetEAvailable() const
-  {
-    //const auto edeps = Getblob_calo_edep();
-    //return std::max(0_MeV, GetRecoilE() - std::accumulate(edeps.begin(), edeps.end(), 0_MeV));
-    return GetRecoilE();
-    //return GetRecoilE(); //Works with CCQENu which doesn't have my neutron branches
-  }
-
   units::LorentzVector<MeV> Universe::GetTruthPmu() const
   {
     ROOT::Math::AxisAngle toBeamFrame(ROOT::Math::XYZVector(1., 0., 0.), MinervaUnits::numi_beam_angle_rad);
