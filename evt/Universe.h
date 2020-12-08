@@ -7,13 +7,12 @@
 #ifndef EVT_CVUNIVERSE_H
 #define EVT_CVUNIVERSE_H
 
-//PlotUtils includes
-#include "PlotUtils/MinervaUniverse.h"
-
 //TODO: Someone who maintains this code should deal with these warnings
 #pragma GCC diagnostic push //Learned to use these GCC-specific preprocessor macros from 
                             //https://stackoverflow.com/questions/6321839/how-to-disable-warnings-for-particular-include-files 
                             #pragma GCC diagnostic ignored "-Woverloaded-virtual"
+//PlotUtils includes
+#include "PlotUtils/MinervaUniverse.h"
 #include "PlotUtils/HistWrapper.h"
 #pragma GCC diagnostic pop
 
