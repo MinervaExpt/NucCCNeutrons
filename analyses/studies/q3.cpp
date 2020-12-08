@@ -36,6 +36,7 @@ namespace ana
 
     GeV reco(const evt::Universe& event) const
     {
+      using namespace units;
       const auto q0 = fCaloSpline.eCorrection(event.GetRecoilE());
       const auto Enu = event.GetMuonP().E() + q0;
       using GeV2 = units::detail::do_pow<2, GeV>::result_t;

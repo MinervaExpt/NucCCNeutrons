@@ -84,6 +84,7 @@ namespace ana
         template <class CANDIDATE>
         void Fill(const evt::Universe& event, const neutrons weightPerNeutron, const CANDIDATE& cand, const units::LorentzVector<mm>& vertex)
         {
+          using namespace units;
           const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
           const mm dist = sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ));
           const double angle = deltaZ.in<mm>() / sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ)).template in<mm>();
