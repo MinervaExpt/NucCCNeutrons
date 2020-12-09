@@ -36,7 +36,7 @@ This makes the shell default to finding the executables, libraries, and files it
 
 All analysis programs are run by the `ProcessAnaTuples` program.  At the highest level, an analysis program is described by a YAML file in the `config` directory.  Under the hood, ProcessAnaTuples combines all YAML files on the command line into a single program.  So, I could, and do, write an intentionally incomplete .yaml file like NeutronMultiplicityTracker.yaml to combine with configuration "flags" on the command line: `ProcessAnaTuples CVOnly.yaml MnvGENIEv1.yaml Tracker.yaml NeutronMultiplicity.yaml <some .root files>`.
 
-###Command Line
+### Command Line
 Inputs to ProcessAnaTuples:
 - 1 or more .yaml files to decide what Cuts, histogramming code, and models are used
 - 1 or more .root files with AnaTuples to process.  At the moment, they cannot be a mixture of data and MC.
@@ -49,7 +49,7 @@ Outputs from ProcessAnaTuples:
 - Note: Don't pipe the output of ProcessAnaTuples to anything right now because it's a mess.  Making stdout useful again is a TODO.
 - Help information on stderr
 
-###Physics Analysis Structure
+### Physics Analysis Structure
 A complete YAML file for ProcessAnaTuples should have a map/list with each of these names:
 1. `systematics`: **List** of alternative universes in which some analysis information is shifted.  Their RMS in each histogram will become the systematic uncertainty on that histogram's bin contents.
 2. `model`: Weights applied to events to modify the underlying neutrino interaction model simulated by [GENIE](http://www.genie-mc.org/).
@@ -60,7 +60,7 @@ A complete YAML file for ProcessAnaTuples should have a map/list with each of th
 6. `backgrounds`: Events that fail the `truth` `cuts` can be further broken down.  Individual `backgrounds` may be fit individually among multiple `sidebands` to model the interplay between different physics processes.
 7. `app`: Extra information that the systematics framework needs to do its job.  Right now, this just means `nFluxUniverses` and `useNuEConstraint`.  Maybe I should call it `flux` instead. 
 
-###File Format
+### File Format
 Most Studies supported by ProcessAnaTuples produce .root files that contain:
 - `TNamed` NucCCNeutronsGitCommitHash: Commit hash with which ProcessAnaTuples was built before it was run.  This may be out of date if you compile ProcessAnaTuples with uncommitted changes!  If you are disciplined with making commits before producing major results, this hash combined with the output .yaml file from ProcessAnaTuples lets you reproduce the job that made a .root file.  Remember that UnfoldUtils and PlotUtils commits are not (yet) recorded.
 - `TParameter<double>` POTUsed: Protons On Target used to produce a .root file.  Useful for comparing data to Monte Carlo samples with a different simulated exposure.  Counted for each input AnaTuple that can be opened.
@@ -71,6 +71,6 @@ Studies can also produce TTrees and text files.
 
 `<Study>_EAvailableBackgroundData<Fiducial>.md` is a markdown file that summarizes how each of the `reco` `cuts` performed on the sample processed.  You can make a nice PDF table with `pandoc -o file.pdf file.md`.  Pandoc may also support cross-compiling into LaTeX.
 
-###TODO: Anatomy of a Study
+### TODO: Anatomy of a Study
 
-###TODO: How to write a Cut
+### TODO: How to write a Cut
