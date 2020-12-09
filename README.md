@@ -15,7 +15,7 @@ My goal is to build on the machinery used to produce [MINERvA's low energy neutr
 2. cd NucCCNeutrons
 3. git clone https://github.com/MinervaExpt/NucCCNeutrons.git src
 4. Install dependencies listed below.  Help CMake find them by setting e.g. `PlotUtils_DIR=/home/aolivier/app/ThesisAnalysis/PlotUtils/opt`
-5. `cd ../debug && mkdir build && cd build && cmake ../../src -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Debug "-Dyaml-cpp_DIR=/path/to/yaml-cpp/lib/cmake/yaml-cpp" #You might need to specify paths to dependencies too`
+5. `cd ../debug && mkdir build && cd build && cmake ../../src -DCMAKE_INSTALL_PREFIX=\`pwd\`/.. -DCMAKE_BUILD_TYPE=Debug "-Dyaml-cpp_DIR=/path/to/yaml-cpp/lib/cmake/yaml-cpp" #You might need to specify paths to dependencies too`
 6. make install #Can parallelize with e.g. make install -j 8
 
 ## Dependencies
