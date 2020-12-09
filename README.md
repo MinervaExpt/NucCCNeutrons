@@ -12,11 +12,11 @@ My goal is to build on the machinery used to produce [MINERvA's low energy neutr
   * src
   * debug
   * opt
-2. cd NucCCNeutrons
-3. git clone https://github.com/MinervaExpt/NucCCNeutrons.git src
+2. `cd NucCCNeutrons`
+3. `git clone https://github.com/MinervaExpt/NucCCNeutrons.git src`
 4. Install dependencies listed below.  Help CMake find them by setting e.g. `PlotUtils_DIR=/home/aolivier/app/ThesisAnalysis/PlotUtils/opt`
-5. ```cd ../debug && mkdir build && cd build && cmake ../../src -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Debug "-Dyaml-cpp_DIR=/path/to/yaml-cpp/lib/cmake/yaml-cpp" #You might need to specify paths to dependencies too```
-6. make install #Can parallelize with e.g. make install -j 8
+5. ``cd ../debug && mkdir build && cd build && cmake ../../src -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Debug "-Dyaml-cpp_DIR=/path/to/yaml-cpp/lib/cmake/yaml-cpp" #You might need to specify paths to dependencies too``
+6. `make install #Can parallelize with e.g. make install -j 8`
 
 ## Dependencies
 1. [PlotUtils](https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/show/AnalysisFramework/Ana/PlotUtils)
@@ -50,7 +50,27 @@ Outputs from ProcessAnaTuples:
 - Help information on stderr
 
 ###Physics Analysis Structure
-TODO
+A complete YAML file for ProcessAnaTuples should have a map/list with each of these names:
+1. `systematics`: **List** of alternative universes in which some analysis information is shifted.  Their RMS in each histogram will become the systematic uncertainty on that histogram's bin contents.
+2. `model`: Weights applied to events to modify the underlying neutrino interaction model simulated by [GENIE](http://www.genie-mc.org/).
+3. `signal`: A Study fills histograms under 4 different conditions.  These conditions can be combined to make all of the histograms needed to extract a differential cross section.  There can only be one Study.
+3. `fiducials`: Fiducial volumes in which to perform the `signal` Study.  The `signal` Study is performed seprately in each fiducial volume.
+4. cuts: Define the phase space in which the `signl` Study will be performed.  `truth` cuts are really SignalConstraints.  `phaseSpace` constraints on the signal can be corrected for in a cross section as part of acceptance.  Events that fail the `signal` constraints themselves are backgrounds that must be subtracted from a measured event rate.  `reco` cuts seek to emulate the `truth` signal definition as much as possible, but will ultimately make mistakes.
+5. `sidebands`: Alternative phase space regions that help constrain `backgrounds` based on data.  Ideally, a sideband defines a similar phase space to the `reco` `cuts`, but it is dominated by one of the `backgrounds`.  A sideband only makes sense if it requires that an event `fails` some of the cut names from `cuts`.  It may also require that an event `passes` additional cuts.  It's a Study just like the `signal`.
+6. `backgrounds`: Events that fail the `truth` `cuts` can be further broken down.  Individual `backgrounds` may be fit individually among multiple `sidebands` to model the interplay between different physics processes.
+7. `app`: Extra information that the systematics framework needs to do its job.  Right now, this just means `nFluxUniverses` and `useNuEConstraint`.  Maybe I should call it `flux` instead. 
 
-###Systematics Format: MnvH1D
-TODO
+###File Format
+Most Studies supported by ProcessAnaTuples produce .root files that contain:
+- `TNamed` NucCCNeutronsGitCommitHash: Commit hash with which ProcessAnaTuples was built before it was run.  This may be out of date if you compile ProcessAnaTuples with uncommitted changes!  If you are disciplined with making commits before producing major results, this hash combined with the output .yaml file from ProcessAnaTuples lets you reproduce the job that made a .root file.  Remember that UnfoldUtils and PlotUtils commits are not (yet) recorded.
+- `TParameter<double>` POTUsed: Protons On Target used to produce a .root file.  Useful for comparing data to Monte Carlo samples with a different simulated exposure.  Counted for each input AnaTuple that can be opened.
+- `TParameter<double>` `<Fiducial>_FiducialNucleons`: Number of nucleons in each entry in the `fiducials` map.  Needed to extract a cross section.
+- `PlotUtils::MnvH1D` and `PlotUtils::MnvH2D`: Histograms like TH1D, but with 1 extra histogram for each systematic universe.  They can report a systematic uncertainty in each bin by taking the RMS of all universes in that bin.  Each universe's histogram is a MnvVertErrorBand.  Read about MINERvA's PlotUtils product to learn about what MnvH1D can do.
+
+Studies can also produce TTrees and text files.
+
+`<Study>_EAvailableBackgroundData<Fiducial>.md` is a markdown file that summarizes how each of the `reco` `cuts` performed on the sample processed.  You can make a nice PDF table with `pandoc -o file.pdf file.md`.  Pandoc may also support cross-compiling into LaTeX.
+
+###TODO: Anatomy of a Study
+
+###TODO: How to write a Cut
