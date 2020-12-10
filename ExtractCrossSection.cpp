@@ -158,6 +158,18 @@ PlotUtils::MnvH1D* UnfoldHist( PlotUtils::MnvH1D* h_folded, PlotUtils::MnvH2D* h
   return h_unfolded;
 }
 
+//The final step of cross section extraction: normalize by flux, bin width, POT, and number of targets
+PlotUtils::MnvH1D* normalize(PlotUtils::MnvH1D* efficiencyCorrected, PlotUtils::MnvH1D* fluxIntegral, const double nNucleons, const double POT)
+{
+  efficiencyCorrected->Divide(efficiencyCorrected, fluxIntegral);
+
+  efficiencyCorrected->Scale(1./nNucleons/POT);
+  efficiencyCorrected->Scale(1., "width");
+  efficiencyCorrected->Scale(1.e4); //Flux histogram is in m^-2, but convention is to report cm^2
+
+  return efficiencyCorrected;
+}
+
 int main(const int argc, const char** argv)
 {
   #ifndef NCINTEX
@@ -209,6 +221,7 @@ int main(const int argc, const char** argv)
       auto migration = GetIngredient<PlotUtils::MnvH2D>(*mcFile, "Migration", prefix);
       auto effNum = GetIngredient<PlotUtils::MnvH1D>(*mcFile, "EfficiencyNumerator", prefix);
       auto effDenom = GetIngredient<PlotUtils::MnvH1D>(*mcFile, "EfficiencyDenominator", prefix);
+      auto simEventRate = effDenom->Clone(); //Make a copy for later
 
       const auto fiducialFound = std::find_if(mcFile->GetListOfKeys()->begin(), mcFile->GetListOfKeys()->end(),
                                               [&prefix](const auto key)
@@ -219,7 +232,7 @@ int main(const int argc, const char** argv)
                                               });
       if(fiducialFound == mcFile->GetListOfKeys()->end()) throw std::runtime_error("Failed to find a number of nucleons that matches prefix " + prefix);
 
-      auto nNucleons = GetIngredient<TParameter<double>>(*dataFile, (*fiducialFound)->GetName());
+      auto nNucleons = GetIngredient<TParameter<double>>(*mcFile, (*fiducialFound)->GetName()); //Dan: Use the same truth fiducial volume for all extractions.  The acceptance correction corrects data back to this fiducial even if the reco fiducial cut is different.
 
       //Look for backgrounds with <prefix>_<analysis>_Background_<name>
       std::vector<PlotUtils::MnvH1D*> backgrounds;
@@ -268,13 +281,17 @@ int main(const int argc, const char** argv)
       unfolded->Divide(unfolded, effNum);
       Plot(*unfolded, "efficiencyCorrected", prefix);
 
-      unfolded->Divide(unfolded, flux);
-      unfolded->Scale(1./nNucleons->GetVal()/dataPOT);
-      unfolded->Scale(1., "width");
-      unfolded->Scale(1.e4); //Flux histogram is in m^-2, but convention is to report cm^2
-      Plot(*unfolded, "crossSection", prefix);
+      auto crossSection = normalize(unfolded, flux, nNucleons->GetVal(), dataPOT);
+      Plot(*crossSection, "crossSection", prefix);
+      crossSection->Clone()->Write("crossSection");
 
-      unfolded->Clone()->Write("crossSection");
+      //Write a "simulated cross section" to compare to the data I just extracted.
+      //If this analysis passed its closure test, this should be the same cross section as
+      //what GENIEXSecExtract would produce.
+      normalize(simEventRate, flux, nNucleons->GetVal(), mcPOT);
+      
+      Plot(*simEventRate, "simulatedCrossSection", prefix);
+      simEventRate->Write("simulatedCrossSection");
     }
     catch(const std::runtime_error& e)
     {
