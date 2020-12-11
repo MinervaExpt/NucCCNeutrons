@@ -28,11 +28,6 @@ namespace PlotUtils
 
 namespace evt
 {
-  //Weird configuration parameters that MuonFunctions.h needs
-  double Universe::m_muon_momentum_cv_offset = 0.0;
-  bool Universe::_is_muon_momentum_cv_offset_set = false;
-  bool Universe::_has_muon_error_been_thrown = false;
-
   std::string Universe::blobAlg = "mergedTejinBlobs";
 
   Universe::Universe(/*const std::string& blobAlg,*/ typename MinervaUniverse::config_t chw, const double nsigma): MinervaUniverse(chw, nsigma)
