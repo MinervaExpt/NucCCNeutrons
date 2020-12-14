@@ -523,13 +523,16 @@ int main(const int argc, const char** argv)
     tableFile << "#Selection:\n" << *fid->selection << "\n";
   }
 
-  //Final Write()s to output file
+  //Write metadata to output file
   options->HistFile->cd();
   auto pot = new TParameter<double>("POTUsed", pot_used);
   pot->Write();
 
   auto commitHash = new TNamed("NucCCNeutronsGitCommitHash", git::commitHash());
   commitHash->Write();
+
+  auto playlist = new TNamed("playlist", options->playlist().c_str());
+  playlist->Write();
 
   return app::CmdLine::ExitCode::Success;
 }
