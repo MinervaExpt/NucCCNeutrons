@@ -108,25 +108,36 @@ namespace
 
   //Pick systematic universes based on a vector<string>.  A curated list of
   //all systematic universes in the NSF.
-  std::map<std::string, std::vector<evt::WeightCachedUniverse*>> chooseSystematics(const std::vector<std::string>& bandsToChoose, PlotUtils::ChainWrapper* chain)
+  std::map<std::string, std::vector<evt::WeightCachedUniverse*>> chooseSystematics(const YAML::Node& bandsToChoose, PlotUtils::ChainWrapper* chain)
   {
     //First, make an exhaustive list of standard error bands in the NSF
     //TODO: Keep this list up to date
     auto allErrorBands  = getStandardSystematics(chain); //TODO: 
 
+    //Any custom systematics from NucCCNeutrons are kept in their own list.
+    auto& customSystFactory = plgn::Factory<evt::WeightCachedUniverse, evt::WeightCachedUniverse::config_t>::instance();
+
     decltype(allErrorBands) result;
     for(const auto& band: bandsToChoose)
     {
+      const auto& bandName = band.first.as<std::string>();
       try
       {
-        result[band] = allErrorBands.at(band);
+        result[bandName] = allErrorBands.at(bandName);
         #ifndef NDEBUG
-          for(const auto& univ: result[band]) assert(univ != nullptr && "Found an error band, but it was a nullptr!");
+          for(const auto& univ: result[bandName]) assert(univ != nullptr && "Found an error band, but it was a nullptr!");
         #endif //NDEBUG
       }
-      catch(const std::out_of_range& err)
+      catch(const std::out_of_range& /*err*/)
       {
-        throw std::runtime_error(std::string("When selecting systematic universes to use:\n") + band + ": no such universe.\n");
+        try
+        {
+          result[bandName].push_back(customSystFactory.Get(band.second, chain).get()); //TODO: This is just one custom universe at a time.  How to handle error bands?
+        }
+        catch(const std::runtime_error& /*e*/)
+        {
+          throw std::runtime_error(std::string("When selecting systematic universes to use:\n") + bandName + ": no such universe.\n");
+        }
       }
     }
 
@@ -277,7 +288,7 @@ namespace app
     {
       MinervaUniverse::SetNFluxUniverses(options.ConfigFile()["app"]["nFluxUniverses"].as<int>());
 
-      const auto errorBands = ::chooseSystematics(options.ConfigFile()["systematics"].as<std::vector<std::string>>(), chw);
+      const auto errorBands = ::chooseSystematics(options.ConfigFile()["systematics"], chw);
       result.insert(errorBands.begin(), errorBands.end());
     }
 
