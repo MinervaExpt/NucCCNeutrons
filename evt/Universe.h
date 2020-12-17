@@ -65,13 +65,15 @@ namespace PlotUtils
 #define blobReco(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    return GetVec<TYPE>((blobAlg + "_" #BRANCH).c_str());\
+    auto branch = GetVec<TYPE>((blobAlg + "_" #BRANCH).c_str());\
+    return dropCandidates(branch);\
   }
 
 #define blobTruth(BRANCH, TYPE)\
   virtual std::vector<TYPE> Get##BRANCH() const\
   {\
-    return GetVec<TYPE>(("truth_" + blobAlg + "_" #BRANCH).c_str());\
+    auto branch = GetVec<TYPE>(("truth_" + blobAlg + "_" #BRANCH).c_str());\
+    return dropCandidates(branch);\
   }
 
 #define truthMatched(BRANCH, TYPE)\
@@ -243,6 +245,22 @@ namespace evt
         return result; 
       }
 
+      //Drop neutron candidates to help me implement certain systematic universes.
+      //Systematic universes have to modify fCandsToDrop rather than overload this
+      //function because this needs to be a function template.
+      template <class CAND>
+      std::vector<CAND> dropCandidates(std::vector<CAND>& branch) const
+      {
+        auto toErase = branch.begin();
+        for(size_t whichCand = 0; whichCand < branch.size(); ++whichCand)
+        {
+          if(fCandsToDrop.count(whichCand)) branch.erase(toErase);
+          ++toErase;
+        }
+
+        return branch;
+      }
+
     public:
       template <class CAND, class ...FUNCTIONS>
       std::vector<CAND> Get(FUNCTIONS... branches) const
@@ -259,6 +277,10 @@ namespace evt
       //Name of the blob algorithm to use
       static std::string blobAlg;
       std::string fHypothesisName;
+
+      //Which neutron candidates to drop.  In the CV, no candidates are dropped.
+      //Useful for systematic universes.
+      std::set<int> fCandsToDrop;
   };
 }
 
