@@ -288,8 +288,36 @@ namespace app
     {
       MinervaUniverse::SetNFluxUniverses(options.ConfigFile()["app"]["nFluxUniverses"].as<int>());
 
-      const auto errorBands = ::chooseSystematics(options.ConfigFile()["systematics"], chw);
-      result.insert(errorBands.begin(), errorBands.end());
+      const auto& warp = options.ConfigFile()["CVWarp"];
+      if(warp) //If this is a warping study, use a specific systematic universe as the CV.
+      {
+        if(warp["band"].size() != 1)
+        {
+          throw std::runtime_error(std::string("You may only select 1 universe for a CV warping study.  You selected ")
+                                   + std::to_string(warp["band"].size()) + " bands.\n");
+        }
+
+        auto errorBands = ::chooseSystematics(warp["band"], chw);
+        auto cv = errorBands.begin()->second.at(warp["whichUniv"].as<size_t>(0));
+        errorBands.clear();
+        errorBands["cv"].push_back(cv);
+
+        if(options.ConfigFile()["systematics"].size() > 0)
+        {
+          std::cerr << "WARNING: Ignoring systematic universes because you have requested a warped central value universe.\n";
+        }
+
+        result.insert(errorBands.begin(), errorBands.end());
+      }
+      else //The usual case: not a warping study
+      {
+        const auto errorBands = ::chooseSystematics(options.ConfigFile()["systematics"], chw);
+        result.insert(errorBands.begin(), errorBands.end());
+      }
+    }
+    else if(options.ConfigFile()["CVWarp"]) //Warping studies are ignored for data
+    {
+      std::clog << "Ignoring warping study when processing data.\n";
     }
 
     //Name of the NeutrinoInt from which to extract kinematic quantities

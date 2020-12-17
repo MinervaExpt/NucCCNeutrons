@@ -182,7 +182,7 @@ int main(const int argc, const char** argv)
       fid->backgrounds = app::setupBackgrounds(options->ConfigFile()["backgrounds"]);
 
       auto nNucleons = dirForFid.make<TParameter<double>>("FiducialNucleons", fid->NNucleons(options->isMC()));
-      nNucleons->Write(); //TODO: Why is this necessary?
+      nNucleons->Write();
 
       try
       {
