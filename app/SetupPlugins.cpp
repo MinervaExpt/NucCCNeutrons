@@ -112,7 +112,7 @@ namespace
   {
     //First, make an exhaustive list of standard error bands in the NSF
     //TODO: Keep this list up to date
-    auto allErrorBands  = getStandardSystematics(chain); //TODO: 
+    auto allErrorBands  = getStandardSystematics(chain);
 
     //Any custom systematics from NucCCNeutrons are kept in their own list.
     auto& customSystFactory = plgn::Factory<evt::WeightCachedUniverse, evt::WeightCachedUniverse::config_t>::instance();
@@ -296,6 +296,8 @@ namespace app
           throw std::runtime_error(std::string("You may only select 1 universe for a CV warping study.  You selected ")
                                    + std::to_string(warp["band"].size()) + " bands.\n");
         }
+
+        std::cout << "About to choose this error band:\n" << warp["band"] << "\n";
 
         auto errorBands = ::chooseSystematics(warp["band"], chw);
         auto cv = errorBands.begin()->second.at(warp["whichUniv"].as<size_t>(0));
