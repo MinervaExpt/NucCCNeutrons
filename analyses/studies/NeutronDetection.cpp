@@ -66,6 +66,7 @@ namespace ana
   {
     const auto cands = event.Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time());
     const auto vertex = event.GetVtx();
+
     for(const auto& cand: cands)
     {
       if(fCuts.countAsReco(cand, vertex)) fDataCands->Fill(event, weight.in<events>(), cand, vertex);

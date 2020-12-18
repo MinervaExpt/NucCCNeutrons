@@ -251,12 +251,12 @@ namespace evt
       template <class CAND>
       std::vector<CAND> dropCandidates(std::vector<CAND>& branch) const
       {
-        auto toErase = branch.begin();
+        /*auto toErase = branch.begin();
         for(size_t whichCand = 0; whichCand < branch.size(); ++whichCand)
         {
           if(fCandsToDrop.count(whichCand)) branch.erase(toErase);
           ++toErase;
-        }
+        }*/
 
         return branch;
       }

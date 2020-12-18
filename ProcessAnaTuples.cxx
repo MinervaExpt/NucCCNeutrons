@@ -181,7 +181,8 @@ int main(const int argc, const char** argv)
       fid->name = config.first.as<std::string>();
       fid->backgrounds = app::setupBackgrounds(options->ConfigFile()["backgrounds"]);
 
-      auto nNucleons = dirForFid.make<TParameter<double>>("FiducialNucleons", fid->NNucleons(options->isMC()));
+      //N.B.: There's a technical reason why it's really hard to use util::Directory for a TParameter.
+      auto nNucleons = new TParameter<double>((config.first.as<std::string>() + "_FiducialNucleons").c_str(), fid->NNucleons(options->isMC()));
       nNucleons->Write();
 
       try
@@ -355,7 +356,7 @@ int main(const int argc, const char** argv)
 
               //Bitfields encoding which reco cuts I passed.  Effectively, this hashes sidebands in a way that works even
               //for sidebands defined by multiple cuts.
-              const auto passedReco = fid->selection->isSelectedWithNoStats(compat, shared); //fid->selection->isDataSelected(*compat.front(), shared);
+              const auto passedReco = fid->selection->isSelectedWithNoStats(compat, shared);
 
               //All compatible universes are in the same selected/sideband region because they pass the same Cuts
               auto whichStudy = findSelectedOrSideband(passedReco, *fid, *compat.front()); 

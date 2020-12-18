@@ -43,7 +43,8 @@ namespace util
     template <class TOBJ>
     struct set
     {
-      static void dir(TOBJ& /*obj*/, TDirectory& /*dir*/) {}
+      static void dir(TObject& /*obj*/, TDirectory& /*dir*/) {}
+      static void dir(TOBJ& obj, TDirectory& dir) { obj.SetDirectory(&dir); }
       static void dir(TH1& hist, TDirectory& dir) { hist.SetDirectory(&dir); }
     };
 

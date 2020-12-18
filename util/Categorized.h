@@ -11,6 +11,7 @@
 
 //Local includes
 #include "util/SafeROOTName.h"
+#include "util/Directory.h"
 
 //c++ includes
 #include <string>
@@ -150,6 +151,11 @@ namespace util
         }
 
         func(*fOther);
+      }
+
+      void SetDirectory(TDirectory* dir)
+      {
+        visit([dir](auto& hist) { util::detail::set<HIST>::dir(hist, *dir); });
       }
 
     private:
