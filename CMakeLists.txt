@@ -71,6 +71,7 @@ add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library
 add_executable(ExtractCrossSection ExtractCrossSection.cpp)
+add_executable(SwapSysUnivWithCV SwapSysUnivWithCV.cpp)
 
 #Build libraries that main executables depend on
 add_subdirectory(units)
@@ -82,9 +83,11 @@ add_subdirectory(app)
 add_dependencies(ProcessAnaTuples generateGitVersion)
 target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
 target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} PlotUtils UnfoldUtils)
+target_link_libraries(SwapSysUnivWithCV ${ROOT_LIBRARIES} PlotUtils)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 install(TARGETS ExtractCrossSection DESTINATION bin)
+install(TARGETS SwapSysUnivWithCV DESTINATION bin)
 
 configure_file(setup.sh.in setup.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup.sh DESTINATION bin)

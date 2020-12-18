@@ -50,7 +50,10 @@ namespace sys
         {
           const int fsIndex = cands[whichCand];
           //TODO: Also run a pseudo-random Bernoulli trial on the next line.
-          //if(fsIndex >= 0 && fs[fsIndex].PDGCode == 2112 && fs[fsIndex].energy - 939.6_MeV <= fMaxKEToDrop) fCandsToDrop.insert(whichCand);
+          if(fsIndex >= 0 && fs[fsIndex].PDGCode == 2112 && fs[fsIndex].energy - 939.6_MeV <= fMaxKEToDrop)
+          {
+            fCandsToDrop.insert(whichCand);
+          }
         }
       }
 
