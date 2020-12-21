@@ -46,19 +46,22 @@ namespace sys
       {
         fCandsToDrop.clear();
 
-        struct Cand
+        if(!m_is_truth) //This is a reco-only systematic
         {
-          MeV edep;
-          mm distAsNeutron; //distAsNeutron < 0 => no neutrons in ancestry
-        };
-
-        const auto cands = Get<Cand>(Getblob_edep(), Getblob_geant_dist_to_edep_as_neutron());
-
-        for(size_t whichCand = 0; whichCand < cands.size(); ++whichCand)
-        {
-          if(cands[whichCand].distAsNeutron > 0_mm && cands[whichCand].edep < fMaxEDepToDrop && fDist(fGen))
+          struct Cand
           {
-            fCandsToDrop.insert(whichCand);
+            MeV edep;
+            mm distAsNeutron; //distAsNeutron < 0 => no neutrons in ancestry
+          };
+
+          const auto cands = Get<Cand>(Getblob_edep(), Getblob_geant_dist_to_edep_as_neutron());
+
+          for(size_t whichCand = 0; whichCand < cands.size(); ++whichCand)
+          {
+            if(cands[whichCand].distAsNeutron > 0_mm && cands[whichCand].edep < fMaxEDepToDrop && fDist(fGen))
+            {
+              fCandsToDrop.insert(whichCand);
+            }
           }
         }
       }
