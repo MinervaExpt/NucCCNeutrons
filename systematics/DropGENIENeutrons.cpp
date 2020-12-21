@@ -10,6 +10,13 @@
 //util includes
 #include "util/Factory.cpp"
 
+//POSIX includes
+#include <unistd.h>
+
+//c++ includes
+#include <random>
+#include <chrono>
+
 namespace sys
 {
   class DropGENIENeutrons: public evt::WeightCachedUniverse
@@ -17,7 +24,9 @@ namespace sys
     public:
       DropGENIENeutrons(const YAML::Node& config, evt::WeightCachedUniverse::config_t chw): evt::WeightCachedUniverse(chw),
                                                                                             fMaxKEToDrop(config["MaxKEToDrop"].as<MeV>()),
-                                                                                            fProbToDrop(config["ProbToDrop"].as<double>())
+                                                                                            fDist(config["ProbToDrop"].as<double>()),
+                                                                                            fGen(std::chrono::system_clock::now().time_since_epoch().count() + getpid())
+                                                                                            //TODO: Use PROCESS too so I don't get the same seed on Fermilab's grid nodes
       {
       }
       virtual ~DropGENIENeutrons() = default;
@@ -49,8 +58,7 @@ namespace sys
         for(size_t whichCand = 0; whichCand < cands.size(); ++whichCand)
         {
           const int fsIndex = cands[whichCand];
-          //TODO: Also run a pseudo-random Bernoulli trial on the next line.
-          if(fsIndex >= 0 && fs[fsIndex].PDGCode == 2112 && fs[fsIndex].energy - 939.6_MeV <= fMaxKEToDrop)
+          if(fsIndex >= 0 && fs[fsIndex].PDGCode == 2112 && fs[fsIndex].energy - 939.6_MeV <= fMaxKEToDrop && fDist(fGen))
           {
             fCandsToDrop.insert(whichCand);
           }
@@ -58,7 +66,8 @@ namespace sys
       }
 
       MeV fMaxKEToDrop;
-      double fProbToDrop;
+      std::bernoulli_distribution fDist;
+      std::mt19937 fGen;
   };
 }
 

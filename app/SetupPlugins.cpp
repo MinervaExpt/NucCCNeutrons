@@ -132,7 +132,7 @@ namespace
       {
         try
         {
-          result[bandName].push_back(customSystFactory.Get(band.second, chain).get()); //TODO: This is just one custom universe at a time.  How to handle error bands?
+          result[bandName].push_back(customSystFactory.Get(band.second, chain).release()); //TODO: This is just one custom universe at a time.  How to handle error bands?
         }
         catch(const std::runtime_error& /*e*/)
         {
