@@ -116,7 +116,7 @@ int main(const int argc, const char** argv)
     return 0;
   }
 
-  const auto fileName = argv[1];
+  const std::string fileName = argv[1];
   const auto bandName = argv[2];
   int whichUniv = -1;
 
@@ -130,14 +130,14 @@ int main(const int argc, const char** argv)
     return 1;
   }
 
-  auto inFile = TFile::Open(fileName, "UPDATE"); //TODO: Clone() so I don't mess up the original?
+  auto inFile = TFile::Open(fileName.c_str(), "UPDATE"); //TODO: Clone() so I don't mess up the original?
   if(!inFile)
   {
     std::cerr << fileName << ": no such file or directory.\n\n" << USAGE << "\n";
     return 1;
   }
 
-  const auto outFileName = std::string(fileName) + "_" + bandName;
+  const auto outFileName = fileName.substr(0, fileName.find('.')) + "_" + bandName + ".root";
   auto outFile = TFile::Open(outFileName.c_str(), "CREATE");
   if(!outFile)
   {
