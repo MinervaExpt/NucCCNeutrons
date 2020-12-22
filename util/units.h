@@ -4,6 +4,7 @@
 
 //util includes
 #include "util/vector.h"
+#include "util/Factory.cpp"
 
 //BaseUnits includes
 #include "units/units.h"
@@ -14,34 +15,60 @@
 #ifndef NEUTRON_UNITS_H
 #define NEUTRON_UNITS_H
 
-//Set up YAML bindings for units.  For now, require that unit name matches exactly.
-//I learned to do this from https://github.com/jbeder/yaml-cpp/wiki/Tutorial
+template <class BASE_UNIT, class FLOATING_POINT>
+struct converter_base
+{
+  converter_base(const YAML::Node& /*node*/) {}
+
+  virtual units::quantity<BASE_UNIT, std::ratio<1>, FLOATING_POINT> convert(const YAML::Node& /*node*/) = 0;
+};
+
 #define ADD_YAML_TO_UNIT(UNIT)\
-  namespace YAML\
+/*Conversion to other compatible units from UNIT itself*/\
+struct UNIT##_converter: public converter_base<typename UNIT::tag, typename UNIT::floating_point>\
+{\
+  UNIT##_converter(const YAML::Node& node): converter_base<typename UNIT::tag, typename UNIT::floating_point>(node)\
   {\
-    template <>\
-    struct convert<UNIT>\
-    {\
-      static Node encode(const UNIT& rhs)\
-      {\
-        Node result;\
-        result = rhs.in<UNIT>();\
-        result.SetTag(#UNIT);\
-        return result;\
-      }\
-\
-      static bool decode(const Node& node, UNIT& value)\
-      {\
-        if(!node.IsScalar()) return false;\
-\
-        /*Require that tag matches UNIT's name*/\
-        if(node.Tag() != std::string("!" #UNIT)) return false;\
-\
-        value = UNIT(node.as<double>());\
-        return true;\
-      }\
-    };\
   }\
+\
+  units::quantity<typename UNIT::tag, std::ratio<1>, typename UNIT::floating_point> convert(const YAML::Node& node) override\
+  {\
+    return UNIT(node.as<double>());\
+  }\
+};\
+\
+namespace\
+{\
+  plgn::Registrar<converter_base<typename UNIT::tag, typename UNIT::floating_point>, UNIT##_converter> reg_##UNIT(#UNIT);\
+}\
+\
+/*Conversion to UNIT itself from other compatible units*/\
+namespace YAML\
+{\
+  template <>\
+  struct convert<UNIT>\
+  {\
+    static Node encode(const UNIT& rhs)\
+    {\
+      Node result;\
+      result = rhs.in<UNIT>();\
+      result.SetTag(#UNIT);\
+      return result;\
+    }\
+\
+    static bool decode(const Node& node, UNIT& value)\
+    {\
+      if(!node.IsScalar()) return false;\
+\
+      /*Require that tag matches UNIT's name*/\
+      auto converter = plgn::Factory<converter_base<typename UNIT::tag, typename UNIT::floating_point>>::instance().Get(node);\
+      if(!converter) return false;\
+\
+      value = converter->convert(node);\
+      return true;\
+    }\
+  };\
+}\
 
 #define REGISTER_UNIT_NAME(UNIT)\
   template <>\
