@@ -12,6 +12,12 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_Flags_For_CXX}" )
 set( CMAKE_CXX_FLAGS_DEBUG "-ggdb" )
 set( CMAKE_CXX_FLAGS_RELEASE "-O2" )
 
+#Add a PROFiling CMAKE_BUILD_TYPE
+set( CMAKE_CXX_FLAGS_PROF "-ggdb -pg -DNDEBUG" )
+set( CMAKE_C_FLAGS_PROF "-ggdb -pg -DNDEBUG" )
+set( CMAKE_EXE_LINKER_FLAGS_PROF "-ggdb -pg -DNDEBUG" )
+set( CMAKE_SHARED_LINKER_FLAGS_PROF "-ggdb -pg -DNDEBUG" )
+
 #Tell this package where it is installed and version control status
 add_definitions(-DINSTALL_DIR="${CMAKE_INSTALL_PREFIX}/")
 

@@ -10,7 +10,7 @@
 //UnfoldUtils includes
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#include "UnfoldUtils/MnvUnfold.h"
+#include "MinervaUnfold/MnvUnfold.h"
 
 //PlotUtils includes
 #include "PlotUtils/MnvH1D.h"
