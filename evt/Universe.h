@@ -239,6 +239,7 @@ namespace evt
       {
         const size_t nCands = std::get<0>(tuple).size();
         std::vector<CAND> result;
+        result.reserve(nCands);
 
         for(size_t whichCand = 0; whichCand < nCands; ++whichCand) result.push_back(CAND{std::get<INDICES>(tuple)[whichCand]...});
 
