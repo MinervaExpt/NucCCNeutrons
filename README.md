@@ -73,5 +73,4 @@ Studies can also produce TTrees and text files.
 
 ### TODO: Anatomy of a Study
 
-
 ### TODO: How to write a Cut
