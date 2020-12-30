@@ -8,6 +8,9 @@ My goal is to build on the machinery used to produce [MINERvA's low energy neutr
 2. Extract a differential cross section in neutron multiplicity as a function of nucleus
 
 ## Installation
+NEW: Install all dependencies using ThesisAnalysis.
+
+Old Manual install instructions:
 1. Make a directory structure for the repository to live in.  I recommend an out of source build in NucCCNeutrons/:
   * src
   * debug
