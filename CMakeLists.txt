@@ -10,7 +10,7 @@ include(AddFileDependencies)
 set( GCC_Flags_For_CXX "-std=c++1y -Wall" )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_Flags_For_CXX}" )
 set( CMAKE_CXX_FLAGS_DEBUG "-ggdb" )
-set( CMAKE_CXX_FLAGS_RELEASE "-O2" )
+set( CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG" )
 
 #Add a PROFiling CMAKE_BUILD_TYPE
 set( CMAKE_CXX_FLAGS_PROF "-ggdb -pg -DNDEBUG" )
@@ -95,5 +95,5 @@ install(TARGETS ProcessAnaTuples DESTINATION bin)
 install(TARGETS ExtractCrossSection DESTINATION bin)
 install(TARGETS SwapSysUnivWithCV DESTINATION bin)
 
-configure_file(setup.sh.in setup.sh @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup.sh DESTINATION bin)
+configure_file(setup.sh.in setup_${PROJECT_NAME}.sh @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_${PROJECT_NAME}.sh DESTINATION bin)
