@@ -1,11 +1,16 @@
 #!/bin/bash
+
+#Make this package relocatable by making PREFIX overrideable.  Default to the old behavior of setting up from a fixed location.
+#You might use this feature to run on the FermiGrid for example.
+PREFIX=${MINERVA_PREFIX:-"@CMAKE_INSTALL_PREFIX@"}
+
 #Make sure libraries can be found at runtime and executable names can
 #be autocompleted by bash.
-export LD_LIBRARY_PATH=@CMAKE_INSTALL_PREFIX@/lib:$LD_LIBRARY_PATH
-export PATH=@CMAKE_INSTALL_PREFIX@/bin:$PATH
+export LD_LIBRARY_PATH=${PREFIX}/lib:$LD_LIBRARY_PATH
+export PATH=${PREFIX}/bin:$PATH
 
 #Bash autocompletion support for cut files
 #Basically, allow auto-completion for every executable file produced:
 #1) Any non-executable in the bin directory
 #2) Any file name the way bash normally does autocompletion
-complete -o filenames -W '$(find @CMAKE_INSTALL_PREFIX@/bin -name "*.yaml" -type f \! -executable -printf %f\\n)' -o default -o bashdefault $(find @CMAKE_INSTALL_PREFIX@/bin -type f -executable -printf %f\\n)
+complete -o filenames -W '$(find ${PREFIX}/bin -name "*.yaml" -type f \! -executable -printf %f\\n)' -o default -o bashdefault $(find ${PREFIX}/bin -type f -executable -printf %f\\n)
