@@ -79,7 +79,8 @@ namespace PlotUtils
 #define truthMatched(BRANCH, TYPE)\
   virtual std::vector<TYPE> GetTruthMatched##BRANCH() const\
   {\
-    return GetVec<TYPE>("truth_FS_" #BRANCH);\
+    auto branch = GetVec<TYPE>("truth_FS_" #BRANCH);\
+    return dropFS(branch);\
   }
 
 namespace evt
@@ -246,21 +247,35 @@ namespace evt
         return result; 
       }
 
+      template <class OBJ>
+      std::vector<OBJ> dropObj(std::vector<OBJ>& branch, std::set<int> objToDrop) const
+      {
+        size_t toErase = 0;
+        const size_t origSize = branch.size();
+        for(size_t whichCand = 0; whichCand < origSize; ++whichCand)
+        {
+          if(objToDrop.count(whichCand)) branch.erase(branch.begin() + toErase);
+          else ++toErase;
+        }
+
+        return branch;
+      }
+
       //Drop neutron candidates to help me implement certain systematic universes.
       //Systematic universes have to modify fCandsToDrop rather than overload this
       //function because this needs to be a function template.
       template <class CAND>
       std::vector<CAND> dropCandidates(std::vector<CAND>& branch) const
       {
-        size_t toErase = 0;
-        const size_t origSize = branch.size();
-        for(size_t whichCand = 0; whichCand < origSize; ++whichCand)
-        {
-          if(fCandsToDrop.count(whichCand)) branch.erase(branch.begin() + toErase);
-          else ++toErase;
-        }
+        return dropObj(branch, fCandsToDrop);
+      }
 
-        return branch;
+      //Same for final state particles.
+      //TODO: 
+      template <class FS>
+      std::vector<FS> dropFS(std::vector<FS>& branch) const
+      {
+        return dropObj(branch, fFSToDrop);
       }
 
     public:
@@ -283,6 +298,10 @@ namespace evt
       //Which neutron candidates to drop.  In the CV, no candidates are dropped.
       //Useful for systematic universes.
       std::set<int> fCandsToDrop;
+
+      //Which FS particles to drop.  In the CV, no FS particles are dropped.
+      //Useful for systematic universes.
+      std::set<int> fFSToDrop;
   };
 }
 

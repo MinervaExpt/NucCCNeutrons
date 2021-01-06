@@ -4,7 +4,7 @@
 //       if there's a flux histogram hanging around.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#define USAGE "SwapSysUnivWithCV <fileToWarp.root> <nameOfErrorBand> <indexOfUniverseWithinBand>"
+#define USAGE "SwapSysUnivWithCV <fileToWarp.root> <nameOfErrorBand> [indexOfUniverseWithinBand = 0]"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
@@ -110,7 +110,7 @@ int main(const int argc, const char** argv)
   #endif
 
   //Check arguments
-  if(!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help"))
+  if(!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help") || argc < 3 || argc > 4)
   {
     std::cout << USAGE << "\n";
     return 0;
@@ -120,15 +120,19 @@ int main(const int argc, const char** argv)
   const auto bandName = argv[2];
   int whichUniv = -1;
 
-  try
+  if(argc > 3)
   {
-    whichUniv = std::stoi(argv[3]);
+    try
+    {
+      whichUniv = std::stoi(argv[3]);
+    }
+    catch(const std::invalid_argument& /*e*/)
+    {
+      std::cerr << argv[3] << " is not an integer!\n\n" << USAGE << "\n";
+      return 1;
+    }
   }
-  catch(const std::invalid_argument& /*e*/)
-  {
-    std::cerr << argv[3] << " is not an integer!\n\n" << USAGE << "\n";
-    return 1;
-  }
+  else whichUniv = 0;
 
   auto inFile = TFile::Open(fileName.c_str(), "UPDATE"); //TODO: Clone() so I don't mess up the original?
   if(!inFile)
