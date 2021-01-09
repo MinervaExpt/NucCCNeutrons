@@ -4,7 +4,7 @@
 //       if there's a flux histogram hanging around.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#define USAGE "SwapSysUnivWithCV <fileToWarp.root> <nameOfErrorBand> [indexOfUniverseWithinBand = 0]"
+#define USAGE "SwapSysUnivWithCV <fileToWarp.root> [nameOfErrorBand = all]"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
@@ -110,65 +110,84 @@ int main(const int argc, const char** argv)
   #endif
 
   //Check arguments
-  if(!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help") || argc < 3 || argc > 4)
+  if(!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help") || argc < 2 || argc > 4)
   {
     std::cout << USAGE << "\n";
     return 0;
   }
 
-  const std::string fileName = argv[1];
-  const auto bandName = argv[2];
-  int whichUniv = -1;
-
-  if(argc > 3)
+  if(argc < 2 || argc > 4)
   {
-    try
-    {
-      whichUniv = std::stoi(argv[3]);
-    }
-    catch(const std::invalid_argument& /*e*/)
-    {
-      std::cerr << argv[3] << " is not an integer!\n\n" << USAGE << "\n";
-      return 1;
-    }
-  }
-  else whichUniv = 0;
-
-  auto inFile = TFile::Open(fileName.c_str(), "UPDATE"); //TODO: Clone() so I don't mess up the original?
-  if(!inFile)
-  {
-    std::cerr << fileName << ": no such file or directory.\n\n" << USAGE << "\n";
+    std::cerr << "Wrong number of arguments.\n\n" << USAGE << "\n";
     return 1;
   }
 
-  const auto outFileName = fileName.substr(0, fileName.find('.')) + "_" + bandName + ".root";
-  auto outFile = TFile::Open(outFileName.c_str(), "CREATE");
-  if(!outFile)
+  const std::string fileName = argv[1];
+  auto inFile = TFile::Open(fileName.c_str(), "READ");
+  if(!inFile)
   {
-    std::cerr << "Couldn't create " << outFileName << " in the current directory.  Does it already exist?\n";
+    std::cerr << fileName << ": no such file or directory.\n\n" << USAGE << "\n";
     return 2;
   }
 
-  //Make the swap
-  try
-  {
-    const auto all1D = find<PlotUtils::MnvH1D>(*inFile);
-    outFile->cd();
-    for(auto hist: all1D) shiftCV(hist, bandName, whichUniv);
+  const auto all1D = find<PlotUtils::MnvH1D>(*inFile);
+  const auto all2D = find<PlotUtils::MnvH2D>(*inFile);
 
-    const auto all2D = find<PlotUtils::MnvH2D>(*inFile);
-    outFile->cd();
-    for(auto hist: all2D) shiftCV(hist, bandName, whichUniv);
-  }
-  catch(const std::runtime_error& e)
+  std::vector<std::string> bandNames;
+                                             
+  if(argc > 2) bandNames.push_back(argv[2]);
+  else
   {
-    std::cerr << "Failed to swap the CV with " << bandName << " because:\n" << e.what() << "\n";
-    return 3;
+    if(!all1D.empty()) bandNames = all1D.front()->GetErrorBandNames();
+    else
+    {
+      if(!all2D.empty()) bandNames = all2D.front()->GetErrorBandNames();
+      else
+      {
+        std::cerr << "No histograms to shift, so I can't infer the list of bandNames.\n\n" << USAGE << "\n";
+        return 3;
+      }
+    }
   }
 
-  //Write the swapped histograms to a new file.
-  //TODO: With the same directory structure
-  outFile->Write();
+  for(const auto& bandName: bandNames)
+  {
+    int nUnivs;
+    if(!all1D.empty()) nUnivs = all1D.front()->GetVertErrorBand(bandName)->GetNHists();
+    else //Nota Bene: In this case, I already checked that all2D is not empty
+    {
+      nUnivs = all2D.front()->GetVertErrorBand(bandName)->GetNHists();
+    }
+
+    for(int whichUniv = 0; whichUniv < nUnivs; ++whichUniv)
+    {
+      const size_t lastSlash = fileName.rfind('/');
+      const auto outFileName = fileName.substr(lastSlash + 1, fileName.rfind('.') - lastSlash - 1) + "_" + bandName + "_" + std::to_string(whichUniv) + ".root";
+      auto outFile = TFile::Open(outFileName.c_str(), "CREATE");
+      if(!outFile)
+      {
+        std::cerr << "Couldn't create " << outFileName << " in the current directory.  Does it already exist?\n";
+        return 4;
+      }
+
+      //Make the swap
+      try
+      {
+        outFile->cd();
+        for(const auto hist: all1D) shiftCV(hist, bandName, whichUniv);
+        for(const auto hist: all2D) shiftCV(hist, bandName, whichUniv);
+      }
+      catch(const std::runtime_error& e)
+      {
+        std::cerr << "Failed to swap the CV with " << bandName << " because:\n" << e.what() << "\n";
+        return 5;
+      }
+
+      //Write the swapped histograms to a new file.
+      //TODO: With the same directory structure
+      outFile->Write();
+    } //For each universe
+  } //For each error band
 
   return 0;
 }
