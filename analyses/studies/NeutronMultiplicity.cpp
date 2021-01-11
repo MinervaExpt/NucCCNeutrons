@@ -27,7 +27,9 @@ namespace ana
   {
     NeutronMultiplicity(const YAML::Node& config): fTruthMinKE(config["truth"]["MinKE"].as<MeV>()),
                                                    fRecoMinEDep(config["reco"]["MinEDep"].as<MeV>()),
-                                                   fRecoMaxZDist(config["reco"]["MaxZDist"].as<mm>())
+                                                   fRecoMaxZDist(config["reco"]["MaxZDist"].as<mm>()),
+                                                   fRecoEDepBoxMin(config["reco"]["EDepBoxMin"].as<MeV>()),
+                                                   fRecoDistBoxMax(config["reco"]["DistBoxMax"].as<mm>())
     {
     }
 
@@ -37,6 +39,7 @@ namespace ana
     {
       MeV edep;
       mm z;
+      mm transverse;
     };
 
     struct FSPart
@@ -50,7 +53,7 @@ namespace ana
     template <class CAND>
     bool countAsReco(const CAND& cand, const units::LorentzVector<mm>& vertex) const
     {
-      return cand.z - vertex.z() < this->fRecoMaxZDist && cand.edep > this->fRecoMinEDep;
+      return cand.z - vertex.z() < this->fRecoMaxZDist && cand.edep > this->fRecoMinEDep && (sqrt(pow<2>(cand.z - vertex.z()) + pow<2>(cand.transverse)) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin);
     }
 
     template <class FS>
@@ -73,7 +76,7 @@ namespace ana
       //Count candidates close enough to the vertex and with enough energy deposit
       const auto vertex = event.GetVtx();
 
-      const auto cands = event.Get<Candidate>(event.Getblob_edep(), event.Getblob_zPos());
+      const auto cands = event.Get<Candidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex());
       return std::count_if(cands.begin(), cands.end(), [&vertex, this](const auto& cand)
                                                        { return this->countAsReco(cand, vertex);});
     }
@@ -82,6 +85,10 @@ namespace ana
       MeV fTruthMinKE; //Minimum energy deposit cut on candidates
       MeV fRecoMinEDep;
       mm fRecoMaxZDist; //Minimum z distance from vertex for candidates
+
+      //Reinteraction cut box
+      MeV fRecoEDepBoxMin;
+      mm fRecoDistBoxMax;
   };
 }
 
