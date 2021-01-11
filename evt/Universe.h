@@ -177,21 +177,24 @@ namespace evt
       //tree as well as the "reco" tree.
       virtual std::vector<int> GetFSPDGCodes() const
       {
-        return GetVec<int>("mc_FSPartPDG");
+        auto branch = GetVec<int>("mc_FSPartPDG");
+        return dropFS(branch);
       }
 
       virtual std::vector<units::LorentzVector<MeV>> GetFSMomenta() const
       {
-        return Get<units::LorentzVector<MeV>>(GetVec<double>("mc_FSPartPx"),
-                                              GetVec<double>("mc_FSPartPy"),
-                                              GetVec<double>("mc_FSPartPz"),
-                                              GetVec<double>("mc_FSPartE"));
+        auto branch = Get<units::LorentzVector<MeV>>(GetVec<double>("mc_FSPartPx"),
+                                                     GetVec<double>("mc_FSPartPy"),
+                                                     GetVec<double>("mc_FSPartPz"),
+                                                     GetVec<double>("mc_FSPartE"));
+        return dropFS(branch);
       }
 
       virtual std::vector<MeV> GetFSEnergies() const
       {
         const auto toConvert = GetVec<double>("mc_FSPartE");
-        return std::vector<MeV>(toConvert.begin(), toConvert.end());
+        auto branch = std::vector<MeV>(toConvert.begin(), toConvert.end());
+        return dropFS(branch);
       }
 
       //Truth-matched branches for FS neutron energy loss study.
