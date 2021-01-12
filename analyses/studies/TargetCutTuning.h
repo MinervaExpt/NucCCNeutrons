@@ -40,10 +40,10 @@ namespace ana
 
     private:
       util::Categorized<units::WithUnits<HistWrapper<evt::Universe>, mm, events>, background_t> fZPositionsByTarget; //Event z positions by truth target
-
       units::WithUnits<HistWrapper<evt::Universe>, mm, events>* fSelectedSignalZPositions;
 
-      //units::WithUnits<HistWrapper<evt::Universe>, mm, events>* fSelectedZPositions; //Event z positions in data.  Compare to stack of fZPositionsByTarget.
+      util::Categorized<util::Categorized<units::WithUnits<Hist2DWrapper<evt::Universe>, mm, mm, events>, int>, background_t> fXYPositionsByTargetByMaterial;
+      util::Categorized<units::WithUnits<Hist2DWrapper<evt::Universe>, mm, mm, events>, int> fSelectedSignalXYPositionsByMaterial;
   };
 }
 
