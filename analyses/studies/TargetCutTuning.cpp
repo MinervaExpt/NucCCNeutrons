@@ -41,7 +41,7 @@ namespace ana
                                                                                                                    univs),
                                                                                                fSelectedSignalXYPositionsByMaterial("VertexXY_Signal",
                                                                                                                    "Reco Vertex X; Reco Vertex Y",
-                                                                                                                   GENIECategories, dir,
+                                                                                                                   ::elements, dir,
                                                                                                                    config["binning"]["xy"]["nBins"].as<int>(),
                                                                                                                    config["binning"]["xy"]["min"].as<double>(),
                                                                                                                    config["binning"]["xy"]["max"].as<double>(),
