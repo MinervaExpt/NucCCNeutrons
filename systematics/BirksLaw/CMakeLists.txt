@@ -1,3 +1,5 @@
-add_executable(makeGeneralizedBirksTable makeGeneralizedBirksTable.cpp Interpolation.cpp)
-target_link_libraries(makeGeneralizedBirksTable)
+add_executable(makeGeneralizedBirksTable makeGeneralizedBirksTable.cpp)
+target_link_libraries(makeGeneralizedBirksTable support)
 install(TARGETS makeGeneralizedBirksTable DESTINATION bin)
+
+install(FILES birksRatios_1000020040.txt birksRatios_2212.txt birksRatios_11.txt DESTINATION etc)

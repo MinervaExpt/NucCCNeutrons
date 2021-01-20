@@ -7,7 +7,7 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //Local includes
-#include "systematics/BirksLaw/Interpolation.h"
+#include "util/Interpolation.h"
 
 //c++ includes
 #include <iostream>
@@ -34,7 +34,7 @@ int main(const int argc, const char** argv)
     return 2;
   }
 
-  Interpolation dEdxTable(dEdxFile);
+  util::Interpolation dEdxTable(dEdxFile);
   if(dEdxTable.empty())
   {
     std::cerr << argv[1] << " is an empty dEdx table.\n" << USAGE << "\n";

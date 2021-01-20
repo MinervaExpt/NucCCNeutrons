@@ -64,6 +64,9 @@ find_package(UnfoldUtils REQUIRED)
 include_directories(${UnfoldUtils_INCLUDE_DIR})
 message("Included UnfoldUtils from ${UnfoldUtils_INCLUDE_DIR}")
 
+#Some OBJECT libraries need this
+add_subdirectory(util)
+
 #Set up OBJECT libraries for plugins first
 add_subdirectory(analyses)
 add_subdirectory(cuts)
@@ -81,7 +84,6 @@ add_executable(SwapSysUnivWithCV SwapSysUnivWithCV.cpp)
 
 #Build libraries that main executables depend on
 add_subdirectory(units)
-add_subdirectory(util)
 add_subdirectory(evt)
 add_subdirectory(config)
 add_subdirectory(app)
