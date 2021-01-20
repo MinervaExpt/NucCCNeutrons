@@ -172,6 +172,14 @@ namespace evt
       blobTruth(blob_geant_dist_to_edep_as_neutron, mm)
       blobTruth(blob_FS_index, int)
       blobTruth(blob_earliest_true_hit_time, ns)
+      blobTruth(blob_n_causes, int)
+
+      //Truth-matched particles that caused the energy deposits in neutron candidates
+      //TODO: These need to drop causes from candidates that were dropped :(  This would be
+      //      much easier if I updated my AnaTool to save the first and last cause for
+      //      each candidate instead of the number of causes.
+      std::vector<int> GetBlobCausePDGs() const { return GetVec<int>(("truth_" + blobAlg + "_cause_PDG_codes").c_str()); }
+      std::vector<MeV> GetBlobCauseEnergies() const { return GetVec<MeV>(("truth_" + blobAlg + "_cause_energies").c_str()); }
 
       //Official FS particle branches.  These work in the Truth
       //tree as well as the "reco" tree.

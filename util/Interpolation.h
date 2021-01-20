@@ -15,6 +15,7 @@ namespace util
   {
     public:
       Interpolation(std::ifstream& file);
+      Interpolation();
   
       double operator [](const double key) const;
   

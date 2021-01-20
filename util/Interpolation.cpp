@@ -16,6 +16,13 @@ namespace util
       fTable.insert(nextEntry);
     }
   }
+
+  //An Interpolation that always returns 1
+  Interpolation::Interpolation()
+  {
+    fTable.insert(std::make_pair(0, 1));
+    fTable.insert(std::make_pair(1, 1));
+  }
   
   double Interpolation::operator [](const double key) const
   {
