@@ -73,11 +73,18 @@ namespace sys
           for(int whichCause = nextCause; whichCause < nextCause + cand.nCauses; ++whichCause)
           {
             const auto& cause = causes[whichCause];
-            energyScaleFactor += fPDGToBirksShift[cause.pdgCode][cause.energy.in<MeV>()] * cause.energy.in<MeV>();
+            const double birksShift = fPDGToBirksShift[cause.pdgCode][cause.energy.in<MeV>()];
+            //std::cout << "For particle with PDG code " << cause.pdgCode << " and energy " << cause.energy << ", Birks' Law changed by a factor of " << birksShift << "\n";
+            energyScaleFactor += birksShift * cause.energy.in<MeV>();
             totalCauseEnergy += cause.energy;
           }
           //TODO: Should I weight by fraction of total edep instead of fraction of total cause energy?
-          shiftedEDeps.push_back(cand.edep.in<MeV>() * energyScaleFactor / totalCauseEnergy.in<MeV>());
+          if(totalCauseEnergy > 0_MeV)
+          {
+            //std::cout << "Dividing energyScaleFactor = " << energyScaleFactor << " by total energy of causes = " << totalCauseEnergy << "\n";
+            shiftedEDeps.push_back(cand.edep.in<MeV>() * energyScaleFactor / totalCauseEnergy.in<MeV>());
+          }
+          else shiftedEDeps.push_back(cand.edep);
 
           nextCause += cand.nCauses;
         }

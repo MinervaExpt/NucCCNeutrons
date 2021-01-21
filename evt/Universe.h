@@ -178,8 +178,8 @@ namespace evt
       //TODO: These need to drop causes from candidates that were dropped :(  This would be
       //      much easier if I updated my AnaTool to save the first and last cause for
       //      each candidate instead of the number of causes.
-      std::vector<int> GetBlobCausePDGs() const { return GetVec<int>(("truth_" + blobAlg + "_cause_PDG_codes").c_str()); }
-      std::vector<MeV> GetBlobCauseEnergies() const { return GetVec<MeV>(("truth_" + blobAlg + "_cause_energies").c_str()); }
+      std::vector<int> GetBlobCausePDGs() const { return GetVec<int>(("truth_" + blobAlg + "_blob_cause_PDG_codes").c_str()); }
+      std::vector<MeV> GetBlobCauseEnergies() const { return GetVec<MeV>(("truth_" + blobAlg + "_blob_cause_energies").c_str()); }
 
       //Official FS particle branches.  These work in the Truth
       //tree as well as the "reco" tree.

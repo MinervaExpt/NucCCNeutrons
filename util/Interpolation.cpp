@@ -26,7 +26,9 @@ namespace util
   
   double Interpolation::operator [](const double key) const
   {
+    //TODO: What to do if upper = fTable.end()?
     const auto upper = fTable.lower_bound(key);
+    if(upper == fTable.end() || upper == fTable.begin()) return 1; //throw std::runtime_error("Asked for interpolation out of the table range.");
     const auto lower = std::prev(upper);
   
     return (upper->second - lower->second)/(upper->first - lower->first)*(key - lower->first) + lower->second;
