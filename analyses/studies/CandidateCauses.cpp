@@ -16,12 +16,14 @@ namespace
   std::vector<util::NamedCategory<int>> pdgToName = {util::NamedCategory<int>{{2212}, "Proton"},
                                                      util::NamedCategory<int>{{2112}, "Neutron"},
                                                      util::NamedCategory<int>{{22}, "Gamma"},
-                                                     util::NamedCategory<int>{{211, -211}, "Charged Pion"},
-                                                     util::NamedCategory<int>{{11, -11}, "Electron"},
+                                                     //util::NamedCategory<int>{{211, -211}, "Charged Pion"},
+                                                     //util::NamedCategory<int>{{11, -11}, "Electron"},
+                                                     util::NamedCategory<int>{{1000010020}, "Deuteron"},
                                                      util::NamedCategory<int>{{1000020040}, "Alpha"},
                                                      util::NamedCategory<int>{{1000060120}, "Carbon"},
                                                      util::NamedCategory<int>{{1000050100}, "Boron"},
-                                                     util::NamedCategory<int>{{1000040080}, "Beryllium"}
+                                                     util::NamedCategory<int>{{1000010030}, "Tritium"},
+                                                     util::NamedCategory<int>{{1000040080, 1000040090, 1000040100}, "Beryllium"},
                                                     };
 }
 
