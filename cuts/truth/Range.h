@@ -23,6 +23,11 @@ namespace truth
                                                                 fMin(config["min"].as<UNIT>(std::numeric_limits<typename UNIT::floating_point>::min())),
                                                                 fMax(config["max"].as<UNIT>(std::numeric_limits<typename UNIT::floating_point>::max()))
       {
+        if(config["equals"])
+        {
+          fMin = config["equals"].as<UNIT>();
+          fMax = config["equals"].as<UNIT>();
+        }
       }
 
       virtual ~Range() = default;
