@@ -6,14 +6,14 @@
 #define RECO_NEUTRONMULTIPLICITY_CPP
 
 //cuts includes
-#include "cuts/reco/ExactMatch.h"
+#include "cuts/reco/Range.h"
 
 //analyses includes
 #include "analyses/studies/NeutronMultiplicity.cpp"
 
 namespace
 {
-  static reco::Cut::Registrar<reco::ExactMatch<ana::NeutronMultiplicity>> MaxNNeutrons_reg("NeutronMultiplicity");
+  static reco::Cut::Registrar<reco::Range<ana::NeutronMultiplicity>> MaxNNeutrons_reg("NeutronMultiplicity");
 }
 
 #endif //RECO_NEUTRONMULTIPLICITY_CPP

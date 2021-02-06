@@ -6,14 +6,14 @@
 #define TRUTH_NEUTRONMULTIPLICITY_CPP
 
 //cuts includes
-#include "cuts/truth/ExactMatch.h"
+#include "cuts/truth/Range.h"
 
 //analyses includes
 #include "analyses/studies/NeutronMultiplicity.cpp"
 
 namespace
 {
-  static truth::Cut::Registrar<truth::ExactMatch<ana::NeutronMultiplicity>> MaxNNeutrons_reg("NeutronMultiplicity");
+  static truth::Cut::Registrar<truth::Range<ana::NeutronMultiplicity>> MaxNNeutrons_reg("NeutronMultiplicity");
 }
 
 #endif //TRUTH_NEUTRONMULTIPLICITY_CPP

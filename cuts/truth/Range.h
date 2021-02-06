@@ -4,19 +4,19 @@
 //       an opportunity to centralize N-1 Cuts infrastructure.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#ifndef RECO_RANGE_H
-#define RECO_RANGE_H
+#ifndef TRUTH_RANGE_H
+#define TRUTH_RANGE_H
 
 //cut includes
-#include "cuts/reco/Cut.h"
+#include "cuts/truth/Cut.h"
 
-namespace reco
+namespace truth
 {
   template <class VARIABLE>
   class Range: public Cut
   {
     private:
-      using UNIT = decltype(std::declval<VARIABLE>().reco(std::declval<evt::Universe>()));
+      using UNIT = decltype(std::declval<VARIABLE>().truth(std::declval<evt::Universe>()));
 
     public:
       Range(const YAML::Node& config, const std::string& name): Cut(config, name), fVar(config["variable"]),
@@ -28,9 +28,9 @@ namespace reco
       virtual ~Range() = default;
 
     protected:
-      virtual bool checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override
+      virtual bool passesCut(const evt::Universe& event) const override
       {
-        const UNIT var = fVar.reco(event);
+        const UNIT var = fVar.truth(event);
         return var >= fMin && var <= fMax;
       }
 
@@ -41,4 +41,4 @@ namespace reco
   };
 }
 
-#endif //RECO_RANGE_H
+#endif //TRUTH_RANGE_H
