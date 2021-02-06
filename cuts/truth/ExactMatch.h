@@ -4,33 +4,37 @@
 //       an opportunity to centralize N-1 Cuts infrastructure.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#ifndef TRUTH_EXACTMATCH_H
-#define TRUTH_EXACTMATCH_H
+#ifndef TRUTH_UPPERLIMIT_H
+#define TRUTH_UPPERLIMIT_H
 
 //cut includes
-#include "cuts/reco/Cut.h"
+#include "cuts/truth/Cut.h"
 
 namespace truth
 {
-  template <class UNIT, UNIT(evt::Universe::*reco)() const>
+  template <class VARIABLE>
   class ExactMatch: public Cut
   {
+    private:
+      using UNIT = decltype(std::declval<VARIABLE>().truth(std::declval<evt::Universe>()));
+
     public:
-      ExactMatch(const YAML::Node& config, const std::string& name): Cut(config, name), fEquals(config["equals"].as<UNIT>())
+      ExactMatch(const YAML::Node& config, const std::string& name): Cut(config, name), fEquals(config["equals"].as<UNIT>()), fVar(config["variable"])
       {
       }
 
       virtual ~ExactMatch() = default;
 
     protected:
-      virtual bool passesCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override
+      virtual bool passesCut(const evt::Universe& event) const override
       {
-        return (event.*truth)() == fEquals;
+        return fVar.truth(event) == fEquals;
       }
 
     private:
       UNIT fEquals;
+      VARIABLE fVar;
   };
 }
 
-#endif //TRUTH_EXACTMATCH_H
+#endif //TRUTH_UPPERLIMIT_H

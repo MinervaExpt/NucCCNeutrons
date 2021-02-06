@@ -25,10 +25,10 @@ namespace
 
 namespace sys
 {
-  class GeneralizedBirksLaw: public CV
+  class GeneralizedBirksLaw: public ::CV
   {
     public:
-      GeneralizedBirksLaw(const YAML::Node& config, const typename CV::config_t& chw): CV(chw)
+      GeneralizedBirksLaw(const YAML::Node& config, const typename CV::config_t& chw): ::CV(chw)
       {
         //Pre-load all PDG codes of interest here
         const std::vector<int> pdgsToLoad = {2212, 11, 1000020040};

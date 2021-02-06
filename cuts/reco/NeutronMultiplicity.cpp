@@ -13,7 +13,7 @@
 
 namespace
 {
-  static reco::Cut::Registrar<reco::UpperLimit<ana::NeutronMultiplicity>> MaxNNeutrons_reg("NeutronMultiplicity");
+  static reco::Cut::Registrar<reco::ExactMatch<ana::NeutronMultiplicity>> MaxNNeutrons_reg("NeutronMultiplicity");
 }
 
 #endif //RECO_NEUTRONMULTIPLICITY_CPP

@@ -13,7 +13,7 @@
 
 namespace
 {
-  static truth::Cut::Registrar<truth::UpperLimit<ana::NeutronMultiplicity>> MaxNNeutrons_reg("NeutronMultiplicity");
+  static truth::Cut::Registrar<truth::ExactMatch<ana::NeutronMultiplicity>> MaxNNeutrons_reg("NeutronMultiplicity");
 }
 
 #endif //TRUTH_NEUTRONMULTIPLICITY_CPP
