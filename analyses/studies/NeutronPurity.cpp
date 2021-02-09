@@ -5,6 +5,7 @@
 
 //signal includes
 #include "analyses/studies/NeutronPurity.h"
+#include "analyses/studies/CandidateMath.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -59,7 +60,8 @@ namespace ana
                                           30, 0, 30,
 
                                           univs),
-                                          fSingleDigitPi0Events("SingleDigitsPi0Events.txt")
+                fPDGToClosestInvMass(pdgCategories, dir, "ClosestInvariantMass", "Invariant Mass;Number of candidates", 50, 0, 300, univs),
+                fSingleDigitPi0Events("SingleDigitsPi0Events.txt")
   {
     constexpr int nBins = 30;
     fClosestEDepVersusDist = dir.make<LOGHIST2D>("ClosestEDepVersusDist", "Closest Candidate per FS;log(Distance from Vertex/1mm);log(Candidate Visible Energy/1MeV)", nBins, 3, 9, nBins, 0.2, 6, univs);
@@ -77,14 +79,17 @@ namespace ana
                                               event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(),
                                               event.Getblob_earliest_time(), event.Getblob_n_clusters(),
                                               event.Getblob_n_digits(), event.Getblob_highest_digit_E(),
-                                              event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron());
+                                              event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron(),
+                                              event.Getblob_nViews());
     const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetTruthMatchedangle_wrt_z());
     const auto vertex = event.GetVtx();
 
     std::unordered_map<int, std::vector<MCCandidate>> fsNeutronToCands; //Mapping from FS neutron to candidates it produced
 
-    for(const auto& cand: cands)
+    //for(const auto& cand: cands)
+    for(auto whichCand = cands.begin(); whichCand != cands.end(); ++whichCand)
     {
+      const auto& cand = *whichCand;
       if(fCuts.countAsReco(cand, vertex))
       {
         int pdg = -1; //-1 represents "Other".  This happens when I couldn't find a parent PDG code.
@@ -102,6 +107,21 @@ namespace ana
         fPDGToEDepVersusNDigits[pdg].Fill(&event, Digits(cand.nDigits), cand.caloEdep, weightPerNeutron);
         fPDGToHighestDigitE[pdg].Fill(&event, cand.highestDigitE, weightPerNeutron);
         fPDGToHighestEVersusNDigits[pdg].Fill(&event, Digits(cand.nDigits), cand.highestDigitE, weightPerNeutron);
+
+        if(cand.nViews > 1)
+        {
+          //Find closest invariant mass to the pi0 mass among all 3D candidates
+          const auto pi0Mass = 134.967_MeV;
+          const auto closest = std::min_element(whichCand+1, cands.end(),
+                                                [pi0Mass, &vertex, &cand](const auto& lhs, const auto& rhs)
+                                                {
+                                                  if(lhs.nViews < 2) return false;
+                                                  if(rhs.nViews < 2) return true;
+                                                  return fabs(ana::InvariantMass(vertex, cand, lhs) - pi0Mass)
+                                                         < fabs(ana::InvariantMass(vertex, cand, rhs) - pi0Mass);
+                                                });
+          if(closest != cands.end()) fPDGToClosestInvMass[pdg].Fill(&event, ana::InvariantMass(vertex, cand, *closest));
+        }
 
         if((pdg == 111) && (cand.nDigits == 1)) fSingleDigitPi0Events << util::arachne(event.GetEventID(false), false, true) << "\n";
       }

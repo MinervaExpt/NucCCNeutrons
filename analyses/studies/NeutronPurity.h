@@ -72,6 +72,7 @@ namespace ana
         MeV highestDigitE;
         int FS_index; //Mapping from a Candidate to an FSPart by index in the array of FSParts
         mm dist_to_edep_as_neutron; //Distance parent and ancestors travelled that were neutrons
+        int nViews; //At least 2 views are needed to reconstruct a candidate's 3D starting position.  MINERvA has up to 3 different views.
       };
 
       //Format for FS particle information.
@@ -87,8 +88,8 @@ namespace ana
 
       template <class XUNIT, class YUNIT, class WUNIT>
       using HIST2D = units::WithUnits<PlotUtils::Hist2DWrapper<evt::Universe>, XUNIT, YUNIT, WUNIT>;
-      //template <class XUNIT, class WUNIT>
-      //using HIST = PlotUtils::HistWrapper<evt::Universe>; //units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, XUNIT, WUNIT>;
+      template <class XUNIT, class WUNIT>
+      using HIST = units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, XUNIT, WUNIT>;
       using LOGHIST2D = PlotUtils::Hist2DWrapper<evt::Universe>;
 
       util::Categorized<HIST2D<Clusters, MeV, neutrons>, int> fPDGToEDepVersusNClusters; //Can I isolate candidates from pi0s by cutting in the energy deposited-number of Clusters plane?
@@ -101,6 +102,8 @@ namespace ana
       //The next 2 plots are filled with log() on each axis based on a study I did in November 2019.
       LOGHIST2D* fClosestEDepVersusDist; //Energy deposit versus distance from vertex for the closest candidate to the vertex for each FS neutron
       LOGHIST2D* fFartherEDepVersusDist; //Energy deposit versus distance from vertex for candidates that are not closest to the vertex for each FS neutron
+
+      util::Categorized<HIST<MeV, neutrons>, int> fPDGToClosestInvMass;
 
       std::ofstream fSingleDigitPi0Events; //Write a file with Arachne event display links to events with 1-digit pi0-induced neutron candidates
   };
