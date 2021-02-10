@@ -59,6 +59,7 @@ namespace ana
       {
         int PDGCode;
         MeV energy;
+        units::LorentzVector<MeV> momentum;
       };
 
       PlotUtils::HistWrapper<evt::Universe>* fCauseNames;

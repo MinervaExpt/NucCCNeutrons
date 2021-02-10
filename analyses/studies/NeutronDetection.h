@@ -70,6 +70,7 @@ namespace ana
         int PDGCode;
         MeV energy;
         double angle_wrt_z; //Angle w.r.t. the z axis of the detector in radians
+        units::LorentzVector<MeV> momentum;
       };
 
       //Histograms I'm going to Fill()

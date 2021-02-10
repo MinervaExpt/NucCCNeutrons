@@ -54,7 +54,7 @@ namespace ana
                                               event.Getblob_n_causes(), event.Getblob_FS_index(),
                                               event.Getblob_geant_dist_to_edep_as_neutron());
     const auto causes = event.Get<Cause>(event.GetBlobCausePDGs(), event.GetBlobCauseEnergies());
-    const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy());
+    const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetFSMomenta());
 
     int startCause = 0;
     for(const auto& cand: cands)

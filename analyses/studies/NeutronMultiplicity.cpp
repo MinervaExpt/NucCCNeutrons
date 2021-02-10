@@ -6,6 +6,7 @@
 #include "analyses/studies/CrossSectionSignal.h"
 #include "analyses/studies/CrossSectionSideband.h"
 #include "analyses/studies/BackgroundsByPionContent.h"
+#include "analyses/studies/CandidateMath.h"
 
 //c++ includes
 #include <string>
@@ -29,7 +30,8 @@ namespace ana
                                                    fRecoMinEDep(config["reco"]["MinEDep"].as<MeV>()),
                                                    fRecoMaxZDist(config["reco"]["MaxZDist"].as<mm>()),
                                                    fRecoEDepBoxMin(config["reco"]["EDepBoxMin"].as<MeV>()),
-                                                   fRecoDistBoxMax(config["reco"]["DistBoxMax"].as<mm>())
+                                                   fRecoDistBoxMax(config["reco"]["DistBoxMax"].as<mm>()),
+                                                   fMinZCosine(config["MinZCosine"].as<double>(0))
     {
     }
 
@@ -46,6 +48,7 @@ namespace ana
     {
       int PDGCode;
       MeV energy;
+      units::LorentzVector<MeV> momentum;
     };
 
     //Decide whether a neutron candidate/FS particle should be counted.
@@ -53,19 +56,19 @@ namespace ana
     template <class CAND>
     bool countAsReco(const CAND& cand, const units::LorentzVector<mm>& vertex) const
     {
-      return cand.z - vertex.z() < this->fRecoMaxZDist && cand.edep > this->fRecoMinEDep && (sqrt(pow<2>(cand.z - vertex.z()) + pow<2>(cand.transverse)) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin);
+      return cand.z - vertex.z() < this->fRecoMaxZDist && cand.edep > this->fRecoMinEDep && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtMuon(vertex, cand)) > fMinZCosine);
     }
 
     template <class FS>
     bool countAsTruth(const FS& fs) const
     {
-      return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinKE;
+      return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinKE && (fabs(cos(fs.momentum.p().theta())) > fMinZCosine);
     }
 
     neutrons truth(const evt::Universe& event) const
     {
       //Count FS neutrons above an energy deposit threshold
-      const auto fs = event.Get<FSPart>(event.GetFSPDGCodes(), event.GetFSEnergies());
+      const auto fs = event.Get<FSPart>(event.GetFSPDGCodes(), event.GetFSEnergies(), event.GetFSMomenta());
 
       return std::count_if(fs.begin(), fs.end(), [this](const auto& fs)
                                                  { return this->countAsTruth(fs);});
@@ -89,6 +92,8 @@ namespace ana
       //Reinteraction cut box
       MeV fRecoEDepBoxMin;
       mm fRecoDistBoxMax;
+
+      double fMinZCosine; //Minimum angle w.r.t. the muon
   };
 }
 

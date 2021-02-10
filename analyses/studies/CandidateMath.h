@@ -4,6 +4,9 @@
 //       particles like photons from a pi0 decay.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+#ifndef ANA_CANDIDATEMATH_H
+#define ANA_CANDIDATEMATH_H
+
 //util includes
 #include "util/units.h"
 #include "util/mathWithUnits.h"
@@ -22,7 +25,7 @@ namespace ana
   }
 
   template <class CANDIDATE>
-  radians AngleWrtMuon(const units::LorentzVector<mm>& vertex, const CANDIDATE& cand)
+  double CosineWrtMuon(const units::LorentzVector<mm>& vertex, const CANDIDATE& cand)
   {
     using namespace units;
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
@@ -38,13 +41,14 @@ namespace ana
 
   //CANDIDATE must also have:
   //1) edep (energy deposited)
-  //2) nViews (> 1 -> 3D position available)
   template <class CANDIDATE>
   MeV InvariantMass(const units::LorentzVector<mm>& vertex, const CANDIDATE& lhs, const CANDIDATE& rhs)
   {
     using namespace units;
-    const radians lhsAngle = AngleWrtMuon(vertex, lhs);
-    const radians rhsAngle = AngleWrtMuon(vertex, rhs);
-    return sqrt(2. * lhs.edep.template in<MeV>() * rhs.edep.template in<MeV>() * (1. - cos(lhsAngle + rhsAngle)));
+    const double lhsAngle = CosineWrtMuon(vertex, lhs);
+    const double rhsAngle = CosineWrtMuon(vertex, rhs);
+    return sqrt(2. * lhs.edep.template in<MeV>() * rhs.edep.template in<MeV>() * (1. - cos(acos(lhsAngle) + acos(rhsAngle))));
   }
 }
+
+#endif //ANA_CANDIDATEMATH_H

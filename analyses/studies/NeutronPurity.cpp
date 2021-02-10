@@ -81,7 +81,7 @@ namespace ana
                                               event.Getblob_n_digits(), event.Getblob_highest_digit_E(),
                                               event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron(),
                                               event.Getblob_nViews());
-    const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetTruthMatchedangle_wrt_z());
+    const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetTruthMatchedangle_wrt_z(), event.GetFSMomenta());
     const auto vertex = event.GetVtx();
 
     std::unordered_map<int, std::vector<MCCandidate>> fsNeutronToCands; //Mapping from FS neutron to candidates it produced
