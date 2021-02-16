@@ -32,7 +32,7 @@ namespace truth
       struct FSPart
       {
         int pdgCode;
-        GeV energy;
+        units::LorentzVector<GeV> momentum;
       };
   };
 }

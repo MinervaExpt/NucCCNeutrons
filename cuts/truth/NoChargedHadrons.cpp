@@ -22,10 +22,10 @@ namespace truth
 
   bool NoChargedHadrons::passesCut(const evt::Universe& event) const
   {
-    const auto fs = event.Get<FSPart>(event.GetFSPDGCodes(), event.GetFSEnergies());
+    const auto fs = event.Get<FSPart>(event.GetFSPDGCodes(), event.GetFSMomenta());
     for(const auto& part: fs)
     {
-      if(part.energy > fTrackingThreshold
+      if(part.momentum.E() - part.momentum.mass() > fTrackingThreshold
          && std::find(chargedHadronsPDGCodes.begin(), chargedHadronsPDGCodes.end(), abs(part.pdgCode)) != chargedHadronsPDGCodes.end())
         return false;
     }
