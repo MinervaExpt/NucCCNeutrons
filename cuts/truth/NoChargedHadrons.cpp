@@ -26,7 +26,7 @@ namespace truth
     for(const auto& part: fs)
     {
       if(part.energy > fTrackingThreshold
-         && std::find(chargedHadronsPDGCodes.begin(), chargedHadronsPDGCodes.end(), fabs(part.pdgCode)) != chargedHadronsPDGCodes.end())
+         && std::find(chargedHadronsPDGCodes.begin(), chargedHadronsPDGCodes.end(), abs(part.pdgCode)) != chargedHadronsPDGCodes.end())
         return false;
     }
 

@@ -31,7 +31,7 @@ namespace ana
                                                    fRecoMaxZDist(config["reco"]["MaxZDist"].as<mm>()),
                                                    fRecoEDepBoxMin(config["reco"]["EDepBoxMin"].as<MeV>()),
                                                    fRecoDistBoxMax(config["reco"]["DistBoxMax"].as<mm>()),
-                                                   fMinZCosine(config["MinZCosine"].as<double>(0))
+                                                   fMinZCosine(config["MinZCosine"].as<double>(0.))
     {
     }
 
@@ -56,13 +56,13 @@ namespace ana
     template <class CAND>
     bool countAsReco(const CAND& cand, const units::LorentzVector<mm>& vertex) const
     {
-      return cand.z - vertex.z() < this->fRecoMaxZDist && cand.edep > this->fRecoMinEDep && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtMuon(vertex, cand)) > fMinZCosine);
+      return (cand.z - vertex.z() < this->fRecoMaxZDist) && (cand.edep > this->fRecoMinEDep) && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtMuon(vertex, cand)) > fMinZCosine);
     }
 
     template <class FS>
     bool countAsTruth(const FS& fs) const
     {
-      return fs.PDGCode == 2112 && (fs.energy - 939.6_MeV) > this->fTruthMinKE && (fabs(cos(fs.momentum.p().theta())) > fMinZCosine);
+      return (fs.PDGCode == 2112) && ((fs.energy - 939.6_MeV) > this->fTruthMinKE) && (fabs(cos(fs.momentum.p().theta())) > fMinZCosine);
     }
 
     neutrons truth(const evt::Universe& event) const
