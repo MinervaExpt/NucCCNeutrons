@@ -27,7 +27,8 @@ namespace truth
       virtual bool passesCut(const evt::Universe& event) const override;
 
     private:
-      MeV fTrackingThreshold;
+      MeV fTrackingThreshold; //Charged hadrons with less energy than this are ignored
+      double fAngleThreshold; //Charged hadrons at an angle larger than this are ignored
 
       struct FSPart
       {

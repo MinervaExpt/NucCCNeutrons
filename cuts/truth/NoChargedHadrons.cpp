@@ -16,16 +16,19 @@ namespace
 namespace truth
 {
   NoChargedHadrons::NoChargedHadrons(const YAML::Node& config, const std::string& name): Cut(config, name),
-                                                                                         fTrackingThreshold(config["trackingThreshold"].as<MeV>(100_MeV))
+                                                                                         fTrackingThreshold(config["trackingThreshold"].as<MeV>(100_MeV)),
+                                                                                         fAngleThreshold(cos(config["angleThreshold"].as<radians>()))
   {
   }
 
   bool NoChargedHadrons::passesCut(const evt::Universe& event) const
   {
+    const auto muonP = event.GetTruthPmu().p();
     const auto fs = event.Get<FSPart>(event.GetFSPDGCodes(), event.GetFSMomenta());
     for(const auto& part: fs)
     {
       if(part.momentum.E() - part.momentum.mass() > fTrackingThreshold
+         && part.momentum.p().unit().dot(muonP.unit()) < fAngleThreshold
          && std::find(chargedHadronsPDGCodes.begin(), chargedHadronsPDGCodes.end(), abs(part.pdgCode)) != chargedHadronsPDGCodes.end())
         return false;
     }
