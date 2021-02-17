@@ -1,6 +1,6 @@
-//File: NeutronPurity.h
-//Brief: This Study quantifies how well I differentiate GENIE-neutron-induced candidates from other candidates.
-//       It's a good place to plot variables I'm considering adding to my candidate selection.
+//File: Pi0Removal.h
+//Brief: This Study quantifies how well I differentiate GENIE-neutron-induced candidates from pi0-induced candidates.
+//       It includes branches dedicated to pi0 removal.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //signal includes
@@ -17,20 +17,20 @@
 //c++ includes
 #include <fstream>
 
-#ifndef SIG_NEUTRONDETECTION_H
-#define SIG_NEUTRONDETECTION_H
+#ifndef ANA_PI0REMOVAL_H
+#define ANA_PI0REMOVAL_H
 
 DECLARE_UNIT_WITH_TYPE_AND_YAML(Clusters, int)
 DECLARE_UNIT_WITH_TYPE_AND_YAML(Digits, int)
 
 namespace ana
 {
-  class NeutronPurity: public Study
+  class Pi0Removal: public Study
   {
     public:
-      NeutronPurity(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
+      Pi0Removal(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
                        std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::Universe*>>& universes);
-      virtual ~NeutronPurity() = default;
+      virtual ~Pi0Removal() = default;
 
       //Do this study only for MC signal events.
       virtual void mcSignal(const evt::Universe& event, const events weight) override;
@@ -63,15 +63,19 @@ namespace ana
       struct MCCandidate
       {
         MeV edep;
-        MeV caloEdep;
         mm z;
         mm transverse;
         ns time;
-        int nClusters;
+        /*int nClusters;
         int nDigits;
-        MeV highestDigitE;
+        MeV highestDigitE;*/
         int FS_index; //Mapping from a Candidate to an FSPart by index in the array of FSParts
         mm dist_to_edep_as_neutron; //Distance parent and ancestors travelled that were neutrons
+        int nViews; //Candidates with >= 2 views may have some 3D reconstruction information
+        double cosine_to_muon; //angle between the fit direction of a 3D neutron candidate and
+                             //the direction from its' start point back to the muon.
+        mm x3D; //X position from fit to 3D candidates
+        mm y3D; //Y position from fit to 3D candidates
       };
 
       //Format for FS particle information.
@@ -79,32 +83,16 @@ namespace ana
       {
         int PDGCode;
         MeV energy;
-        double angle_wrt_z; //Angle w.r.t. the z axis of the detector in radians
         units::LorentzVector<MeV> momentum;
       };
 
-      //Helper function that needs to know about MCCandidate
-      static mm distToVertex(const MCCandidate& cand, const units::LorentzVector<mm>& vertex);
-
-      template <class XUNIT, class YUNIT, class WUNIT>
-      using HIST2D = units::WithUnits<PlotUtils::Hist2DWrapper<evt::Universe>, XUNIT, YUNIT, WUNIT>;
       template <class XUNIT, class WUNIT>
       using HIST = units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, XUNIT, WUNIT>;
-      using LOGHIST2D = PlotUtils::Hist2DWrapper<evt::Universe>;
 
-      util::Categorized<HIST2D<Clusters, MeV, neutrons>, int> fPDGToEDepVersusNClusters; //Can I isolate candidates from pi0s by cutting in the energy deposited-number of Clusters plane?
-      util::Categorized<HIST2D<Digits, MeV, neutrons>, int> fPDGToEDepVersusNDigits;
-
-      util::Categorized<units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, MeV, neutrons>, int> fPDGToHighestDigitE;
-
-      util::Categorized<HIST2D<Digits, MeV, neutrons>, int> fPDGToHighestEVersusNDigits;
-
-      //The next 2 plots are filled with log() on each axis based on a study I did in November 2019.
-      LOGHIST2D* fClosestEDepVersusDist; //Energy deposit versus distance from vertex for the closest candidate to the vertex for each FS neutron
-      LOGHIST2D* fFartherEDepVersusDist; //Energy deposit versus distance from vertex for candidates that are not closest to the vertex for each FS neutron
-
-      std::ofstream fSingleDigitPi0Events; //Write a file with Arachne event display links to events with 1-digit pi0-induced neutron candidates
+      util::Categorized<HIST<MeV, neutrons>, int> fPDGToBestInvMass; //The closest invariant mass to the pi0 mass among all other candidates
+      util::Categorized<PlotUtils::HistWrapper<evt::Universe>, int> fPDGToCosineToMuon; //Are candidates that shoot off at angles not aligned with direction to muon
+                                                                                        //primarily neutrons or pi0s?
   };
 }
 
-#endif //SIG_NEUTRONDETECTION_H
+#endif //ANA_PI0REMOVAL_H

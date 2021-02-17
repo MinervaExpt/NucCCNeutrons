@@ -41,13 +41,15 @@ namespace ana
 
   //CANDIDATE must also have:
   //1) edep (energy deposited)
+  //2) x3D (from 3D fit)
+  //3) y3D (from 3D fit)
   template <class CANDIDATE>
   MeV InvariantMass(const units::LorentzVector<mm>& vertex, const CANDIDATE& lhs, const CANDIDATE& rhs)
   {
     using namespace units;
-    const double lhsAngle = CosineWrtMuon(vertex, lhs);
-    const double rhsAngle = CosineWrtMuon(vertex, rhs);
-    return sqrt(2. * lhs.edep.template in<MeV>() * rhs.edep.template in<MeV>() * (1. - cos(acos(lhsAngle) + acos(rhsAngle))));
+    const auto lhsDirToMuon = (vertex.p() - units::XYZVector<mm>(lhs.x3D, lhs.y3D, lhs.z)).unit();
+    const auto rhsDirToMuon = (vertex.p() - units::XYZVector<mm>(rhs.x3D, rhs.y3D, rhs.z)).unit();
+    return sqrt(2. * lhs.edep.template in<MeV>() * rhs.edep.template in<MeV>() * (1. - lhsDirToMuon.dot(rhsDirToMuon)));
   }
 }
 

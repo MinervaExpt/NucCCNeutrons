@@ -168,6 +168,9 @@ namespace evt
       blobReco(blob_n_clusters, int)
       blobReco(blob_n_digits, int)
       blobReco(blob_highest_digit_E, MeV)
+      blobReco(blob_direction_difference, double)
+      blobReco(blob_3D_start_x, mm)
+      blobReco(blob_3D_start_y, mm)
 
       blobTruth(blob_geant_dist_to_edep_as_neutron, mm)
       blobTruth(blob_FS_index, int)

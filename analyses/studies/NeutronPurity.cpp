@@ -60,7 +60,6 @@ namespace ana
                                           30, 0, 30,
 
                                           univs),
-                fPDGToClosestInvMass(pdgCategories, dir, "ClosestInvariantMass", "Invariant Mass;Number of candidates", 50, 0, 300, univs),
                 fSingleDigitPi0Events("SingleDigitsPi0Events.txt")
   {
     constexpr int nBins = 30;
@@ -79,8 +78,7 @@ namespace ana
                                               event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(),
                                               event.Getblob_earliest_time(), event.Getblob_n_clusters(),
                                               event.Getblob_n_digits(), event.Getblob_highest_digit_E(),
-                                              event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron(),
-                                              event.Getblob_nViews());
+                                              event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron());
     const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetTruthMatchedangle_wrt_z(), event.GetFSMomenta());
     const auto vertex = event.GetVtx();
 
@@ -108,7 +106,7 @@ namespace ana
         fPDGToHighestDigitE[pdg].Fill(&event, cand.highestDigitE, weightPerNeutron);
         fPDGToHighestEVersusNDigits[pdg].Fill(&event, Digits(cand.nDigits), cand.highestDigitE, weightPerNeutron);
 
-        if(cand.nViews > 1)
+        /*if(cand.nViews > 1)
         {
           //Find closest invariant mass to the pi0 mass among all 3D candidates
           const auto pi0Mass = 134.967_MeV;
@@ -121,7 +119,7 @@ namespace ana
                                                          < fabs(ana::InvariantMass(vertex, cand, rhs) - pi0Mass);
                                                 });
           if(closest != cands.end()) fPDGToClosestInvMass[pdg].Fill(&event, ana::InvariantMass(vertex, cand, *closest));
-        }
+        }*/
 
         if((pdg == 111) && (cand.nDigits == 1)) fSingleDigitPi0Events << util::arachne(event.GetEventID(false), false, true) << "\n";
       }

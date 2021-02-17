@@ -24,38 +24,6 @@ namespace units
 {
   //Much of the interface of these classes was copied from ROOT's ROOT::Math::LorentzVector
   //because I want them to be interchangeable.
-
-  //Make the compiler try this before std::sqrt().  Ultimately, this should go in BaseUnits.
-  /*template <class TAG, class PREFIX, class FLOAT>
-  quantity<TAG, std::ratio<1>, FLOAT> sqrt(const quantity<productTag<TAG, TAG>, PREFIX, FLOAT> value)
-  {
-    return std::sqrt(value.template in<quantity<productTag<TAG, TAG>, std::ratio<1>, FLOAT>>());
-  }
-
-  template <class TAG, class PREFIX, class FLOAT>
-  FLOAT sin(const quantity<TAG, PREFIX, FLOAT> angle)
-  {
-    return std::sin(angle.template in<quantity<TAG, PREFIX, FLOAT>>());
-  }
-
-  template <class TAG, class PREFIX, class FLOAT>
-  FLOAT cos(const quantity<TAG, PREFIX, FLOAT> angle)
-  {
-    return std::cos(angle.template in<quantity<TAG, PREFIX, FLOAT>>());
-  }
-
-  template <class TAG, class PREFIX, class FLOAT>
-  FLOAT atan2(const quantity<TAG, PREFIX, FLOAT> x, const quantity<TAG, PREFIX, FLOAT> y)
-  {
-    return std::atan2(x.template in<quantity<TAG, PREFIX, FLOAT>>(), y.template in<quantity<TAG, PREFIX, FLOAT>>());
-  }
-
-  template <class TAG, class PREFIX, class FLOAT>
-  quantity<TAG, PREFIX, FLOAT> fabs(const quantity<TAG, PREFIX, FLOAT> value)
-  {
-    return (value.template in<quantity<TAG, PREFIX, FLOAT>>() < 0)?-value:value;
-  }*/
-
   namespace detail
   {
     template <class T>
@@ -166,7 +134,7 @@ namespace units
       XYZVector<unitless> unit() const
       {
         const auto length = mag().template in<SCALAR>();
-        if(length = 0) return {0, 0, 0};
+        if(length == 0) return {0, 0, 0};
         return (*this * (1./length)).template in<SCALAR>();
       }
 
