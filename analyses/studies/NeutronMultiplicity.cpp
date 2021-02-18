@@ -31,8 +31,8 @@ namespace ana
                                                    fRecoMaxZDist(config["reco"]["MaxZDist"].as<mm>()),
                                                    fRecoEDepBoxMin(config["reco"]["EDepBoxMin"].as<MeV>()),
                                                    fRecoDistBoxMax(config["reco"]["DistBoxMax"].as<mm>()),
-                                                   fMinZCosine(config["MinZCosine"].as<double>(0.)),
-                                                   fVertexBoxDist(config["VertexBoxDist"].as<mm>(0_mm))
+                                                   fMinZCosine(config["reco"]["MinZCosine"].as<double>(0.)),
+                                                   fVertexBoxDist(config["reco"]["VertexBoxDist"].as<mm>(0_mm))
     {
     }
 
