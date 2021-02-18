@@ -28,7 +28,7 @@ namespace truth
     for(const auto& part: fs)
     {
       if(part.momentum.E() - part.momentum.mass() > fTrackingThreshold
-         && part.momentum.p().unit().dot(muonP.unit()) < fAngleThreshold
+         && fabs(part.momentum.p().unit().dot(muonP.unit())) > fAngleThreshold
          && std::find(chargedHadronsPDGCodes.begin(), chargedHadronsPDGCodes.end(), abs(part.pdgCode)) != chargedHadronsPDGCodes.end())
         return false;
     }

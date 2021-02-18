@@ -31,7 +31,8 @@ namespace ana
                                                    fRecoMaxZDist(config["reco"]["MaxZDist"].as<mm>()),
                                                    fRecoEDepBoxMin(config["reco"]["EDepBoxMin"].as<MeV>()),
                                                    fRecoDistBoxMax(config["reco"]["DistBoxMax"].as<mm>()),
-                                                   fMinZCosine(config["MinZCosine"].as<double>(0.))
+                                                   fMinZCosine(config["MinZCosine"].as<double>(0.)),
+                                                   fVertexBoxDist(config["VertexBoxDist"].as<mm>(0_mm))
     {
     }
 
@@ -56,7 +57,7 @@ namespace ana
     template <class CAND>
     bool countAsReco(const CAND& cand, const units::LorentzVector<mm>& vertex) const
     {
-      return (cand.z - vertex.z() < this->fRecoMaxZDist) && (cand.edep > this->fRecoMinEDep) && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtMuon(vertex, cand)) > fMinZCosine);
+      return (cand.z - vertex.z() < this->fRecoMaxZDist) && (cand.edep > this->fRecoMinEDep) && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtMuon(vertex, cand)) > fMinZCosine) && (DistFromVertex(vertex, cand) > fVertexBoxDist);
     }
 
     template <class FS>
@@ -94,6 +95,9 @@ namespace ana
       mm fRecoDistBoxMax;
 
       double fMinZCosine; //Minimum angle w.r.t. the muon
+
+      //Vertex box: no candidates allowed inside
+      mm fVertexBoxDist;
   };
 }
 
