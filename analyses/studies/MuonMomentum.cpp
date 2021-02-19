@@ -83,10 +83,10 @@ namespace
   static ana::CrossSectionSignal<ana::MuonMomentum>::Registrar MuonMomentumSignal_reg("MuonMomentumSignal");
   static ana::CrossSectionSideband<ana::MuonMomentum>::Registrar MuonMomentumSideband_reg("MuonMomentumSideband");
 
-  static ana::CrossSetionSginal<ana::MuonPT>::Registrar MuonPTSignal_reg("MuonPTSignal");
+  static ana::CrossSectionSignal<ana::MuonPT>::Registrar MuonPTSignal_reg("MuonPTSignal");
   static ana::CrossSectionSideband<ana::MuonPT>::Registrar MuonPTSideband_reg("MuonPTSideband");
 
-  static ana::CrossSetionSginal<ana::MuonPz>::Registrar MuonPzSignal_reg("MuonPzSignal");
+  static ana::CrossSectionSignal<ana::MuonPz>::Registrar MuonPzSignal_reg("MuonPzSignal");
   static ana::CrossSectionSideband<ana::MuonPz>::Registrar MuonPzSideband_reg("MuonPzSideband");
 
   static ana::CrossSection2DSignal<ana::MuonPz, ana::MuonPT>::Registrar MuonPzPTSignal_reg("MuonPzPTSignal");
