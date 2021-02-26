@@ -20,7 +20,7 @@ namespace truth
 
     public:
       Range(const YAML::Node& config, const std::string& name): Cut(config, name), fVar(config["variable"]),
-                                                                fMin(config["min"].as<UNIT>(std::numeric_limits<typename UNIT::floating_point>::min())),
+                                                                fMin(config["min"].as<UNIT>(-std::numeric_limits<typename UNIT::floating_point>::max())),
                                                                 fMax(config["max"].as<UNIT>(std::numeric_limits<typename UNIT::floating_point>::max()))
       {
         if(config["equals"])
