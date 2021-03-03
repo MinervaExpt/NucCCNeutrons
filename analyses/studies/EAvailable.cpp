@@ -69,8 +69,8 @@ namespace ana
 
 namespace
 {
-  /*static ana::CrossSectionSignal<ana::EAvailable>::Registrar EAvailableSignal_reg("EAvailableSignal");
-  static ana::CrossSectionSideband<ana::EAvailable>::Registrar EAvailableSideband_reg("EAvailableSideband");*/
+  static ana::CrossSectionSignal<ana::EAvailable>::Registrar EAvailableSignal_reg("EAvailableSignal");
+  static ana::CrossSectionSideband<ana::EAvailable>::Registrar EAvailableSideband_reg("EAvailableSideband");
   static ana::Resolution<ana::EAvailable>::Registrar EAvailableResolution_reg("EAvailableResolution");
 }
 
