@@ -121,6 +121,11 @@ namespace units
 
       //TODO: Since I'm requiring that the "sum of weights" axis have units, overload Scale() too.
 
+      void SetDirectory(TDirectory* dir)
+      {
+        HIST::SetDirectory(dir);
+      }
+
     private:
       //Implementation details to map number of AXES... to axis access functions
       template <class X>
@@ -174,6 +179,11 @@ namespace units
       { 
         return Base_t::univHist(univ)->Fill(value.template in<XUNIT>(), weight.template in<YUNIT>()); 
       }
+
+      void SetDirectory(TDirectory* dir)
+      {
+        Base_t::hist->SetDirectory(dir);
+      }
   };
 
 
@@ -207,6 +217,11 @@ namespace units
       int Fill(const UNIV* univ, const OTHERX x, const OTHERY y, const OTHERZ weight)
       { 
         return Base_t::univHist(univ)->Fill(x.template in<XUNIT>(), y.template in<YUNIT>(), weight.template in<ZUNIT>()); 
+      }
+
+      void SetDirectory(TDirectory* dir)
+      {
+        Base_t::hist->SetDirectory(dir);
       }
   };
 }

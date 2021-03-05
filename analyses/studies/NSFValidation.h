@@ -9,6 +9,7 @@
 
 //util includes
 #include "util/Categorized.h"
+#include "util/WithUnits.h"
 
 #ifndef ANA_NSFVALIDATION_H
 #define ANA_NSFVALIDATION_H

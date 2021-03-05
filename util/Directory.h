@@ -28,9 +28,6 @@
 #include "PlotUtils/Hist2DWrapper.h"
 #pragma GCC diagnostic pop
 
-//Units includes
-#include "util/WithUnits.h"
-
 namespace util  
 {
   //Machinery to specialize just one bit of code
@@ -60,16 +57,6 @@ namespace util
     struct set<PlotUtils::Hist2DWrapper<UNIV>>
     { 
       static void dir(PlotUtils::Hist2DWrapper<UNIV>& wrapper, TDirectory& dir) { wrapper.hist->SetDirectory(&dir); }
-    };
-
-    //Specialize for using HistWrapper<> with WithUnits<>.
-    //I could probably do SFINAE and look for a "hist" member,
-    //but it's after 6PM.  Actually, this might turn out to be
-    //SFINAE after all...
-    template <class HASHIST, class ...UNITS>
-    struct set<units::WithUnits<HASHIST, UNITS...>>
-    {
-      static void dir(units::WithUnits<HASHIST, UNITS...>& wrapper, TDirectory& dir) { wrapper.hist->SetDirectory(&dir); }
     };
   }
 
