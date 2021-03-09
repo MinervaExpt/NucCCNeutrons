@@ -18,6 +18,8 @@
 #include "TDirectory.h"
 #include "TKey.h"
 
+#include "TParameter.h"
+
 //Feature needed with pre-ROOT6 PlotUtils.
 #ifndef NCINTEX
 #include "Cintex/Cintex.h"
@@ -133,6 +135,9 @@ int main(const int argc, const char** argv)
   const auto all1D = find<PlotUtils::MnvH1D>(*inFile);
   const auto all2D = find<PlotUtils::MnvH2D>(*inFile);
 
+  const auto allParameters = find<TParameter<double>>(*inFile);
+  //const auto allStrings = find<TNamed>(*inFile);
+
   std::vector<std::string> bandNames;
                                              
   if(argc > 2) bandNames.push_back(argv[2]);
@@ -182,6 +187,10 @@ int main(const int argc, const char** argv)
         std::cerr << "Failed to swap the CV with " << bandName << " because:\n" << e.what() << "\n";
         return 5;
       }
+
+      //Copy TParameters (POT information) and TStrings (bookkeeping) to the new file.
+      for(auto par: allParameters) par->Write();
+      //for(auto str: allStrings) str->Write(); //TODO: I need all TNamed that aren't also TH1s
 
       //Write the swapped histograms to a new file.
       //TODO: With the same directory structure

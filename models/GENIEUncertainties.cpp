@@ -14,6 +14,7 @@ namespace model
   GENIEUncertainties::GENIEUncertainties(const YAML::Node& config): Model(config)
   {
     PlotUtils::MinervaUniverse::SetNonResPiReweight(config["UseNonResonantPion"].as<bool>());
+    PlotUtils::MinervaUniverse::SetDeuteriumGeniePiTune(config["UseDeuteriumPionTune"].as<bool>(false));
   }
 
   events GENIEUncertainties::GetWeight(const evt::Universe& univ) const

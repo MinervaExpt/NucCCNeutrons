@@ -349,6 +349,7 @@ namespace app
                 << "going with a weight of 1 for every event.\n"
                 << "YOU HAVE BEEN WARNED!\n";
       MinervaUniverse::SetNonResPiReweight(false); //I have to give this a default value if the GENIE reweight isn't set up.  It's an error to run without setting up either a GENIE reweight or no reweights at all.
+      MinervaUniverse::SetDeuteriumGeniePiTune(false);
     }
 
     std::vector<std::unique_ptr<model::Model>> models;
