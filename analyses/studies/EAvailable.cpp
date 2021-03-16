@@ -25,9 +25,12 @@ namespace ana
   //An available energy VARIABLE for the CrossSection<> templates.
   struct EAvailable
   {
-    EAvailable(const YAML::Node& config): fMultiplicity(config) {}
+    EAvailable(const YAML::Node& config): fMultiplicity(config)//,
+                                          //fCandMaxClusters(config["reco"]["candMaxClusters"].as<int>(std::numeric_limits<int>::max())) //Used to be hard-coded as 3
+    {
+    }
 
-    inline std::string name() const { return "E_available"; }
+    inline std::string name() const { return "E_{available}"; }
 
     GeV truth(const evt::Universe& event) const
     {
@@ -40,7 +43,7 @@ namespace ana
       const auto neutronE = std::accumulate(cands.begin(), cands.end(), 0_MeV,
                                             [&event, this](const MeV sum, const auto& cand)
                                             {
-                                              if(this->fMultiplicity.countAsReco(cand, event.GetVtx()) && cand.nClusters < 3)
+                                              if(this->fMultiplicity.countAsReco(cand, event.GetVtx())) //&& cand.nClusters <= fCandMaxClusters)
                                                 return sum + cand.caloEdep;
 
                                               return sum;
@@ -64,6 +67,8 @@ namespace ana
       };
 
       NeutronMultiplicity fMultiplicity;
+
+      //int fCandMaxClusters; //Helpful for removing pi0-induced candidates
   };
 }
 
