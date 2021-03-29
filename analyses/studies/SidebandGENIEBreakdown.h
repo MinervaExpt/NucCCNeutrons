@@ -45,6 +45,7 @@ namespace ana
                     "Reco and truth variable calculations must be in the same units!");
 
       using HIST = units::WithUnits<HistWrapper<evt::Universe>, UNIT, events>;
+      using HIST2D = units::WithUnits<Hist2DWrapper<evt::Universe>, GeV, GeV, events>;
 
     public:
       SidebandGENIEBreakdown(const YAML::Node& config, util::Directory& dir,
@@ -54,8 +55,10 @@ namespace ana
                                                                                    fSignalByGENIELabel("TruthSignal", "Reco " + fVar.name(), GENIECategories, dir,
                                                                                                        config["binning"].as<std::vector<double>>(), universes),
                                                                                    fBackgroundsByGENIELabel(backgrounds, dir, "Background", "Reco " + fVar.name(),
-                                                                                                            GENIECategories, dir, config["binning"].as<std::vector<double>>(), universes)
+                                                                                                            GENIECategories, dir, config["binning"].as<std::vector<double>>(), universes),
+                                                                                   fBackgroundQ0Q3("Background_q0q3", "Truth q0;Truth q3", backgrounds, dir, 20, 0, 3, 20, 0, 3, universes)
       {
+        fSignalQ0Q3 = dir.make<HIST2D>("Signal_q0q3", "Signal Phase Space;Truth q0;Truth q3", 20, 0, 3, 20, 0, 3, universes);
       }
 
       virtual ~SidebandGENIEBreakdown() = default;
@@ -68,11 +71,13 @@ namespace ana
       virtual void mcSignal(const evt::Universe& event, const events weight) override
       {
         fSignalByGENIELabel[event.GetInteractionType()].Fill(&event, fVar.reco(event), weight);
+        fSignalQ0Q3->Fill(&event, event.GetTruthQ0(), event.GetTruthQ3(), weight);
       }
 
       virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) override
       {
         fBackgroundsByGENIELabel[background][event.GetInteractionType()].Fill(&event, fVar.reco(event), weight);
+        fBackgroundQ0Q3[background].Fill(&event, event.GetTruthQ0(), event.GetTruthQ3());
       }
 
       //Sidebands aren't defined in the truth tree, so do nothing
@@ -83,7 +88,9 @@ namespace ana
       virtual void afterAllFiles(const events /*passedSelection*/) override
       {
         fSignalByGENIELabel.visit([](auto& hist) { hist.SyncCVHistos(); });
+        fSignalQ0Q3->SyncCVHistos();
         fBackgroundsByGENIELabel.visit([](auto& category) { category.visit([](auto& hist) { hist.SyncCVHistos(); }); });
+        fBackgroundQ0Q3.visit([](auto& hist) { hist.SyncCVHistos(); });
       }
 
       using Registrar = Study::Registrar<SidebandGENIEBreakdown<VARIABLE>>;
@@ -93,8 +100,11 @@ namespace ana
 
       //Sideband histograms are designed to be subtracted from the selected region before
       //unfolding, so they must all be in reconstructed variables.
-      util::Categorized<HIST, int> fSignalByGENIELabel;
-      util::Categorized<util::Categorized<HIST, int>, background_t> fBackgroundsByGENIELabel;
+      util::Categorized<HIST, int> fSignalByGENIELabel; //Are the same GENIE labels dominant in the signal region and the sidebands?
+      HIST2D* fSignalQ0Q3; //Do the signal and sidebands cover the same q0, q3 phase space? 
+
+      util::Categorized<util::Categorized<HIST, int>, background_t> fBackgroundsByGENIELabel; //Are the same GENIE labels dominant in the signal region and the sidebands?
+      util::Categorized<HIST2D, background_t> fBackgroundQ0Q3; //Do the signal and sidebands cover the same q0, q3 phase space?
   };
 }
 
