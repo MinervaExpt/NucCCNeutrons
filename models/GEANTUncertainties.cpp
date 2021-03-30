@@ -13,7 +13,7 @@ namespace model
 {
   GEANTUncertainties::GEANTUncertainties(const YAML::Node& config): Model(config)
   {
-    PlotUtils::MinervaUniverse::SetMHRWeightNeutronCVReweight(config["UseAbfaltererNeutronReweight"].as<bool>());
+    PlotUtils::MinervaUniverse::SetMHRWeightNeutronCVReweight(config["UseNeutronReweight"].as<bool>());
     PlotUtils::MinervaUniverse::SetMHRWeightElastics(config["ReweightElastics"].as<bool>(true));
     //TODO: Connect PlotUtils::MinervaUniverse::SetReadoutVolume() to how Fiducials were set up.
     //      This means I need a different set of weights for each fiducial though.  That's a limitation
