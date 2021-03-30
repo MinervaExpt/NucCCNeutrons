@@ -84,20 +84,35 @@ namespace
     //TODO: This only works for the CV.  What about systematic universes?
     Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& fixedNames = {})
     {
-      data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Data"); //It's important to use an MnvH1D somewhere to force the linker to link against PlotUtils.
-                                                                                //Otherwise, I'll get a lot of messages about missing dictionaries and bad reads.
+      //Unfortunately, the data in the selection region has a different naming convention.  It ends with "_Signal".
+      //TODO: Just rename histograms in ExtractCrossSection so that data ends with "_Data" in selection region too.  "Signal" is a stupid and confusing name anyway.
+      try
+      {
+        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Data"); //It's important to use an MnvH1D somewhere to force the linker to link against PlotUtils.
+                                                                                  //Otherwise, I'll get a lot of messages about missing dictionaries and bad reads.
+      }
+      catch(const std::runtime_error& e)
+      {
+        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal");
+      }
+
       fixedSum.reset(static_cast<TH1*>(data->Clone()));
       fixedSum->SetDirectory(nullptr); //I'm going to delete this pointer, so make sure the output file doesn't try to delete it a second time!
       fixedSum->Reset();
 
       std::vector<TH1*> fixedHists;
 
+      const std::string bkgTag = "_Background_";
       for(auto key: *mcDir.GetListOfKeys())
       {
-        if(std::string(key->GetName()).find(sidebandName + "_Background_") != std::string::npos)
+        const std::string keyName = key->GetName();
+        const size_t bkgLoc = keyName.find(sidebandName + bkgTag);
+        if(bkgLoc != std::string::npos)
         {
+          const auto bkgName = keyName.substr(bkgLoc + sidebandName.length() + bkgTag.length(), std::string::npos);
           const auto hist = GetIngredient<TH1>(mcDir, key->GetName());
-          if(std::find(fixedNames.begin(), fixedNames.end(), key->GetName()) != fixedNames.end()) fixedSum->Add(hist);
+          if(std::find(fixedNames.begin(), fixedNames.end(), bkgName) != fixedNames.end())
+            fixedSum->Add(hist);
           else floatingHists.push_back(hist);
         }
       }
@@ -234,14 +249,18 @@ namespace
 
   std::vector<std::string> findBackgroundNames(TDirectoryFile& dir, const std::vector<std::string>& fixedBackgrounds)
   {
+    const std::string tag = "_Background_";
     std::set<std::string> uniqueBackgrounds;
     for(auto key: *dir.GetListOfKeys())
     {
       std::string keyName = key->GetName();
-      const size_t bkgLocation = keyName.find("_Background_");
-      if(bkgLocation != std::string::npos
-         && std::find(fixedBackgrounds.begin(), fixedBackgrounds.end(), keyName.substr(bkgLocation, std::string::npos)) == fixedBackgrounds.end())
-        uniqueBackgrounds.insert(keyName.substr(bkgLocation, std::string::npos));
+      const size_t bkgLocation = keyName.find(tag);
+      if(bkgLocation != std::string::npos)
+      {
+        const std::string bkgName = keyName.substr(bkgLocation + tag.length(), std::string::npos);
+        if(std::find(fixedBackgrounds.begin(), fixedBackgrounds.end(), bkgName) == fixedBackgrounds.end())
+          uniqueBackgrounds.insert(bkgName);
+      }
     }
 
     return std::vector<std::string>(uniqueBackgrounds.begin(), uniqueBackgrounds.end());
@@ -275,7 +294,7 @@ int main(const int argc, const char** argv)
     std::cerr << "Failed to copy file with MC histograms named " << argv[2] << "\n";
     return 3;
   }
-  auto mcFile = TFile::Open((mcBaseName + "_constrained.root").c_str());
+  auto mcFile = TFile::Open((mcBaseName + "_constrained.root").c_str(), "UPDATE");
 
   const double mcPOT = GetIngredient<TParameter<double>>(*mcFile, "POTUsed")->GetVal(),
                dataPOT = GetIngredient<TParameter<double>>(*dataFile, "POTUsed")->GetVal();
@@ -292,6 +311,11 @@ int main(const int argc, const char** argv)
   {*/
     auto* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit2");
 
+    //TODO: Have Backgrounds set these up maybe?  I'm setting up the parameters for each Background category.
+    minimizer->SetVariable(0, "Var 0", 1, 1e-2);
+    minimizer->SetVariable(1, "Var 1", 1, 1e-2);
+    minimizer->SetVariable(2, "Var 2", 1, 1e-2);
+
     const std::string selectionName = findSelectionName(*mcFile);
     const auto sidebandNames = findSidebandNames(*mcFile, selectionName); //TODO: When I can figure out the fiducial volume, don't include it in the sidebandNames
     /*for(int whichUniv = 0; whichUniv < nUnivs; ++whichUniv) //TODO: Universe loop
@@ -299,6 +323,7 @@ int main(const int argc, const char** argv)
       std::vector<Sideband> sidebands;
       for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, fixedBackgroundNames);
       Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
+      std::cout << "Number of parameters Universe expects is " << objectiveFunction.NDim() << "\n";
       minimizer->SetFunction(objectiveFunction); //I may need ROOT::Math::Functor if this doesn't compile
       minimizer->Minimize();
 
@@ -315,7 +340,7 @@ int main(const int argc, const char** argv)
     //TODO: Plot fit sidebands
   //} //TODO: Loop over fiducial volumes
 
-  mcFile->Write();
+  mcFile->Write("", TObject::kOverwrite);
 
   return 0;
 }
