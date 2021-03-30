@@ -34,6 +34,7 @@
 #include "PlotUtils/MinosEfficiencySystematics.h"
 #include "PlotUtils/MuonResolutionSystematics.h"
 #include "PlotUtils/MuonSystematics.h"
+#include "PlotUtils/GeantHadronSystematics.h"
 //#include "PlotUtils/ResponseSystematics.h"
 
 //c++ includes
@@ -101,6 +102,7 @@ namespace
     ::merge(PlotUtils::GetMuonResolutionSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
     ::merge(PlotUtils::GetMinervaMuonSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
     ::merge(PlotUtils::GetMinosMuonSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
+    ::merge(PlotUtils::GetGeantHadronSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
     //::merge(PlotUtils::GetResponseSystematicsMap<evt::WeightCachedUniverse>(chain, true), allErrorBands); //TODO: flag to turn off neutron response?
 
     return allErrorBands;
