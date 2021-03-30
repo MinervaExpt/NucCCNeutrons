@@ -65,6 +65,8 @@ namespace
     virtual double functionToFit(const int whichBin, const double* pars) const = 0;
     virtual int nPars() const = 0;
 
+    virtual void setParameters(ROOT::Math::Minimizer& min, const int nextPar) const = 0;
+
     std::string name; //This background scales all histograms with this string in their names
   };
 
@@ -74,15 +76,20 @@ namespace
     ScaledBackground(const std::string& name): Background(name) {}
     virtual ~ScaledBackground() = default;
 
-    virtual double functionToFit(const int /*whichBin*/, const double* pars) const { return pars[0]; }
-    virtual int nPars() const { return 1; }
+    double functionToFit(const int /*whichBin*/, const double* pars) const override { return pars[0]; }
+    int nPars() const override { return 1; }
+
+    void setParameters(ROOT::Math::Minimizer& min, const int nextPar) const override
+    {
+      min.SetVariable(nextPar, name.c_str(), 1, 1e-2); //TODO: Configure step size somehow?  What about guesses for initial parameter value?
+    }
   };
 
   //Each background category in a single sideband for a single systematic Universe
   struct Sideband
   {
     //TODO: This only works for the CV.  What about systematic universes?
-    Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& fixedNames = {})
+    Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<Background*> floatingBkgs, const std::vector<std::string>& fixedNames)
     {
       //Unfortunately, the data in the selection region has a different naming convention.  It ends with "_Signal".
       //TODO: Just rename histograms in ExtractCrossSection so that data ends with "_Data" in selection region too.  "Signal" is a stupid and confusing name anyway.
@@ -100,9 +107,10 @@ namespace
       fixedSum->SetDirectory(nullptr); //I'm going to delete this pointer, so make sure the output file doesn't try to delete it a second time!
       fixedSum->Reset();
 
-      std::vector<TH1*> fixedHists;
+      for(const auto bkg: floatingBkgs) floatingHists.push_back(GetIngredient<TH1>(mcDir, sidebandName + "_Background_" + bkg->name));
+      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<TH1>(mcDir, sidebandName + "_Background_" + fixed));
 
-      const std::string bkgTag = "_Background_";
+      /*const std::string bkgTag = "_Background_";
       for(auto key: *mcDir.GetListOfKeys())
       {
         const std::string keyName = key->GetName();
@@ -115,7 +123,7 @@ namespace
             fixedSum->Add(hist);
           else floatingHists.push_back(hist);
         }
-      }
+      }*/
     }
 
     //Observer pointers to histograms that came from (and will be deleted by) a TFile
@@ -139,6 +147,12 @@ namespace
         //TODO: assert() that all sidebands have same binning
         assert(!fSidebands.empty() && "Requested sideband fit with no sidebands!");
         assert(std::all_of(fSidebands.begin(), fSidebands.end(), [&backgrounds](const auto& sideband) { return sideband.floatingHists.size() == backgrounds.size(); }));
+        #ifndef NDEBUG
+        for(size_t whichBkg = 0; whichBkg < fBackgrounds.size(); ++whichBkg)
+        {
+          for(const auto& sideband: fSidebands) assert(std::string(sideband.floatingHists[whichBkg]->GetName()).find(fBackgrounds[whichBkg]->name) != std::string::npos && "Sideband and background indices don't match!");
+        }
+        #endif //NDEBUG
         fLastBin = fSidebands.front().data->GetXaxis()->GetNbins();
       }
 
@@ -170,13 +184,13 @@ namespace
           for(const auto& sideband: fSidebands)
           {
             double floatingSum = 0,
-                   dataContent = sideband.data->GetBinContent(whichBin),
-                   dataErr = sideband.data->GetBinError(whichBin);
+                   dataContent = sideband.data->GetBinContent(whichBin);
+                   //dataErr = sideband.data->GetBinError(whichBin);
             for(size_t whichBackground = 0; whichBackground < fBackgrounds.size(); ++whichBackground)
             {
               floatingSum += sideband.floatingHists[whichBackground]->GetBinContent(whichBin) * backgroundFitFuncs[whichBin];
             }
-            chi2 += pow<2>((floatingSum + sideband.fixedSum->GetBinContent(whichBin))*fPOTScale - dataContent)/pow<2>(dataErr);
+            chi2 += pow<2>((floatingSum + sideband.fixedSum->GetBinContent(whichBin))*fPOTScale - dataContent)/dataContent; //pow<2>(dataErr); //TODO: Aaron divides by data error instead.  Seems like I've heard of this before, but I don't remember where or when to use it.
           }
         } //For each bin
 
@@ -305,23 +319,26 @@ int main(const int argc, const char** argv)
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
   std::vector<Background*> backgrounds;
-  for(const auto& bkgName: fixedBackgroundNames) backgrounds.push_back(new ScaledBackground(bkgName));
+  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new ScaledBackground(bkgName));
 
   /*for(const auto& prefix: crossSectionPrefixes) //Usually a loop over fiducial volumes
   {*/
     auto* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit2");
 
-    //TODO: Have Backgrounds set these up maybe?  I'm setting up the parameters for each Background category.
-    minimizer->SetVariable(0, "Var 0", 1, 1e-2);
-    minimizer->SetVariable(1, "Var 1", 1, 1e-2);
-    minimizer->SetVariable(2, "Var 2", 1, 1e-2);
+    //Set up fit parameters for each Background
+    int nextPar = 0;
+    for(const auto bkg: backgrounds)
+    {
+      bkg->setParameters(*minimizer, nextPar);
+      nextPar = bkg->nPars();
+    }
 
     const std::string selectionName = findSelectionName(*mcFile);
     const auto sidebandNames = findSidebandNames(*mcFile, selectionName); //TODO: When I can figure out the fiducial volume, don't include it in the sidebandNames
     /*for(int whichUniv = 0; whichUniv < nUnivs; ++whichUniv) //TODO: Universe loop
     {*/
       std::vector<Sideband> sidebands;
-      for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, fixedBackgroundNames);
+      for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgrounds, fixedBackgroundNames);
       Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
       std::cout << "Number of parameters Universe expects is " << objectiveFunction.NDim() << "\n";
       minimizer->SetFunction(objectiveFunction); //I may need ROOT::Math::Functor if this doesn't compile
@@ -330,7 +347,7 @@ int main(const int argc, const char** argv)
       minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?
 
       for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
-      Sideband selection(selectionName, *dataFile, *mcFile, fixedBackgroundNames);
+      Sideband selection(selectionName, *dataFile, *mcFile, backgrounds, fixedBackgroundNames);
       objectiveFunction.scale(selection, *minimizer);
 
       //TODO: Propagate errors from TMinuit

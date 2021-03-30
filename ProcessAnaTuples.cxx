@@ -338,7 +338,7 @@ int main(const int argc, const char** argv)
         const size_t nMCEntries = anaTuple.GetEntries();
         for(auto& compat: groupedUnivs)
         {
-          for(auto& univ: compat) univ->SetTree(&anaTuple);
+          for(auto& univ: compat) univ->SetTreeMC(&anaTuple);
         }
 
         //Get MINOS weights
@@ -409,7 +409,7 @@ int main(const int argc, const char** argv)
           const size_t nTruthEntries = truthTuple.GetEntries();
           for(auto& compat: groupedUnivs)
           {
-            for(auto univ: compat) univ->SetTree(&truthTuple);
+            for(auto univ: compat) univ->SetTreeMC(&truthTuple); //TODO: Is MnvHadronReweight even compatible with the truth tree?
           }
 
           //Don't try to get MINOS weights in the truth tree loop

@@ -112,7 +112,12 @@ namespace evt
       void SetTree(PlotUtils::TreeWrapper* chw)
       {
         m_chw = chw;
-        weight_hadron<PlotUtils::TreeWrapper*>().setDataTree(m_chw->GetTree());
+      }
+
+      void SetTreeMC(PlotUtils::TreeWrapper* chw)
+      {
+        SetTree(chw);
+        weight_hadron<PlotUtils::TreeWrapper*>(m_chw).setDataTree(m_chw->GetTree());
       }
 
       //Information about this event
