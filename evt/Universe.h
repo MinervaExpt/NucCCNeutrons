@@ -109,7 +109,11 @@ namespace evt
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
       //The user is responsible for deleting m_chw as in its normal usage.
-      void SetTree(PlotUtils::TreeWrapper* chw) { m_chw = chw; }
+      void SetTree(PlotUtils::TreeWrapper* chw)
+      {
+        m_chw = chw;
+        weight_hadron<PlotUtils::TreeWrapper*>().setDataTree(m_chw->GetTree());
+      }
 
       //Information about this event
       SliceID GetEventID(const bool isData) const;

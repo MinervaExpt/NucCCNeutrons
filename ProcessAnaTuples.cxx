@@ -151,6 +151,7 @@ int main(const int argc, const char** argv)
   std::vector<std::unique_ptr<model::Model>> reweighters;
   std::vector<std::unique_ptr<fid::Fiducial>> fiducials;
   evt::WeightCache weights;
+  std::string anaTupleName;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
   std::unique_ptr<app::CmdLine> options;
@@ -161,7 +162,23 @@ int main(const int argc, const char** argv)
                                                  //list of files to process, prepares a file for histograms, and puts the configuration
                                                  //file together.  See CmdLine.h for more details.
 
-    auto universes = app::getSystematics(nullptr, *options, options->isMC(), weights);
+    //Name of the AnaTuple to read
+    anaTupleName = options->ConfigFile()["app"]["AnaTupleName"].as<std::string>("NucCCNeutron");
+
+    //MnvHadronReweight needs a TreeWrapper because it tries to connect to the tree as soon as it is created.
+    //TODO: Lots of error checking :(
+    if(options->TupleFileNames().empty()) throw std::runtime_error("You must pass at least one tuple file for finding branch names for MnvHadronReweight.");
+    PlotUtils::ChainWrapper exampleTuple(anaTupleName.c_str());
+    exampleTuple.Add(options->TupleFileNames().front());
+
+    /*std::unique_ptr<TFile> firstTupleFile(TFile::Open(options->TupleFileNames().front().c_str(), "READ"));
+    if(!firstTupleFile) throw std::runtime_error("Could not open the first tuple file, " + options->TupleFileNames().front() + ", for finding branches that MnvHadronReweight needs.");
+
+    auto exampleRecoTree = dynamic_cast<TTree*>(firstTupleFile->Get(anaTupleName.c_str()));
+    if(exampleRecoTree == nullptr) throw std::runtime_error("There is no TTree named " + anaTupleName + " in " + options->TupleFileNames().front() + ".");
+    PlotUtils::TreeWrapper exampleTuple(exampleRecoTree);*/
+
+    auto universes = app::getSystematics(&exampleTuple, *options, options->isMC(), weights);
 
     //Send whatever noise PlotUtils makes during setup to a file in the current working directory
     #ifdef NDEBUG
@@ -170,6 +187,7 @@ int main(const int argc, const char** argv)
 
     //The file where I will put histrograms I produce.
     util::Directory histDir(*options->HistFile);
+    options->HistFile->cd();
 
     //Assemble Fiducials
     auto& fiducialFactory = plgn::Factory<fid::Fiducial>::instance();
@@ -256,9 +274,6 @@ int main(const int argc, const char** argv)
 
   const bool anyoneWantsTruth = std::any_of(fiducials.begin(), fiducials.end(), [](const auto& fid) { return fid->study->wantsTruthLoop(); });
 
-  //Name of the AnaTuple to read
-  const auto anaTupleName = options->ConfigFile()["app"]["AnaTupleName"].as<std::string>("NucCCNeutron");
-
   //Accumulate POT from each good file
   double pot_used = 0;
 
@@ -309,6 +324,7 @@ int main(const int argc, const char** argv)
         continue; //TODO: Don't use continue if I can help it
       }
       recoTree->SetCacheSize(1e7); //Read 10MB at a time
+                                   //TODO: I'll bet I could make this 4k blocks or something to be more efficient on modern SSDs
 
       PlotUtils::TreeWrapper anaTuple(recoTree);
 
