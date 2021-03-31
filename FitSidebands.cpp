@@ -17,6 +17,8 @@
 #include "TDirectoryFile.h"
 #include "TFile.h"
 #include "TParameter.h"
+#include "Minuit2/Minuit2Minimizer.h" //TODO: Remove me?
+#include "TMinuitMinimizer.h"
 
 //TODO: Share GetIngredient() and possibly the prefix and background search functions with ExtractCrossSection.
 //      Put them in util or something.
@@ -62,7 +64,7 @@ namespace
 
     //functionToFit() tries to model a data/MC ratio for a specific background in a sideband.
     //It takes the bin number and nPars() parameters from the fitter as arguments.
-    virtual double functionToFit(const int whichBin, const double* pars) const = 0;
+    virtual double functionToFit(const double binCenter, const double* pars) const = 0;
     virtual int nPars() const = 0;
 
     virtual void setParameters(ROOT::Math::Minimizer& min, const int nextPar) const = 0;
@@ -76,12 +78,32 @@ namespace
     ScaledBackground(const std::string& name): Background(name) {}
     virtual ~ScaledBackground() = default;
 
-    double functionToFit(const int /*whichBin*/, const double* pars) const override { return pars[0]; }
+    double functionToFit(const double /*binCenter*/, const double* pars) const override { return pars[0]; }
     int nPars() const override { return 1; }
 
     void setParameters(ROOT::Math::Minimizer& min, const int nextPar) const override
     {
-      min.SetVariable(nextPar, name.c_str(), 1, 1e-2); //TODO: Configure step size somehow?  What about guesses for initial parameter value?
+      min.SetVariable(nextPar, name.c_str(), 1, 1e-3); //TODO: Configure step size somehow?  What about guesses for initial parameter value?
+    }
+  };
+
+  //Fit a line to a sideband's data/MC ratio
+  struct LinearBackground: public Background
+  {
+    LinearBackground(const std::string& name): Background(name) {}
+    virtual ~LinearBackground() = default;
+
+    double functionToFit(const double binCenter, const double* pars) const override
+    {
+      return pars[0] + pars[1] * binCenter;
+    }
+
+    int nPars() const override { return 2; }
+
+    void setParameters(ROOT::Math::Minimizer& min, const int nextPar) const override
+    {
+      min.SetVariable(nextPar, (name + " intercept").c_str(), 0, 1e-3);
+      min.SetVariable(nextPar + 1, (name + " slope").c_str(), 0, 1e-3);
     }
   };
 
@@ -174,10 +196,11 @@ namespace
         for(int whichBin = fFirstBin; whichBin < fLastBin; ++whichBin)
         {
           std::vector<double> backgroundFitFuncs(fBackgrounds.size());
+          const double binCenter = fSidebands.front().floatingHists.front()->GetXaxis()->GetBinCenter(whichBin);
           int whichParam = 0;
           for(size_t whichBackground = 0; whichBackground < fBackgrounds.size(); ++whichBackground)
           {
-            backgroundFitFuncs[whichBackground] = fBackgrounds[whichBackground]->functionToFit(whichBin, parameters + whichParam);
+            backgroundFitFuncs[whichBackground] = fBackgrounds[whichBackground]->functionToFit(binCenter, parameters + whichParam);
             whichParam += fBackgrounds[whichBackground]->nPars();
           }
 
@@ -203,16 +226,18 @@ namespace
         const double* parameters = fitParams.X();
 
         int firstParam = 0;
-        for(auto bkg: fBackgrounds)
+        for(size_t whichBkg = 0; whichBkg < fBackgrounds.size(); ++whichBkg)
         {
+          const auto bkg = fBackgrounds[whichBkg];
           for(int whichBin = fFirstBin; whichBin < fLastBin; ++whichBin)
           {
-            const double scaleFactor = bkg->functionToFit(whichBin, parameters + firstParam);
+            const double scaleFactor = bkg->functionToFit(toModify.floatingHists[whichBkg]->GetXaxis()->GetBinCenter(whichBin), parameters + firstParam);
 
-            for(auto& floatHist: toModify.floatingHists)
-            {
-              floatHist->SetBinContent(whichBin, floatHist->GetBinContent(whichBin) * scaleFactor);
-            } //For each floating background histogram
+            auto floatHist = toModify.floatingHists[whichBkg];
+            assert(std::string(floatHist->GetName()).find(bkg->name) != std::string::npos && "Background histogram and model name do not match!");
+            std::cout << "Scaling bin " << whichBin << " (content " << floatHist->GetBinContent(whichBin) << ") of " << floatHist->GetName() << " by " << scaleFactor << "\n";
+            floatHist->SetBinContent(whichBin, floatHist->GetBinContent(whichBin) * scaleFactor);
+            std::cout << "Its content is now " << floatHist->GetBinContent(whichBin) << "\n";
           } //For each bin
 
           firstParam += bkg->nPars();
@@ -323,28 +348,57 @@ int main(const int argc, const char** argv)
 
   /*for(const auto& prefix: crossSectionPrefixes) //Usually a loop over fiducial volumes
   {*/
-    auto* minimizer = ROOT::Math::Factory::CreateMinimizer("Minuit2");
+    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kSimplex, 3); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex); //ROOT::Math::Factory::CreateMinimizer("Minuit2"); //"GSLMultiMin"); //"Minuit");
 
     //Set up fit parameters for each Background
-    int nextPar = 0;
+    size_t nextPar = 0;
     for(const auto bkg: backgrounds)
     {
       bkg->setParameters(*minimizer, nextPar);
-      nextPar = bkg->nPars();
+      nextPar += bkg->nPars();
     }
 
+    //TODO: Overriding parameters by eye
+    //For scale factor fit
+    minimizer->SetLimitedVariable(0, "1_Neutron", 1.2, 5e-2, 1, 1.5);
+    minimizer->SetVariable(1, "ChargedPions", 0.85, 5e-2);
+    minimizer->SetVariable(2, "NeutralPionsOnly", 1, 5e-2);
+
+    //For linear fit to data/MC ratio
+    /*minimizer->SetLimitedVariable(0, "1_Neutron intercept", 1, 5e-2, 0.8, 2);
+    minimizer->SetLimitedVariable(1, "1_Neutron slope", 0.6, 5e-2, 0, 1);
+    minimizer->SetVariable(2, "ChargedPions intercept", 0.5, 5e-2);
+    minimizer->SetVariable(3, "ChargedPions slope", 0.5/0.6, 5e-2);
+    minimizer->SetVariable(4, "NeutralPionsOnly intercept", 0.6, 5e-2);
+    minimizer->SetVariable(5, "NeutralPionsOnly slope", 0.6/0.8, 5e-2);*/
+
     const std::string selectionName = findSelectionName(*mcFile);
-    const auto sidebandNames = findSidebandNames(*mcFile, selectionName); //TODO: When I can figure out the fiducial volume, don't include it in the sidebandNames
+    /*const*/ auto sidebandNames = findSidebandNames(*mcFile, selectionName); //TODO: When I can figure out the fiducial volume, don't include it in the sidebandNames
+
+    //Don't include the multi-pi sideband in the fit at all.  I shouldn't need it because its background is insignificant in the selection region.
+    //This sideband isn't very pure in MultiPi backgrounds anyway.
+    //TODO: Just stop including this sideband in the event loop
+    auto toRemove = std::remove_if(sidebandNames.begin(), sidebandNames.end(), [](const auto& name) { return name.find("MultiPi") != std::string::npos; });
+    sidebandNames.erase(toRemove, sidebandNames.end());
+
     /*for(int whichUniv = 0; whichUniv < nUnivs; ++whichUniv) //TODO: Universe loop
     {*/
       std::vector<Sideband> sidebands;
       for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgrounds, fixedBackgroundNames);
       Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
-      std::cout << "Number of parameters Universe expects is " << objectiveFunction.NDim() << "\n";
-      minimizer->SetFunction(objectiveFunction); //I may need ROOT::Math::Functor if this doesn't compile
+      assert(nextPar == objectiveFunction.NDim());
+      minimizer->SetFunction(objectiveFunction);
       minimizer->Minimize();
 
-      minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?
+      minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?  Looks like I can check the return code of minimize()
+
+      //Print fit parameter results in case Minimizer doesn't do it.
+      const double* fitResults = minimizer->X();
+      const double* fitErrors = minimizer->Errors();
+      for(int whichPar = 0; whichPar < objectiveFunction.NDim(); ++whichPar)
+      {
+        std::cout << "Value for parameter " << whichPar << " after fit is " << fitResults[whichPar] << " +/- " << fitErrors[whichPar] << "\n";
+      }
 
       for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
       Sideband selection(selectionName, *dataFile, *mcFile, backgrounds, fixedBackgroundNames);

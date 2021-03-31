@@ -30,7 +30,7 @@ include_directories( "${PROJECT_SOURCE_DIR}" )
 
 #Find dependencies
 list( APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-find_package(ROOT REQUIRED COMPONENTS RIO Net Tree Core Geom EG GenVector OPTIONAL_COMPONENTS Cintex) #TODO: Remove CintEx if ROOT version > 5.34
+find_package(ROOT REQUIRED COMPONENTS RIO Net Tree Core Geom EG GenVector Minuit2 Minuit OPTIONAL_COMPONENTS Cintex) #TODO: Remove CintEx if ROOT version > 5.34
 
 if(${ROOT_VERSION} VERSION_LESS 6 AND NOT ${ROOT_Cintex_FOUND})
   MESSAGE(FATAL_ERROR "Cintex is optional except when it's not.  ROOT 6 has Reflex "
