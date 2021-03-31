@@ -17,7 +17,7 @@
 #include "TDirectoryFile.h"
 #include "TFile.h"
 #include "TParameter.h"
-#include "Minuit2/Minuit2Minimizer.h" //TODO: Remove me?
+//#include "Minuit2/Minuit2Minimizer.h" //TODO: Remove me?
 #include "TMinuitMinimizer.h"
 
 //TODO: Share GetIngredient() and possibly the prefix and background search functions with ExtractCrossSection.
@@ -56,6 +56,84 @@ namespace
     return GetIngredient<TYPE>(dir, prefix + "_" + ingredient);
   }
 
+  //Each background category in a single sideband for a single systematic Universe
+  struct Sideband
+  {
+    //Construct a Sideband in the CV
+    Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& floatingBackgroundNames, const std::vector<std::string>& fixedNames)
+    {
+      //Unfortunately, the data in the selection region has a different naming convention.  It ends with "_Signal".
+      //TODO: Just rename histograms in ExtractCrossSection so that data ends with "_Data" in selection region too.  "Signal" is a stupid and confusing name anyway.
+      try
+      { 
+        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Data")->GetCVHistoWithStatError();  
+      }
+      catch(const std::runtime_error& e)
+      { 
+        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal")->GetCVHistoWithStatError();
+      }
+
+      fixedSum.reset(static_cast<TH1*>(data.Clone()));
+      fixedSum->SetDirectory(nullptr); //I'm going to delete this pointer, so make sure the output file doesn't try to delete it a second time!
+      fixedSum->Reset();
+
+      for(const auto bkg: floatingBackgroundNames) floatingHists.push_back(GetIngredient<TH1>(mcDir, sidebandName + "_Background_" + bkg));
+      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<TH1>(mcDir, sidebandName + "_Background_" + fixed));
+
+      //Keep signal contamination fixed too
+      try
+      {
+        fixedSum->Add(GetIngredient<TH1>(mcDir, sidebandName + "_TruthSignal"));
+      }
+      catch(const std::runtime_error& e)
+      {
+        fixedSum->Add(GetIngredient<TH1>(mcDir, sidebandName + "_SelectedMCEvents"));
+      }
+    }
+
+    //Construct a Sideband in a specific (non-CV) systematic universe
+    Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& floatingBkgNames, const std::vector<std::string>& fixedNames, const std::string& errorBandName, const int whichUniv)
+    {
+      //Unfortunately, the data in the selection region has a different naming convention.  It ends with "_Signal".
+      //TODO: Just rename histograms in ExtractCrossSection so that data ends with "_Data" in selection region too.  "Signal" is a stupid and confusing name anyway.
+      try
+      {
+        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Data")->GetCVHistoWithStatError();
+      }
+      catch(const std::runtime_error& e)
+      {
+        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal")->GetCVHistoWithStatError();
+      }
+
+      fixedSum.reset(static_cast<TH1*>(data.Clone()));
+      fixedSum->SetDirectory(nullptr); //I'm going to delete this pointer, so make sure the output file doesn't try to delete it a second time!
+      fixedSum->Reset();
+
+      for(const auto bkg: floatingBkgNames) floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
+      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
+
+      //Keep signal contamination fixed too
+      try
+      {
+        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal")->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
+      }
+      catch(const std::runtime_error& e)
+      {
+        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents")->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
+      }
+    }
+
+    //Observer pointers to histograms that came from (and will be deleted by) a TFile
+    TH1D data;
+    std::unique_ptr<TH1> fixedSum;
+    std::vector<TH1*> floatingHists;
+
+    //Make the compiler happy.
+    Sideband(const Sideband& parent): data(parent.data), fixedSum(static_cast<TH1*>(parent.fixedSum->Clone())), floatingHists(parent.floatingHists)
+    {
+    }
+  };
+
   //TODO: Put Background fit options in their own directory?
   struct Background
   {
@@ -67,7 +145,7 @@ namespace
     virtual double functionToFit(const double binCenter, const double* pars) const = 0;
     virtual int nPars() const = 0;
 
-    virtual void setParameters(ROOT::Math::Minimizer& min, const int nextPar) const = 0;
+    virtual void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const = 0;
 
     std::string name; //This background scales all histograms with this string in their names
   };
@@ -81,9 +159,33 @@ namespace
     double functionToFit(const double /*binCenter*/, const double* pars) const override { return pars[0]; }
     int nPars() const override { return 1; }
 
-    void setParameters(ROOT::Math::Minimizer& min, const int nextPar) const override
+    void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const override
     {
-      min.SetVariable(nextPar, name.c_str(), 1, 1e-3); //TODO: Configure step size somehow?  What about guesses for initial parameter value?
+      assert(!sidebands.empty());
+
+      const auto whichHist = std::find_if(sidebands.front().floatingHists.begin(), sidebands.front().floatingHists.end(), [this](const auto hist) { return std::string(hist->GetName()).find(this->name) != std::string::npos; });
+      assert(whichHist != sidebands.front().floatingHists.end());
+      const size_t index = std::distance(sidebands.front().floatingHists.begin(), whichHist);
+
+      const auto largestSideband = std::max_element(sidebands.begin(), sidebands.end(),
+                                                    [index](const auto& lhs, const auto& rhs)
+                                                    {
+                                                      const auto sumHists = [](const double sum, const auto hist) { return sum + hist->Integral(); };
+                                                      const double lhsTotal = std::accumulate(lhs.floatingHists.begin(), lhs.floatingHists.end(), lhs.fixedSum->Integral(), sumHists);
+                                                      const double rhsTotal = std::accumulate(rhs.floatingHists.begin(), rhs.floatingHists.end(), rhs.fixedSum->Integral(), sumHists);
+                                                      return lhs.floatingHists[index]->Integral()/lhsTotal < rhs.floatingHists[index]->Integral()/rhsTotal;
+                                                    });
+      assert(largestSideband != sidebands.end());
+
+      std::unique_ptr<TH1D> mcRatio(static_cast<TH1D*>(largestSideband->fixedSum->Clone()));
+      for(const auto& hist: largestSideband->floatingHists) mcRatio->Add(hist);
+      mcRatio->Scale(POTRatio);
+      mcRatio->Divide(&largestSideband->data, mcRatio.get());
+      const double scaleGuess = (mcRatio->GetMaximum() - mcRatio->GetMinimum())/2. + mcRatio->GetMinimum();
+      std::cout << "Setting guess for scaled background " << name << " (index = " << index << ") to " << scaleGuess << "\n"
+                << "Ratio max is " << mcRatio->GetMaximum() << "\nRatio min is " << mcRatio->GetMinimum() << "\n";
+
+      min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
     }
   };
 
@@ -100,62 +202,11 @@ namespace
 
     int nPars() const override { return 2; }
 
-    void setParameters(ROOT::Math::Minimizer& min, const int nextPar) const override
+    void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& /*sidebands*/, const double /*POTRatio*/) const override
     {
+      //TODO: Guess parameters based on sidebands
       min.SetVariable(nextPar, (name + " intercept").c_str(), 0, 1e-3);
       min.SetVariable(nextPar + 1, (name + " slope").c_str(), 0, 1e-3);
-    }
-  };
-
-  //Each background category in a single sideband for a single systematic Universe
-  struct Sideband
-  {
-    //TODO: This only works for the CV.  What about systematic universes?
-    Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<Background*> floatingBkgs, const std::vector<std::string>& fixedNames)
-    {
-      //Unfortunately, the data in the selection region has a different naming convention.  It ends with "_Signal".
-      //TODO: Just rename histograms in ExtractCrossSection so that data ends with "_Data" in selection region too.  "Signal" is a stupid and confusing name anyway.
-      try
-      {
-        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Data"); //It's important to use an MnvH1D somewhere to force the linker to link against PlotUtils.
-                                                                                  //Otherwise, I'll get a lot of messages about missing dictionaries and bad reads.
-      }
-      catch(const std::runtime_error& e)
-      {
-        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal");
-      }
-
-      fixedSum.reset(static_cast<TH1*>(data->Clone()));
-      fixedSum->SetDirectory(nullptr); //I'm going to delete this pointer, so make sure the output file doesn't try to delete it a second time!
-      fixedSum->Reset();
-
-      for(const auto bkg: floatingBkgs) floatingHists.push_back(GetIngredient<TH1>(mcDir, sidebandName + "_Background_" + bkg->name));
-      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<TH1>(mcDir, sidebandName + "_Background_" + fixed));
-
-      /*const std::string bkgTag = "_Background_";
-      for(auto key: *mcDir.GetListOfKeys())
-      {
-        const std::string keyName = key->GetName();
-        const size_t bkgLoc = keyName.find(sidebandName + bkgTag);
-        if(bkgLoc != std::string::npos)
-        {
-          const auto bkgName = keyName.substr(bkgLoc + sidebandName.length() + bkgTag.length(), std::string::npos);
-          const auto hist = GetIngredient<TH1>(mcDir, key->GetName());
-          if(std::find(fixedNames.begin(), fixedNames.end(), bkgName) != fixedNames.end())
-            fixedSum->Add(hist);
-          else floatingHists.push_back(hist);
-        }
-      }*/
-    }
-
-    //Observer pointers to histograms that came from (and will be deleted by) a TFile
-    TH1* data;
-    std::unique_ptr<TH1> fixedSum;
-    std::vector<TH1*> floatingHists;
-
-    //Make the compiler happy.
-    Sideband(const Sideband& parent): data(parent.data), fixedSum(static_cast<TH1*>(parent.fixedSum->Clone())), floatingHists(parent.floatingHists)
-    {
     }
   };
 
@@ -175,7 +226,7 @@ namespace
           for(const auto& sideband: fSidebands) assert(std::string(sideband.floatingHists[whichBkg]->GetName()).find(fBackgrounds[whichBkg]->name) != std::string::npos && "Sideband and background indices don't match!");
         }
         #endif //NDEBUG
-        fLastBin = fSidebands.front().data->GetXaxis()->GetNbins();
+        fLastBin = fSidebands.front().data.GetXaxis()->GetNbins();
       }
 
       unsigned int NDim() const override
@@ -207,13 +258,13 @@ namespace
           for(const auto& sideband: fSidebands)
           {
             double floatingSum = 0,
-                   dataContent = sideband.data->GetBinContent(whichBin);
-                   //dataErr = sideband.data->GetBinError(whichBin);
+                   dataContent = sideband.data.GetBinContent(whichBin),
+                   dataErr = sideband.data.GetBinError(whichBin);
             for(size_t whichBackground = 0; whichBackground < fBackgrounds.size(); ++whichBackground)
             {
               floatingSum += sideband.floatingHists[whichBackground]->GetBinContent(whichBin) * backgroundFitFuncs[whichBin];
             }
-            chi2 += pow<2>((floatingSum + sideband.fixedSum->GetBinContent(whichBin))*fPOTScale - dataContent)/dataContent; //pow<2>(dataErr); //TODO: Aaron divides by data error instead.  Seems like I've heard of this before, but I don't remember where or when to use it.
+            chi2 += pow<2>((floatingSum + sideband.fixedSum->GetBinContent(whichBin))*fPOTScale - dataContent)/pow<2>(dataErr); //TODO: Aaron divides by data error instead.  Seems like I've heard of this before, but I don't remember where or when to use it.  I saw it referred to as the reduce chi2 somewhere yesterday which I know means chi2/NDOF.  Otherwise, I divide by dataContent.
           }
         } //For each bin
 
@@ -235,9 +286,7 @@ namespace
 
             auto floatHist = toModify.floatingHists[whichBkg];
             assert(std::string(floatHist->GetName()).find(bkg->name) != std::string::npos && "Background histogram and model name do not match!");
-            std::cout << "Scaling bin " << whichBin << " (content " << floatHist->GetBinContent(whichBin) << ") of " << floatHist->GetName() << " by " << scaleFactor << "\n";
             floatHist->SetBinContent(whichBin, floatHist->GetBinContent(whichBin) * scaleFactor);
-            std::cout << "Its content is now " << floatHist->GetBinContent(whichBin) << "\n";
           } //For each bin
 
           firstParam += bkg->nPars();
@@ -348,29 +397,13 @@ int main(const int argc, const char** argv)
 
   /*for(const auto& prefix: crossSectionPrefixes) //Usually a loop over fiducial volumes
   {*/
-    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kSimplex, 3); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex); //ROOT::Math::Factory::CreateMinimizer("Minuit2"); //"GSLMultiMin"); //"Minuit");
-
-    //Set up fit parameters for each Background
-    size_t nextPar = 0;
-    for(const auto bkg: backgrounds)
-    {
-      bkg->setParameters(*minimizer, nextPar);
-      nextPar += bkg->nPars();
-    }
+    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kSimplex, 3); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
 
     //TODO: Overriding parameters by eye
     //For scale factor fit
-    minimizer->SetLimitedVariable(0, "1_Neutron", 1.2, 5e-2, 1, 1.5);
+    /*minimizer->SetLimitedVariable(0, "1_Neutron", 1.2, 5e-2, 1, 1.5);
     minimizer->SetVariable(1, "ChargedPions", 0.85, 5e-2);
-    minimizer->SetVariable(2, "NeutralPionsOnly", 1, 5e-2);
-
-    //For linear fit to data/MC ratio
-    /*minimizer->SetLimitedVariable(0, "1_Neutron intercept", 1, 5e-2, 0.8, 2);
-    minimizer->SetLimitedVariable(1, "1_Neutron slope", 0.6, 5e-2, 0, 1);
-    minimizer->SetVariable(2, "ChargedPions intercept", 0.5, 5e-2);
-    minimizer->SetVariable(3, "ChargedPions slope", 0.5/0.6, 5e-2);
-    minimizer->SetVariable(4, "NeutralPionsOnly intercept", 0.6, 5e-2);
-    minimizer->SetVariable(5, "NeutralPionsOnly slope", 0.6/0.8, 5e-2);*/
+    minimizer->SetVariable(2, "NeutralPionsOnly", 1, 5e-2);*/
 
     const std::string selectionName = findSelectionName(*mcFile);
     /*const*/ auto sidebandNames = findSidebandNames(*mcFile, selectionName); //TODO: When I can figure out the fiducial volume, don't include it in the sidebandNames
@@ -381,36 +414,73 @@ int main(const int argc, const char** argv)
     auto toRemove = std::remove_if(sidebandNames.begin(), sidebandNames.end(), [](const auto& name) { return name.find("MultiPi") != std::string::npos; });
     sidebandNames.erase(toRemove, sidebandNames.end());
 
-    /*for(int whichUniv = 0; whichUniv < nUnivs; ++whichUniv) //TODO: Universe loop
-    {*/
-      std::vector<Sideband> sidebands;
-      for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgrounds, fixedBackgroundNames);
-      Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
-      assert(nextPar == objectiveFunction.NDim());
-      minimizer->SetFunction(objectiveFunction);
-      minimizer->Minimize();
+    //Fit the Central Value (CV) backgrounds.  These are the numbers actually subtracted from the data to make it a cross section.
+    std::vector<Sideband> sidebands;
+    for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
 
-      minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?  Looks like I can check the return code of minimize()
+    int nextPar = 0;
+    for(auto bkg: backgrounds)
+    {
+      bkg->guessInitialParameters(*minimizer, nextPar, sidebands, dataPOT/mcPOT);
+      nextPar += bkg->nPars();
+    }
 
-      //Print fit parameter results in case Minimizer doesn't do it.
-      const double* fitResults = minimizer->X();
-      const double* fitErrors = minimizer->Errors();
-      for(int whichPar = 0; whichPar < objectiveFunction.NDim(); ++whichPar)
+    Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
+    assert(nextPar == objectiveFunction.NDim());
+    minimizer->SetFunction(objectiveFunction);
+    minimizer->Minimize();
+
+    minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?  Looks like I can check the return code of minimize()
+
+    for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
+    Sideband selection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
+    objectiveFunction.scale(selection, *minimizer);
+
+    //Get the list of error bands to loop over
+    auto referenceHist = GetIngredient<PlotUtils::MnvH1D>(*mcFile, selectionName + "_Signal");
+    const auto errorBandNames = referenceHist->GetErrorBandNames();
+
+    //Fit each error band to the data.  This really constrains the uncertainty on the simulated backgrounds.
+    for(const auto& bandName: errorBandNames)
+    {
+      const auto univs = referenceHist->GetVertErrorBand(bandName)->GetHists();
+      for(size_t whichUniv = 0; whichUniv < univs.size(); ++whichUniv)
       {
-        std::cout << "Value for parameter " << whichPar << " after fit is " << fitResults[whichPar] << " +/- " << fitErrors[whichPar] << "\n";
-      }
+        //TODO: Overriding parameters by eye
+        //For scale factor fit
+        /*minimizer->SetLimitedVariable(0, "1_Neutron", 1.2, 5e-2, 1, 1.5);
+        minimizer->SetVariable(1, "ChargedPions", 0.85, 5e-2);
+        minimizer->SetVariable(2, "NeutralPionsOnly", 1, 5e-2);*/
 
-      for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
-      Sideband selection(selectionName, *dataFile, *mcFile, backgrounds, fixedBackgroundNames);
-      objectiveFunction.scale(selection, *minimizer);
+        int nextPar = 0;
+        for(auto bkg: backgrounds)
+        {
+          bkg->guessInitialParameters(*minimizer, nextPar, sidebands, dataPOT/mcPOT);
+          nextPar += bkg->nPars();
+        }
 
-      //TODO: Propagate errors from TMinuit
-      //TODO: Print fit diagnostics.  Throw out bad fits if I can come up with a robust scheme to detect some of them.
-    //} //TODO: Loop over universes
+        std::cout << "Fitting error band " << bandName << " universe " << whichUniv << ".\n";
+        std::vector<Sideband> sidebands;
+        for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, bandName, whichUniv);
+        Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
+        assert(nextPar == objectiveFunction.NDim());
+        minimizer->SetFunction(objectiveFunction);
+        minimizer->Minimize();
 
-    //TODO: Plot fit sidebands
-  //} //TODO: Loop over fiducial volumes
+        minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?  Looks like I can check the return code of minimize()
 
+        for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
+        Sideband selection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, bandName, whichUniv);
+        objectiveFunction.scale(selection, *minimizer);
+
+        //TODO: Propagate errors from TMinuit
+        //TODO: Print fit diagnostics.  Throw out bad fits if I can come up with a robust scheme to detect some of them.
+      } //Loop over universes
+    } //Loop over error bands
+  //} //Loop over fiducial volumes
+
+  //TODO: Can I make sure I preserve the order of keys in the file somehow?  Keys that didn't get updated are ending up at the end of the directory list.
+  //      The consequence is that my automatic color scheme changes.  I could probably just reorder the Backgrounds during the event loop if it comes to that.
   mcFile->Write("", TObject::kOverwrite);
 
   return 0;
