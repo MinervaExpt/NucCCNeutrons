@@ -73,57 +73,33 @@ namespace
         data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal")->GetCVHistoWithStatError();
       }
 
-      fixedSum.reset(static_cast<TH1D*>(data.Clone()));
-      fixedSum->Reset();
-
       for(const auto bkg: floatingBackgroundNames)
       {
         floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg));
       }
-      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<TH1D>(mcDir, sidebandName + "_Background_" + fixed));
+
+      fixedSum.reset(static_cast<PlotUtils::MnvH1D*>(floatingHists.front()->Clone()));
+      fixedSum->Reset();
+      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed));
 
       //Keep signal contamination fixed too
       try
       {
-        fixedSum->Add(GetIngredient<TH1>(mcDir, sidebandName + "_TruthSignal"));
+        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
       }
       catch(const std::runtime_error& e)
       {
-        fixedSum->Add(GetIngredient<TH1>(mcDir, sidebandName + "_SelectedMCEvents"));
+        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
       }
     }
 
-    //Construct a Sideband in a specific (non-CV) systematic universe
-    Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& floatingBkgNames, const std::vector<std::string>& fixedNames, const std::string& errorBandName, const int whichUniv)
+    //Construct a Sideband in a specific, non-CV, systematic universe using the CV sideband as the source of histograms.
+    //This makes sure the sideband histograms' modifications are written to the output file with the CV.
+    Sideband(const Sideband& cvSideband, const std::string& errorBandName, const int whichUniv): data(cvSideband.data), fixedSum(static_cast<TH1D*>(dynamic_cast<PlotUtils::MnvH1D*>(cvSideband.fixedSum.get())->GetVertErrorBand(errorBandName)->GetHist(whichUniv)->Clone()))
     {
-      //Unfortunately, the data in the selection region has a different naming convention.  It ends with "_Signal".
-      //TODO: Just rename histograms in ExtractCrossSection so that data ends with "_Data" in selection region too.  "Signal" is a stupid and confusing name anyway.
-      try
+      for(const auto cvHist: cvSideband.floatingHists)
       {
-        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Data")->GetCVHistoWithStatError();
-      }
-      catch(const std::runtime_error& e)
-      {
-        data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal")->GetCVHistoWithStatError();
-      }
-
-      fixedSum.reset(static_cast<TH1D*>(data.Clone()));
-      fixedSum->Reset();
-
-      for(const auto bkg: floatingBkgNames)
-      {
-        floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
-      }
-      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
-
-      //Keep signal contamination fixed too
-      try
-      {
-        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal")->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
-      }
-      catch(const std::runtime_error& e)
-      {
-        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents")->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
+        floatingHists.push_back(dynamic_cast<PlotUtils::MnvH1D*>(cvHist)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
       }
     }
 
@@ -406,12 +382,6 @@ int main(const int argc, const char** argv)
   {*/
     auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kSimplex, 3); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
 
-    //TODO: Overriding parameters by eye
-    //For scale factor fit
-    /*minimizer->SetLimitedVariable(0, "1_Neutron", 1.2, 5e-2, 1, 1.5);
-    minimizer->SetVariable(1, "ChargedPions", 0.85, 5e-2);
-    minimizer->SetVariable(2, "NeutralPionsOnly", 1, 5e-2);*/
-
     const std::string selectionName = findSelectionName(*mcFile);
     /*const*/ auto sidebandNames = findSidebandNames(*mcFile, selectionName); //TODO: When I can figure out the fiducial volume, don't include it in the sidebandNames
 
@@ -454,15 +424,9 @@ int main(const int argc, const char** argv)
       const auto univs = referenceHist->GetVertErrorBand(bandName)->GetHists();
       for(size_t whichUniv = 0; whichUniv < univs.size(); ++whichUniv)
       {
-        //TODO: Overriding parameters by eye
-        //For scale factor fit
-        /*minimizer->SetLimitedVariable(0, "1_Neutron", 1.2, 5e-2, 1, 1.5);
-        minimizer->SetVariable(1, "ChargedPions", 0.85, 5e-2);
-        minimizer->SetVariable(2, "NeutralPionsOnly", 1, 5e-2);*/
-
         std::cout << "Fitting error band " << bandName << " universe " << whichUniv << ".\n";
         std::vector<Sideband> sidebands;
-        for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, bandName, whichUniv);
+        for(const auto& cvSideband: cvSidebands) sidebands.emplace_back(cvSideband, bandName, whichUniv);
 
         int nextPar = 0;
         for(auto bkg: backgrounds)
@@ -480,7 +444,7 @@ int main(const int argc, const char** argv)
         minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?  Looks like I can check the return code of minimize()
 
         for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
-        Sideband selection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, bandName, whichUniv);
+        Sideband selection(cvSelection, bandName, whichUniv);
         objectiveFunction.scale(selection, *minimizer);
 
         //TODO: Propagate errors from TMinuit
