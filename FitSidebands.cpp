@@ -79,8 +79,6 @@ namespace
       for(const auto bkg: floatingBackgroundNames)
       {
         floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg));
-        //GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->SetDirectory(&mcDir);
-        //floatingHists.back()->SetDirectory(&mcDir);
       }
       for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<TH1D>(mcDir, sidebandName + "_Background_" + fixed));
 
@@ -115,8 +113,6 @@ namespace
       for(const auto bkg: floatingBkgNames)
       {
         floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
-        //GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->SetDirectory(&mcDir);
-        //floatingHists.back()->SetDirectory(&mcDir);
       }
       for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
 
@@ -495,26 +491,23 @@ int main(const int argc, const char** argv)
       //explicitly synchronized.  I changed the CV when I fit it, so I need to synchronize the error bands
       //by hand.  If I don't do this, the systematic error bars MnvH1D calculates (really the covariance matrix)
       //will be wrong.
-      mcFile->cd();
       for(const auto& cvSideband: cvSidebands)
       {
         for(const auto cvHist: cvSideband.floatingHists)
         {
-          auto histToUpdate = dynamic_cast<PlotUtils::MnvH1D*>(cvHist); //GetIngredient<PlotUtils::MnvH1D>(*mcFile, cvHist->GetName());
+          auto histToUpdate = dynamic_cast<PlotUtils::MnvH1D*>(cvHist);
           histToUpdate->GetVertErrorBand(bandName)->TH1D::operator=(*cvHist);
-          //histToUpdate->SetDirectory(mcFile);
         }
       }
       for(const auto cvHist: cvSelection.floatingHists)
       {
-        auto histToUpdate = dynamic_cast<PlotUtils::MnvH1D*>(cvHist); //GetIngredient<PlotUtils::MnvH1D>(*mcFile, cvHist->GetName());
+        auto histToUpdate = dynamic_cast<PlotUtils::MnvH1D*>(cvHist);
         histToUpdate->GetVertErrorBand(bandName)->TH1D::operator=(*cvHist);
-        //histToUpdate->SetDirectory(mcFile);
       }
     } //Loop over error bands
 
     //Make sure updated histograms end up in the output file
-    //mcFile->cd(); //TODO: Needed if not already done for previous block
+    mcFile->cd();
     for(const auto& cvSideband: cvSidebands)
     {
       for(const auto cvHist: cvSideband.floatingHists) cvHist->Write("", TObject::kOverwrite);
@@ -524,7 +517,6 @@ int main(const int argc, const char** argv)
 
   //TODO: Can I make sure I preserve the order of keys in the file somehow?  Keys that didn't get updated are ending up at the end of the directory list.
   //      The consequence is that my automatic color scheme changes.  I could probably just reorder the Backgrounds during the event loop if it comes to that.
-  //mcFile->Write("", TObject::kOverwrite);
 
   return 0;
 }
