@@ -73,12 +73,16 @@ namespace
         data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal")->GetCVHistoWithStatError();
       }
 
-      fixedSum.reset(static_cast<TH1*>(data.Clone()));
-      fixedSum->SetDirectory(nullptr); //I'm going to delete this pointer, so make sure the output file doesn't try to delete it a second time!
+      fixedSum.reset(static_cast<TH1D*>(data.Clone()));
       fixedSum->Reset();
 
-      for(const auto bkg: floatingBackgroundNames) floatingHists.push_back(GetIngredient<TH1>(mcDir, sidebandName + "_Background_" + bkg));
-      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<TH1>(mcDir, sidebandName + "_Background_" + fixed));
+      for(const auto bkg: floatingBackgroundNames)
+      {
+        floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg));
+        //GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->SetDirectory(&mcDir);
+        //floatingHists.back()->SetDirectory(&mcDir);
+      }
+      for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<TH1D>(mcDir, sidebandName + "_Background_" + fixed));
 
       //Keep signal contamination fixed too
       try
@@ -105,11 +109,15 @@ namespace
         data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal")->GetCVHistoWithStatError();
       }
 
-      fixedSum.reset(static_cast<TH1*>(data.Clone()));
-      fixedSum->SetDirectory(nullptr); //I'm going to delete this pointer, so make sure the output file doesn't try to delete it a second time!
+      fixedSum.reset(static_cast<TH1D*>(data.Clone()));
       fixedSum->Reset();
 
-      for(const auto bkg: floatingBkgNames) floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
+      for(const auto bkg: floatingBkgNames)
+      {
+        floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
+        //GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg)->SetDirectory(&mcDir);
+        //floatingHists.back()->SetDirectory(&mcDir);
+      }
       for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed)->GetVertErrorBand(errorBandName)->GetHist(whichUniv));
 
       //Keep signal contamination fixed too
@@ -126,10 +134,10 @@ namespace
     //Observer pointers to histograms that came from (and will be deleted by) a TFile
     TH1D data;
     std::unique_ptr<TH1> fixedSum;
-    std::vector<TH1*> floatingHists;
+    std::vector<TH1D*> floatingHists;
 
     //Make the compiler happy.
-    Sideband(const Sideband& parent): data(parent.data), fixedSum(static_cast<TH1*>(parent.fixedSum->Clone())), floatingHists(parent.floatingHists)
+    Sideband(const Sideband& parent): data(parent.data), fixedSum(static_cast<TH1D*>(parent.fixedSum->Clone())), floatingHists(parent.floatingHists)
     {
     }
   };
@@ -185,7 +193,8 @@ namespace
       std::cout << "Setting guess for scaled background " << name << " (index = " << index << ") to " << scaleGuess << "\n"
                 << "Ratio max is " << mcRatio->GetMaximum() << "\nRatio min is " << mcRatio->GetMinimum() << "\n";
 
-      min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
+      //min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
+      min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
     }
   };
 
@@ -361,6 +370,8 @@ int main(const int argc, const char** argv)
   ROOT::Cintex::Cintex::Enable(); //Needed to look up dictionaries for PlotUtils classes like MnvH1D
   #endif
 
+  TH1::AddDirectory(kFALSE); //Don't add any temporary histograms to the output file by default.  Let me delete them myself.
+
   if(argc != 3) //Remember that argv[0] is the executable name
   {
     std::cerr << "Expected exactly 2 arguments, but got " << argc-1 << "\n"
@@ -415,26 +426,27 @@ int main(const int argc, const char** argv)
     sidebandNames.erase(toRemove, sidebandNames.end());
 
     //Fit the Central Value (CV) backgrounds.  These are the numbers actually subtracted from the data to make it a cross section.
-    std::vector<Sideband> sidebands;
-    for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
+    std::vector<Sideband> cvSidebands;
+    for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
 
     int nextPar = 0;
     for(auto bkg: backgrounds)
     {
-      bkg->guessInitialParameters(*minimizer, nextPar, sidebands, dataPOT/mcPOT);
+      bkg->guessInitialParameters(*minimizer, nextPar, cvSidebands, dataPOT/mcPOT);
       nextPar += bkg->nPars();
     }
+    minimizer->SetVariableLimits(0, 0.9, 1.6); //Manually set limits on QELike sideband because it goes negative or very large
 
-    Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
+    Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT);
     assert(nextPar == objectiveFunction.NDim());
     minimizer->SetFunction(objectiveFunction);
     minimizer->Minimize();
 
     minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?  Looks like I can check the return code of minimize()
 
-    for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
-    Sideband selection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
-    objectiveFunction.scale(selection, *minimizer);
+    for(auto& sideband: cvSidebands) objectiveFunction.scale(sideband, *minimizer);
+    Sideband cvSelection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
+    objectiveFunction.scale(cvSelection, *minimizer);
 
     //Get the list of error bands to loop over
     auto referenceHist = GetIngredient<PlotUtils::MnvH1D>(*mcFile, selectionName + "_Signal");
@@ -452,16 +464,18 @@ int main(const int argc, const char** argv)
         minimizer->SetVariable(1, "ChargedPions", 0.85, 5e-2);
         minimizer->SetVariable(2, "NeutralPionsOnly", 1, 5e-2);*/
 
+        std::cout << "Fitting error band " << bandName << " universe " << whichUniv << ".\n";
+        std::vector<Sideband> sidebands;
+        for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, bandName, whichUniv);
+
         int nextPar = 0;
         for(auto bkg: backgrounds)
         {
           bkg->guessInitialParameters(*minimizer, nextPar, sidebands, dataPOT/mcPOT);
           nextPar += bkg->nPars();
         }
+        minimizer->SetVariableLimits(0, 0.9, 1.6); //Manually set limits on QELike sideband because it goes negative or very large
 
-        std::cout << "Fitting error band " << bandName << " universe " << whichUniv << ".\n";
-        std::vector<Sideband> sidebands;
-        for(const auto& name: sidebandNames) sidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, bandName, whichUniv);
         Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
         assert(nextPar == objectiveFunction.NDim());
         minimizer->SetFunction(objectiveFunction);
@@ -476,12 +490,41 @@ int main(const int argc, const char** argv)
         //TODO: Propagate errors from TMinuit
         //TODO: Print fit diagnostics.  Throw out bad fits if I can come up with a robust scheme to detect some of them.
       } //Loop over universes
+
+      //An MnvH1D actually contains many copies of the CV, one for each MnvVertErrorBand, that are not
+      //explicitly synchronized.  I changed the CV when I fit it, so I need to synchronize the error bands
+      //by hand.  If I don't do this, the systematic error bars MnvH1D calculates (really the covariance matrix)
+      //will be wrong.
+      mcFile->cd();
+      for(const auto& cvSideband: cvSidebands)
+      {
+        for(const auto cvHist: cvSideband.floatingHists)
+        {
+          auto histToUpdate = dynamic_cast<PlotUtils::MnvH1D*>(cvHist); //GetIngredient<PlotUtils::MnvH1D>(*mcFile, cvHist->GetName());
+          histToUpdate->GetVertErrorBand(bandName)->TH1D::operator=(*cvHist);
+          //histToUpdate->SetDirectory(mcFile);
+        }
+      }
+      for(const auto cvHist: cvSelection.floatingHists)
+      {
+        auto histToUpdate = dynamic_cast<PlotUtils::MnvH1D*>(cvHist); //GetIngredient<PlotUtils::MnvH1D>(*mcFile, cvHist->GetName());
+        histToUpdate->GetVertErrorBand(bandName)->TH1D::operator=(*cvHist);
+        //histToUpdate->SetDirectory(mcFile);
+      }
     } //Loop over error bands
+
+    //Make sure updated histograms end up in the output file
+    //mcFile->cd(); //TODO: Needed if not already done for previous block
+    for(const auto& cvSideband: cvSidebands)
+    {
+      for(const auto cvHist: cvSideband.floatingHists) cvHist->Write("", TObject::kOverwrite);
+    }
+    for(const auto cvHist: cvSelection.floatingHists) cvHist->Write("", TObject::kOverwrite);
   //} //Loop over fiducial volumes
 
   //TODO: Can I make sure I preserve the order of keys in the file somehow?  Keys that didn't get updated are ending up at the end of the directory list.
   //      The consequence is that my automatic color scheme changes.  I could probably just reorder the Backgrounds during the event loop if it comes to that.
-  mcFile->Write("", TObject::kOverwrite);
+  //mcFile->Write("", TObject::kOverwrite);
 
   return 0;
 }
