@@ -136,7 +136,11 @@ namespace
     ScaledBackground(const std::string& name): Background(name) {}
     virtual ~ScaledBackground() = default;
 
-    double functionToFit(const double /*binCenter*/, const double* pars) const override { return pars[0]; }
+    double functionToFit(const double /*binCenter*/, const double* pars) const override
+    {
+      if(pars[0] > 1e20) std::cout << "Got a very large scale factor to try of " << pars[0] << "\n";
+      return pars[0];
+    }
     int nPars() const override { return 1; }
 
     void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const override
@@ -165,8 +169,8 @@ namespace
       std::cout << "Setting guess for scaled background " << name << " (index = " << index << ") to " << scaleGuess << "\n"
                 << "Ratio max is " << mcRatio->GetMaximum() << "\nRatio min is " << mcRatio->GetMinimum() << "\n";
 
-      //min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
-      min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
+      min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
+      //min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
     }
   };
 
@@ -243,9 +247,10 @@ namespace
                    dataErr = sideband.data.GetBinError(whichBin);
             for(size_t whichBackground = 0; whichBackground < fBackgrounds.size(); ++whichBackground)
             {
-              floatingSum += sideband.floatingHists[whichBackground]->GetBinContent(whichBin) * backgroundFitFuncs[whichBin];
+              floatingSum += sideband.floatingHists[whichBackground]->GetBinContent(whichBin) * backgroundFitFuncs[whichBackground];
             }
-            chi2 += pow<2>((floatingSum + sideband.fixedSum->GetBinContent(whichBin))*fPOTScale - dataContent)/pow<2>(dataErr); //TODO: Aaron divides by data error instead.  Seems like I've heard of this before, but I don't remember where or when to use it.  I saw it referred to as the reduce chi2 somewhere yesterday which I know means chi2/NDOF.  Otherwise, I divide by dataContent.
+            //TODO: Don't add to chi2 if denominator is < 32-bit floating point precision?
+            if(dataErr > 1e-10) chi2 += pow<2>((floatingSum + sideband.fixedSum->GetBinContent(whichBin))*fPOTScale - dataContent)/pow<2>(dataErr); //dataContent;
           }
         } //For each bin
 
@@ -380,10 +385,8 @@ int main(const int argc, const char** argv)
 
   /*for(const auto& prefix: crossSectionPrefixes) //Usually a loop over fiducial volumes
   {*/
-    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kSimplex, 3); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
-
     const std::string selectionName = findSelectionName(*mcFile);
-    /*const*/ auto sidebandNames = findSidebandNames(*mcFile, selectionName); //TODO: When I can figure out the fiducial volume, don't include it in the sidebandNames
+    /*const*/ std::vector<std::string> sidebandNames = findSidebandNames(*mcFile, selectionName);
 
     //Don't include the multi-pi sideband in the fit at all.  I shouldn't need it because its background is insignificant in the selection region.
     //This sideband isn't very pure in MultiPi backgrounds anyway.
@@ -394,6 +397,9 @@ int main(const int argc, const char** argv)
     //Fit the Central Value (CV) backgrounds.  These are the numbers actually subtracted from the data to make it a cross section.
     std::vector<Sideband> cvSidebands;
     for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
+    Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT);
+
+    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kSimplex, objectiveFunction.NDim()); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
 
     int nextPar = 0;
     for(auto bkg: backgrounds)
@@ -403,7 +409,6 @@ int main(const int argc, const char** argv)
     }
     minimizer->SetVariableLimits(0, 0.9, 1.6); //Manually set limits on QELike sideband because it goes negative or very large
 
-    Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT);
     assert(nextPar == objectiveFunction.NDim());
     minimizer->SetFunction(objectiveFunction);
     minimizer->Minimize();
