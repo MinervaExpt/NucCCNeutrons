@@ -138,7 +138,6 @@ namespace
 
     double functionToFit(const double /*binCenter*/, const double* pars) const override
     {
-      if(pars[0] > 1e20) std::cout << "Got a very large scale factor to try of " << pars[0] << "\n";
       return pars[0];
     }
     int nPars() const override { return 1; }
@@ -166,8 +165,10 @@ namespace
       mcRatio->Scale(POTRatio);
       mcRatio->Divide(&largestSideband->data, mcRatio.get());
       const double scaleGuess = (mcRatio->GetMaximum() - mcRatio->GetMinimum())/2. + mcRatio->GetMinimum();
+      #ifndef NDEBUG
       std::cout << "Setting guess for scaled background " << name << " (index = " << index << ") to " << scaleGuess << "\n"
                 << "Ratio max is " << mcRatio->GetMaximum() << "\nRatio min is " << mcRatio->GetMinimum() << "\n";
+      #endif //NDEBUG
 
       min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
       //min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
@@ -249,7 +250,7 @@ namespace
             {
               floatingSum += sideband.floatingHists[whichBackground]->GetBinContent(whichBin) * backgroundFitFuncs[whichBackground];
             }
-            //TODO: Don't add to chi2 if denominator is < 32-bit floating point precision?
+            //Don't add to chi2 if denominator is < 32-bit floating point precision.
             if(dataErr > 1e-10) chi2 += pow<2>((floatingSum + sideband.fixedSum->GetBinContent(whichBin))*fPOTScale - dataContent)/pow<2>(dataErr); //dataContent;
           }
         } //For each bin
@@ -429,7 +430,10 @@ int main(const int argc, const char** argv)
       const auto univs = referenceHist->GetVertErrorBand(bandName)->GetHists();
       for(size_t whichUniv = 0; whichUniv < univs.size(); ++whichUniv)
       {
+        #ifndef NDEBUG
         std::cout << "Fitting error band " << bandName << " universe " << whichUniv << ".\n";
+        #endif //NDEBUG
+
         std::vector<Sideband> sidebands;
         for(const auto& cvSideband: cvSidebands) sidebands.emplace_back(cvSideband, bandName, whichUniv);
 
@@ -444,9 +448,14 @@ int main(const int argc, const char** argv)
         Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
         assert(nextPar == objectiveFunction.NDim());
         minimizer->SetFunction(objectiveFunction);
-        minimizer->Minimize();
-
-        minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?  Looks like I can check the return code of minimize()
+        if(minimizer->Minimize() == false)
+        {
+          //TODO: I'd like to use cerr here too, but it doesn't seem to stay synchronized with whatever ROOT is doing (probably printf).
+          //TODO: Keep going but make return code nonzero.
+          std::cout << "Fit failed for universe " << whichUniv << " in error band " << bandName
+                    << "!  I'm going to save this result and keep going with the other universes anyway...\n";
+          minimizer->PrintResults();
+        }
 
         for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
         Sideband selection(cvSelection, bandName, whichUniv);
