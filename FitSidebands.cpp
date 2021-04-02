@@ -128,6 +128,38 @@ namespace
     virtual void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const = 0;
 
     std::string name; //This background scales all histograms with this string in their names
+
+    //Helper functions for guessing parameter starting values
+    protected:
+      std::unique_ptr<TH1D> makeDataMCRatio(const Sideband& sideband, const double POTRatio) const
+      {
+        std::unique_ptr<TH1D> mcRatio(static_cast<TH1D*>(sideband.fixedSum->Clone()));
+        for(const auto& hist: sideband.floatingHists) mcRatio->Add(hist);
+        mcRatio->Scale(POTRatio);
+        mcRatio->Divide(&sideband.data, mcRatio.get());
+
+        return std::move(mcRatio);
+      }
+
+      auto getMostPureSideband(const std::vector<Sideband>& sidebands) const -> decltype(sidebands.begin())
+      {
+        assert(!sidebands.empty());
+
+        const auto whichHist = std::find_if(sidebands.front().floatingHists.begin(), sidebands.front().floatingHists.end(), [this](const auto hist) { return std::string(hist->GetName()).find(this->name) != std::string::npos; });
+        assert(whichHist != sidebands.front().floatingHists.end());
+        const size_t index = std::distance(sidebands.front().floatingHists.begin(), whichHist);
+
+        const auto largestSideband = std::max_element(sidebands.begin(), sidebands.end(),
+                                                      [index](const auto& lhs, const auto& rhs)
+                                                      {
+                                                        const auto sumHists = [](const double sum, const auto hist) { return sum + hist->Integral(); };
+                                                        const double lhsTotal = std::accumulate(lhs.floatingHists.begin(), lhs.floatingHists.end(), lhs.fixedSum->Integral(), sumHists);
+                                                        const double rhsTotal = std::accumulate(rhs.floatingHists.begin(), rhs.floatingHists.end(), rhs.fixedSum->Integral(), sumHists);
+                                                        return lhs.floatingHists[index]->Integral()/lhsTotal < rhs.floatingHists[index]->Integral()/rhsTotal;
+                                                      });
+
+        return largestSideband;
+      }
   };
 
   //Scale a background's normalization only.  The simplest kind of sideband fit and the one most often used by MINERvA analyses.
@@ -144,34 +176,18 @@ namespace
 
     void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const override
     {
-      assert(!sidebands.empty());
-
-      const auto whichHist = std::find_if(sidebands.front().floatingHists.begin(), sidebands.front().floatingHists.end(), [this](const auto hist) { return std::string(hist->GetName()).find(this->name) != std::string::npos; });
-      assert(whichHist != sidebands.front().floatingHists.end());
-      const size_t index = std::distance(sidebands.front().floatingHists.begin(), whichHist);
-
-      const auto largestSideband = std::max_element(sidebands.begin(), sidebands.end(),
-                                                    [index](const auto& lhs, const auto& rhs)
-                                                    {
-                                                      const auto sumHists = [](const double sum, const auto hist) { return sum + hist->Integral(); };
-                                                      const double lhsTotal = std::accumulate(lhs.floatingHists.begin(), lhs.floatingHists.end(), lhs.fixedSum->Integral(), sumHists);
-                                                      const double rhsTotal = std::accumulate(rhs.floatingHists.begin(), rhs.floatingHists.end(), rhs.fixedSum->Integral(), sumHists);
-                                                      return lhs.floatingHists[index]->Integral()/lhsTotal < rhs.floatingHists[index]->Integral()/rhsTotal;
-                                                    });
+      const auto largestSideband = getMostPureSideband(sidebands);
       assert(largestSideband != sidebands.end());
 
-      std::unique_ptr<TH1D> mcRatio(static_cast<TH1D*>(largestSideband->fixedSum->Clone()));
-      for(const auto& hist: largestSideband->floatingHists) mcRatio->Add(hist);
-      mcRatio->Scale(POTRatio);
-      mcRatio->Divide(&largestSideband->data, mcRatio.get());
+      auto mcRatio = makeDataMCRatio(*largestSideband, POTRatio);
       const double scaleGuess = (mcRatio->GetMaximum() - mcRatio->GetMinimum())/2. + mcRatio->GetMinimum();
       #ifndef NDEBUG
       std::cout << "Setting guess for scaled background " << name << " (index = " << index << ") to " << scaleGuess << "\n"
                 << "Ratio max is " << mcRatio->GetMaximum() << "\nRatio min is " << mcRatio->GetMinimum() << "\n";
       #endif //NDEBUG
 
-      min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
-      //min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
+      //min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
+      min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
     }
   };
 
@@ -188,11 +204,18 @@ namespace
 
     int nPars() const override { return 2; }
 
-    void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& /*sidebands*/, const double /*POTRatio*/) const override
+    void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const override
     {
+      const auto largestSideband = getMostPureSideband(sidebands);
+      assert(largestSideband != sidebands.end());
+
+      auto mcRatio = makeDataMCRatio(*largestSideband, POTRatio);
+      const double interceptGuess = mcRatio->GetBinContent(1);
+      const double slopeGuess = (mcRatio->GetMaximum() - interceptGuess) / (mcRatio->GetXaxis()->GetBinCenter(mcRatio->GetMaximumBin()) - mcRatio->GetXaxis()->GetBinCenter(1));
+
       //TODO: Guess parameters based on sidebands
-      min.SetVariable(nextPar, (name + " intercept").c_str(), 0, 1e-3);
-      min.SetVariable(nextPar + 1, (name + " slope").c_str(), 0, 1e-3);
+      min.SetVariable(nextPar, (name + " intercept").c_str(), interceptGuess, interceptGuess/20.);
+      min.SetVariable(nextPar + 1, (name + " slope").c_str(), slopeGuess, slopeGuess/20.);
     }
   };
 
@@ -382,7 +405,12 @@ int main(const int argc, const char** argv)
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
   std::vector<Background*> backgrounds;
-  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new ScaledBackground(bkgName));
+  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new LinearBackground(bkgName)); //ScaledBackground(bkgName));
+
+  //Program status to return to the operating system.  Nonzero indicates a problem that will stop
+  //i.e. a cross section extraction script.  I'm going to keep going if an individual fit fails
+  //but return a nonzero programStatus.
+  int programStatus = 0;
 
   /*for(const auto& prefix: crossSectionPrefixes) //Usually a loop over fiducial volumes
   {*/
@@ -400,7 +428,7 @@ int main(const int argc, const char** argv)
     for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
     Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT);
 
-    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kSimplex, objectiveFunction.NDim()); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
+    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
 
     int nextPar = 0;
     for(auto bkg: backgrounds)
@@ -408,13 +436,13 @@ int main(const int argc, const char** argv)
       bkg->guessInitialParameters(*minimizer, nextPar, cvSidebands, dataPOT/mcPOT);
       nextPar += bkg->nPars();
     }
-    minimizer->SetVariableLimits(0, 0.9, 1.6); //Manually set limits on QELike sideband because it goes negative or very large
 
     assert(nextPar == objectiveFunction.NDim());
     minimizer->SetFunction(objectiveFunction);
-    minimizer->Minimize();
+    if(!minimizer->Minimize()) programStatus = 4;
 
-    minimizer->PrintResults(); //TODO: Don't do this for every sideband.  Maybe just for the CV and sidebands with minimizer errors?  Looks like I can check the return code of minimize()
+    std::cout << "CV fit results.  Universe fit results will only be printed if the minimization fails or when compiled in debug mode (NDEBUG not defined).\n";
+    minimizer->PrintResults();
 
     for(auto& sideband: cvSidebands) objectiveFunction.scale(sideband, *minimizer);
     Sideband cvSelection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
@@ -443,7 +471,6 @@ int main(const int argc, const char** argv)
           bkg->guessInitialParameters(*minimizer, nextPar, sidebands, dataPOT/mcPOT);
           nextPar += bkg->nPars();
         }
-        minimizer->SetVariableLimits(0, 0.9, 1.6); //Manually set limits on QELike sideband because it goes negative or very large
 
         Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
         assert(nextPar == objectiveFunction.NDim());
@@ -452,9 +479,10 @@ int main(const int argc, const char** argv)
         {
           //TODO: I'd like to use cerr here too, but it doesn't seem to stay synchronized with whatever ROOT is doing (probably printf).
           //TODO: Keep going but make return code nonzero.
-          std::cout << "Fit failed for universe " << whichUniv << " in error band " << bandName
+          std::cerr << "Fit failed for universe " << whichUniv << " in error band " << bandName
                     << "!  I'm going to save this result and keep going with the other universes anyway...\n";
           minimizer->PrintResults();
+          programStatus = 4;
         }
 
         for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
@@ -496,5 +524,5 @@ int main(const int argc, const char** argv)
   //TODO: Can I make sure I preserve the order of keys in the file somehow?  Keys that didn't get updated are ending up at the end of the directory list.
   //      The consequence is that my automatic color scheme changes.  I could probably just reorder the Backgrounds during the event loop if it comes to that.
 
-  return 0;
+  return programStatus;
 }
