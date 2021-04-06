@@ -39,13 +39,13 @@
 
 namespace
 {
-  std::map<std::string, std::vector<std::string>> errorGroups = {{"CCQE Model", {"GENIE_CCQEPauliSupViaKF", "GENIE_NormCCQE", "GENIE_VecFFCCQEshape", "GENIE_MaCCQEshape"}},
-                                                                 {"Nucleon FSI", {"GENIE_FrAbs_N", "GENIE_FrCEx_N", "GENIE_FrElas_N", "GENIE_FrInel_N", "GENIE_MFP_N"}},
-                                                                 {"Pion FSI", {"GENIE_FrAbs_pi", "GENIE_FrCEx_pi", "GENIE_FrElas_pi", "GENIE_FrPiProd_pi", "GENIE_MFP_pi"}},
-                                                                 {"GENIE_NormCCRES", {"GENIE_NormCCRES"}},
+  std::map<std::string, std::vector<std::string>> errorGroups = {{"CCQE Model and RPA", {"GENIE_CCQEPauliSupViaKF", "GENIE_NormCCQE", "GENIE_VecFFCCQEshape", "GENIE_MaCCQEshape", "RPA_LowQ2", "RPA_HighQ2"}},
+                                                                 {"FSI", {"GENIE_FrAbs_N", "GENIE_FrCEx_N", "GENIE_FrElas_N", "GENIE_FrInel_N", "GENIE_MFP_N", "GENIE_FrAbs_pi", "GENIE_FrCEx_pi", "GENIE_FrElas_pi", "GENIE_FrPiProd_pi", "GENIE_MFP_pi"}},
+                                                                 //{"RES Model", {"GENIE_MaRES", "GENIE_MvRES"}},
+                                                                 {"GEANT", {"GEANT_Neutron", "GEANT_Proton", "GEANT_Pion"}},
                                                                  {"Flux", {"Flux"}},
-                                                                 {"RPA_LowQ2", {"RPA_LowQ2"}},
-                                                                 {"2p2h", {"2p2h"}}};
+                                                                 //{"RPA_LowQ2", {"RPA_LowQ2"}},
+                                                                 {"2p2h Tune", {"Low_Recoil_2p2h_Tune"}}};
 }
 
 //Convince the STL to talk to TIter so I can use std::find_if()
@@ -98,10 +98,15 @@ void Plot(PlotUtils::MnvH1D& hist, const std::string& stepName, const std::strin
 
   //Set up a MnvPlotter
   PlotUtils::MnvPlotter plotter;
-  plotter.error_summary_group_map = ::errorGroups;
+  plotter.ApplyStyle(PlotUtils::kCCQENuStyle);
+  //plotter.error_summary_group_map = ::errorGroups;
+  plotter.axis_maximum = 0.4;
 
   plotter.DrawErrorSummary(&hist);
   can.Print((prefix + "_" + stepName + "_uncertaintySummary.png").c_str());
+
+  plotter.DrawErrorSummary(&hist, "TR", true, true, 1e-5, false, "Other");
+  can.Print((prefix + "_" + stepName + "_otherUncertainties.png").c_str());
 }
 
 template <class TYPE>
