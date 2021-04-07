@@ -182,7 +182,7 @@ namespace
       auto mcRatio = makeDataMCRatio(*largestSideband, POTRatio);
       const double scaleGuess = (mcRatio->GetMaximum() - mcRatio->GetMinimum())/2. + mcRatio->GetMinimum();
       #ifndef NDEBUG
-      std::cout << "Setting guess for scaled background " << name << " (index = " << index << ") to " << scaleGuess << "\n"
+      std::cout << "Setting guess for scaled background " << name << " (index = " << nextPar << ") to " << scaleGuess << "\n"
                 << "Ratio max is " << mcRatio->GetMaximum() << "\nRatio min is " << mcRatio->GetMinimum() << "\n";
       #endif //NDEBUG
 
