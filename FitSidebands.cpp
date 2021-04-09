@@ -82,14 +82,16 @@ namespace
       fixedSum->Reset();
       for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed));
 
-      //Keep signal contamination fixed too
+      //Let signal float too
       try
       {
-        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
+        //fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
+        floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
       }
       catch(const std::runtime_error& e)
       {
-        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
+        //fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
+        floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
       }
     }
 
@@ -401,11 +403,12 @@ int main(const int argc, const char** argv)
 
   //const auto crossSectionPrefixes = findCrossSectionPrefixes(*dataFile); //TODO: Maybe this is the longest unique string at the beginning of all keys?
 
-  const std::vector<std::string> fixedBackgroundNames = {}; //{"Other", "MultiPi", "0_Neutrons"};
+  const std::vector<std::string> fixedBackgroundNames = {"Other"}; //{"Other", "MultiPi", "0_Neutrons"};
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
   std::vector<Background*> backgrounds;
   for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new LinearBackground(bkgName)); //ScaledBackground(bkgName));
+  backgrounds.push_back(new LinearBackground("TruthSignal")); //Let the signal float too
 
   //Program status to return to the operating system.  Nonzero indicates a problem that will stop
   //i.e. a cross section extraction script.  I'm going to keep going if an individual fit fails
