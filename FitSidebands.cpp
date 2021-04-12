@@ -403,7 +403,7 @@ int main(const int argc, const char** argv)
 
   //const auto crossSectionPrefixes = findCrossSectionPrefixes(*dataFile); //TODO: Maybe this is the longest unique string at the beginning of all keys?
 
-  const std::vector<std::string> fixedBackgroundNames = {"Other"}; //{"Other", "MultiPi", "0_Neutrons"};
+  const std::vector<std::string> fixedBackgroundNames = {"MultiPi", "Other"}; //{"Other", "MultiPi", "0_Neutrons"};
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
   std::vector<Background*> backgrounds;
