@@ -1,0 +1,1 @@
+add_library(reweighters OBJECT FluxAndCVReweighter.cpp FSIReweighter.cpp GeantNeutronCVReweighter.cpp GENIEReweighter.cpp LowQ2PiReweighter.cpp LowRecoil2p2hReweighter.cpp MKReweighter.cpp RPAReweighter.cpp)
