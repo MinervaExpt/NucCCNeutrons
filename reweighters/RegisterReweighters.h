@@ -15,6 +15,7 @@
 #include "reweighters/LowRecoil2p2hReweighter.cpp"
 #include "reweighters/MKReweighter.cpp"
 #include "reweighters/RPAReweighter.cpp"
+#include "reweighters/MINOSEfficiencyReweighter.cpp"
 
 //util includes
 #include "util/Factory.cpp"
@@ -45,6 +46,7 @@ namespace
   static DefaultRegistrar<LowRecoil2p2hReweighter> tune2p2hReg("LowRecoil2p2hReweighter");
   static DefaultRegistrar<MKReweighter> mkReg("MKModel");
   static DefaultRegistrar<RPAReweighter> rpaReg("RPA");
+  static DefaultRegistrar<MINOSEfficiencyReweighter> minosReg("MINOSEfficiency");
 
   //A dedicated Registrar for each Reweighter that needs constructor arguments
   class FSIRegistrar: public plgn::RegistrarBase<PlotUtils::Reweighter<evt::Universe>>
