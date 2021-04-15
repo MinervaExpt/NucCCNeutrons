@@ -21,22 +21,20 @@ namespace PlotUtils
     public:
       Model(weighters_t&& weighters)
       {
-        //Sort Reweighters by whether they need to check IsVerticalOnly()
-        for(auto& weighter: weighters)
-        {
-          if(weighter->DependsReco()) fDependsRecoWeighters.push_back(std::move(weighter));
-          else fDependsTruthOnlyWeighters.push_back(std::move(weighter));
-        }
-
         //Check for incompatible Reweighters
-        //Doing this after setting up the vectors of Reweighters in case someone really needs
-        //to use incompatible Reweighters anyway.  Just catch the exception.
         for(auto whichWeighter = weighters.begin(); whichWeighter != weighters.end(); ++whichWeighter)
         {
           for(auto otherWeighter = std::next(whichWeighter); otherWeighter != weighters.end(); ++otherWeighter)
           {
             if(!(*whichWeighter)->IsCompatible(**otherWeighter)) throw std::runtime_error("Reweighters named " + (*whichWeighter)->GetName() + " and " + (*otherWeighter)->GetName() + " are not compatible!");
           }
+        }
+
+        //Sort Reweighters by whether they need to check IsVerticalOnly()
+        for(auto& weighter: weighters)
+        {
+          if(weighter->DependsReco()) fDependsRecoWeighters.push_back(std::move(weighter));
+          else fDependsTruthOnlyWeighters.push_back(std::move(weighter));
         }
       }
 

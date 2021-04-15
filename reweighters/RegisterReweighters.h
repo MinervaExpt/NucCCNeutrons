@@ -43,7 +43,7 @@ namespace
 
   static DefaultRegistrar<FluxAndCVReweighter> fluxReg("FluxAndCV");
   static DefaultRegistrar<GeantNeutronCVReweighter> geantReg("GeantNeutronCV");
-  static DefaultRegistrar<LowRecoil2p2hReweighter> tune2p2hReg("LowRecoil2p2hReweighter");
+  static DefaultRegistrar<LowRecoil2p2hReweighter> tune2p2hReg("LowRecoil2p2hWeight");
   static DefaultRegistrar<MKReweighter> mkReg("MKModel");
   static DefaultRegistrar<RPAReweighter> rpaReg("RPA");
   static DefaultRegistrar<MINOSEfficiencyReweighter> minosReg("MINOSEfficiency");

@@ -21,6 +21,9 @@ namespace PlotUtils
     public:
       GENIEReweighter(bool useNonResPi, bool useDeuteriumPionTune): Reweighter<UNIVERSE, EVENT>(), fUseNonResPiReweight(useNonResPi), fUseDeuteriumPionTune(useDeuteriumPionTune)
       {
+        //TODO: Deprecate and remove these from PlotUtils because GetRequiredUniverses() does the same job but with a lot less of a mess.
+        UNIVERSE::SetNonResPiReweight(useNonResPi);
+        UNIVERSE::SetDeuteriumGeniePiTune(useDeuteriumPionTune);
       }
 
       virtual ~GENIEReweighter() = default;
