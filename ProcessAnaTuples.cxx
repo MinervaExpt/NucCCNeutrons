@@ -38,6 +38,10 @@
 //models includes
 #include "models/Model.h"
 
+//TODO: This eventually replaces models
+//reweighters includes
+#include "reweighters/RegisterReweighters.h"
+
 //app includes
 #include "app/CmdLine.h"
 #include "app/IsMC.h"

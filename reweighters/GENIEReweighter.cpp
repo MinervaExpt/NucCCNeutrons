@@ -27,10 +27,10 @@ namespace PlotUtils
 
       double GetWeight(const UNIVERSE& univ, const EVENT& /*event*/) const override
       {
-        double nonResPiWgt = fUseNonResPiReweight && PlotUtils::IsNonResPi(*this)
+        double nonResPiWgt = fUseNonResPiReweight && PlotUtils::IsNonResPi(univ)
                            ? PlotUtils::kNonResPiWeight : 1.;
-        double deutWgt = fUseDeuteriumPionTune && PlotUtils::IsCCRes(*this) ?
-                         ( PlotUtils::GetGenieParReweight(*this,"truth_genie_wgt_MaRES",
+        double deutWgt = fUseDeuteriumPionTune && PlotUtils::IsCCRes(univ) ?
+                         ( PlotUtils::GetGenieParReweight(univ,"truth_genie_wgt_MaRES",
                                                         NSFDefaults::DEUTERIUM_MaRES,
                                                         NSFDefaults::GENIE_MaRES,
                                                         NSFDefaults::GENIE_MaRES_1Sig ) * 

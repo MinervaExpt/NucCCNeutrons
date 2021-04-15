@@ -27,9 +27,9 @@ namespace PlotUtils
       double GetWeight(const UNIVERSE& univ, const EVENT& /*event*/) const override
       {
         //variation 0 is the CV
-        if(!PlotUtils::IsCCRes(*this)) return 1;
+        if(!PlotUtils::IsCCRes(univ)) return 1;
         return PlotUtils::weight_lowq2pi().getWeight(univ.GetQ2True() * 1e-6 /*GeV^2*/,
-                                                 fChannel, 0);
+                                                     fChannel, 0);
       }
 
       std::string GetName() const override { return "LowQ2Pi_" + fChannel; }

@@ -39,7 +39,7 @@ namespace PlotUtils
       }
 
     private:
-      PlotUtils::weightMK fCalculator;
+      mutable PlotUtils::weightMK fCalculator; //TODO: Why can't GetWeight() be const here?  I don't see any obvious reasons at first glance, but I'm far from an expert on this.
   };
 }
 
