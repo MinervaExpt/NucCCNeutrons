@@ -8,6 +8,9 @@
 //ana includes
 #include "analyses/base/Study.h"
 
+//reweighters includes
+#include "reweighters/Reweighter.h"
+
 //PlotUtils includes
 #include "PlotUtils/Cut.h"
 
@@ -76,7 +79,8 @@ namespace app
   std::vector<std::vector<evt::Universe*>> groupCompatibleUniverses(const std::map<std::string, std::vector<evt::Universe*>> bands);
 
   //Set up models to modify the weight of each CV event.
-  std::vector<std::unique_ptr<model::Model>> setupModels(const YAML::Node& config);
+  //std::vector<std::unique_ptr<model::Model>> setupModels(const YAML::Node& config);
+  std::vector<std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>> setupReweighters(const YAML::Node& config);
 }
 
 #endif //APP_SETUPPLUGINS_H

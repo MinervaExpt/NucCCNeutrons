@@ -8,25 +8,21 @@
 #ifndef PLOTUTILS_MODEL_H
 #define PLOTUTILS_MODEL_H
 
+//reweighters includes
+#include "reweighters/Reweighter.h"
+
 namespace PlotUtils
 {
-  class Reweighter;
-
-  namespace detail
-  {
-    struct empty {};
-  }
-
   template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
   class Model
   {
-    using weighters_t = std::vector<std::unique_ptr<Reweighter>>;
+    using weighters_t = std::vector<std::unique_ptr<Reweighter<UNIVERSE>>>;
 
     public:
       Model(weighters_t&& weighters)
       {
         //Sort Reweighters by whether they need to check IsVerticalOnly()
-        for(const auto& weighter: weighters)
+        for(auto& weighter: weighters)
         {
           if(weighter->DependsReco()) fDependsRecoWeighters.push_back(std::move(weighter));
           else fDependsTruthOnlyWeighters.push_back(std::move(weighter));
@@ -42,6 +38,15 @@ namespace PlotUtils
             if(!(*whichWeighter)->IsCompatible(**otherWeighter)) throw std::runtime_error("Reweighters named " + (*whichWeighter)->GetName() + " and " + (*otherWeighter)->GetName() + " are not compatible!");
           }
         }
+      }
+
+      void SetEntry(const UNIVERSE& univ, const EVENT& event)
+      {
+        fCVTruthOnlyWeight = 1;
+        for(const auto& weighter: fDependsTruthOnlyWeighters) fCVTruthOnlyWeight *= weighter->GetWeight(univ, event);
+
+        fCVDependsRecoWeight = 1;
+        for(const auto& weighter: fDependsRecoWeighters) fCVDependsRecoWeight *= weighter->GetWeight(univ, event);
       }
 
       double GetWeight(const UNIVERSE& univ, const EVENT& event) const

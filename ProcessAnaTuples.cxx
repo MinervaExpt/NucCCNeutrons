@@ -41,6 +41,7 @@
 //TODO: This eventually replaces models
 //reweighters includes
 #include "reweighters/RegisterReweighters.h"
+#include "reweighters/Model.h"
 
 //app includes
 #include "app/CmdLine.h"
@@ -114,10 +115,10 @@ namespace
                        });
   }
 
-  events getWeight(const std::vector<std::unique_ptr<model::Model>>& models, const evt::Universe& event)
+  /*events getWeight(const std::vector<std::unique_ptr<model::Model>>& models, const evt::Universe& event)
   {
     return std::accumulate(models.begin(), models.end(), 1., [&event](const double product, const auto& model) { return product * model->GetWeight(event).template in<events>(); });
-  }
+  }*/
 
   //Given a cut map, passedCuts, find the Study that this event fits in.
   ana::Study* findSelectedOrSideband(const std::bitset<64> passedCuts, fid::Fiducial& fid, evt::Universe& univ)
@@ -152,7 +153,8 @@ int main(const int argc, const char** argv)
   //Components I need for the event loop
   std::vector<std::vector<evt::Universe*>> groupedUnivs;
   evt::Universe* cv;
-  std::vector<std::unique_ptr<model::Model>> reweighters;
+  //std::vector<std::unique_ptr<model::Model>> reweighters;
+  std::vector<std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>> reweighters;
   std::vector<std::unique_ptr<fid::Fiducial>> fiducials;
   evt::WeightCache weights;
   std::string anaTupleName;
@@ -261,13 +263,15 @@ int main(const int argc, const char** argv)
 
     cv = universes["cv"].front();
     groupedUnivs = app::groupCompatibleUniverses(universes);
-    reweighters = app::setupModels(options->ConfigFile()["model"]); //This MUST come after setting up universes because of the static variables that DefaultUniverse relies on
+    reweighters = app::setupReweighters(options->ConfigFile()["model"]); //This MUST come after setting up universes because of the static variables that DefaultUniverse relies on
   }
   catch(const std::runtime_error& e)
   {
     std::cerr << e.what() << "\n";
     return app::CmdLine::YAMLError;
   }
+
+  PlotUtils::Model<evt::Universe> cvModel(std::move(reweighters));
 
   //End the job and warn the user if there are no Fiducials to process.
   if(fiducials.empty())
@@ -358,12 +362,12 @@ int main(const int argc, const char** argv)
           {
             cv->SetEntry(entry);
             weights.SetEntry(*cv);
-            const double cvWeight = ::getWeight(reweighters, *cv).in<events>();
 
             //Fill "fake data" by treating MC exactly like data but using a weight.
             //This is useful for closure tests and warping studies.
             PlotUtils::detail::empty CVShared;
-            //const auto CVPassedReco = fid->selection->isMCSelected(*cv, CVShared, cvWeight);
+            cvModel.SetEntry(*cv, CVShared);
+            const double cvWeight = cvModel.GetWeight(*cv, CVShared);
             const auto CVPassedReco = fid->selection->isMCSelectedCV(*cv, CVShared, cvWeight);
             const auto CVStudy = findSelectedOrSideband(CVPassedReco, *fid, *cv);
             if(CVStudy) CVStudy->data(*cv, cvWeight);
@@ -383,14 +387,14 @@ int main(const int argc, const char** argv)
               if(whichStudy)
               {
                 //Categorize by whether this is signal or some background
-                if(fid->selection->isSignal(event)) for(const auto univ: compat) whichStudy->mcSignal(*univ, ::getWeight(reweighters, *univ));
+                if(fid->selection->isSignal(event)) for(const auto univ: compat) whichStudy->mcSignal(*univ, cvModel.GetWeight(*univ, shared));
                 else //If not truthSignal
                 {
                   const auto foundBackground = std::find_if(fid->backgrounds.begin(), fid->backgrounds.end(),
                                                             [&event](const auto& background)
                                                             { return ::requireAll(background->passes, event); });
 
-                  for(const auto univ: compat) whichStudy->mcBackground(*univ, ::derefOrNull(foundBackground, fid->backgrounds.end()), ::getWeight(reweighters, *univ));
+                  for(const auto univ: compat) whichStudy->mcBackground(*univ, ::derefOrNull(foundBackground, fid->backgrounds.end()), cvModel.GetWeight(*univ, shared));
                 } //If not truthSignal
               } //If found a Study to fill.  Could be either signal or sideband.  Means that at least some cuts passed.
             } //For each Fiducial
@@ -428,8 +432,9 @@ int main(const int argc, const char** argv)
             for(auto& fid: fiducials)
             {
               cv->SetEntry(entry);
-              weights.SetEntry(*cv);
-              const double truthCVWeightForCuts = ::getWeight(reweighters, *cv).in<events>();
+              PlotUtils::detail::empty shared;
+              cvModel.SetEntry(*cv, shared);
+              const double truthCVWeightForCuts = cvModel.GetWeight(*cv, shared);
 
               for(const auto& compat: groupedUnivs)
               {
@@ -438,7 +443,7 @@ int main(const int argc, const char** argv)
   
                 if(fid->selection->isEfficiencyDenom(event, truthCVWeightForCuts))
                 {
-                  for(const auto univ: compat) fid->study->truth(*univ, ::getWeight(reweighters, *univ));
+                  for(const auto univ: compat) fid->study->truth(*univ, cvModel.GetWeight(*univ, shared));
                 } //If event passes all truth cuts
               } //For each error band
             } //For each Fiducial

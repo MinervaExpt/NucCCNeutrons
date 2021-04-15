@@ -12,8 +12,9 @@
 #include "cuts/reco/Cut.h"
 #include "cuts/truth/Cut.h"
 
+//TODO: Models directory is being replaced by reweighters
 //models includes
-#include "models/Model.h"
+//#include "models/Model.h"
 
 //util includes
 #include "util/Directory.h"
@@ -340,7 +341,7 @@ namespace app
     return groupedUnivs;
   }
 
-  std::vector<std::unique_ptr<model::Model>> setupModels(const YAML::Node& config)
+  std::vector<std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>> setupReweighters(const YAML::Node& config)
   {
     if(config.size() == 0)
     {
@@ -354,28 +355,28 @@ namespace app
       MinervaUniverse::SetDeuteriumGeniePiTune(false);
     }
 
-    std::vector<std::unique_ptr<model::Model>> models;
-    auto& modelFactory = plgn::Factory<model::Model>::instance();
+    std::vector<std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>> reweighters;
+    auto& reweightFactory = plgn::Factory<PlotUtils::Reweighter<evt::Universe>>::instance();
 
-    for(const auto& model: config)
+    for(const auto& reweight: config)
     {
       try
       {
         #ifndef NDEBUG
-          std::cout << "Using a model of type " << model.second.Tag() << "\n";
+          std::cout << "Using a model of type " << reweight.second.Tag() << "\n";
         #endif //NDEBUG
-        models.emplace_back(modelFactory.Get(model.second));
+        reweighters.emplace_back(reweightFactory.Get(reweight.second));
       }
       catch(const std::runtime_error& e)
       {
-        throw std::runtime_error(std::string("Failed to set up a Model named " + model.first.as<std::string>() + ":\n") + e.what());
+        throw std::runtime_error(std::string("Failed to set up a Model named " + reweight.first.as<std::string>() + ":\n") + e.what());
       }
     }
 
     #ifndef NDEBUG
-      std::cout << "Using " << models.size() << " models.\n";
+      std::cout << "Using " << reweighters.size() << " models.\n";
     #endif //NDEBUG
 
-    return models;
+    return reweighters;
   }
 }
