@@ -1,3 +1,9 @@
+#File: CVOnly.yaml
+#Brief: Use this file to turn off systematics when you're only interested 
+#       in the CV.  It might decrease wall time by a factor of 5 when running
+#       the same job multiple times.  Good for debugging.
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
 #File: Targets.yaml
 #Brief: Z ranges of MINERvA's nuclear targets in truth and reconstruction.
 #       Reco cuts taken from Jeffrey's analysis in the Fall of 2019.
@@ -108,47 +114,17 @@ MultiTrack:
     reco:
       min: !mm 6000
       max: !mm 8500
-#File: CVOnly.yaml
-#Brief: Use this file to turn off systematics when you're only interested 
-#       in the CV.  It might decrease wall time by a factor of 5 when running
-#       the same job multiple times.  Good for debugging.
-#Author: Andrew Olivier aolivier@ur.rochester.edu
-
-systematics: []
-#!/usr/bin/env ProcessAnaTuples
-#Models commonly used in MINERvA results
-
-MnvGENIEv1: &MnvGENIEv1
-  Flux: !FluxAndCV
-  GENIE: !GENIE
-    UseNonResonantPion: true
-  MINOSEfficiency: !MINOSEfficiency
-  RPASuppression: !RPA
-  Valencia2p2h: !2p2h
-
-ForgotToReweight: &ForgotToReweight
-
-#TODO: Is there a better name for this?
-DefaultGENIE: &DefaultGENIE
-  Flux: !FluxAndCV
-  GENIE: !GENIE
-    UseNonResonantPion: false
-  MINOSEfficiency: !MINOSEfficiency
-#!/usr/bin/env ProcessAnaTuples
-#File: NucCCNeutronsAntineutrinoStandard.yaml
-#Brief: My standard cuts for my neutron multiplicity analysis in antineutrino mode in the TRACKER.
-#       You still have to plug in a "signal" block and a systematics block from another YAML file
-#       on the command line.
-#Author: Andrew Olivier aolivier@ur.rochester.edu
 
 #MnvGENIEv1
 model:
   Flux: !FluxAndCV
-  GENIE: !GENIE
-    UseNonResonantPion: true
+  GENIE: !GENIEPionTunes
+    useNonResPi: true
+    useDeuteriumPionTune: false
   MINOSEfficiency: !MINOSEfficiency
   RPASuppression: !RPA
-  Valencia2p2h: !2p2h
+  Valencia2p2h: !LowRecoil2p2hWeight
+  AbfaltererNeutronInelastic: !GeantNeutronCV
 
 #nu-e constraint doesn't work in antineutrino data yet as of 6/4/2020.
 #100 flux universes matches the NSF validation suite.
@@ -156,24 +132,47 @@ app:
   useNuEConstraint: false
   nFluxUniverses: 100
 
+fiducials:
+  Tracker: !Tracker
+    zRange: *OneTrackTracker
+    apothem:
+      apothem: !mm 850
+
+
+neutronCounter: &neutronCounter
+  truth:
+    MinKE: !MeV 10
+  reco:
+    MinEDep: !MeV 1.5 #Just above cross-talk
+    MaxZDist: !mm 1500 #roughly tuned for tracker
+    EDepBoxMin: !MeV 0
+    DistBoxMax: !mm 10000
+    Pi0RemovalCosineMin: 0
+    Pi0RemovalCosineMax: 0.97
+
 #Basically, Amy/Dan's inclusive Cuts (adapted for my AnaTool) + available energy.
 cuts:
   truth:
     phaseSpace:
-      Tracker: *OneTrackTracker
-      Apothem: !Apothem
-        apothem: !mm 850
-      MuonMomentum: !MuonMomentum
-        min: !GeV 2
-      TrackAngle: !TrackAngle
-        max: !degrees 20
-    signal:
-      Antineutrino: !IsAntineutrino
-      CC: !IsCC
+      #LowQ3: &q3Cut !Q3Range
+      #  min: !MeV 0
+      #  max: !MeV 400
+      #  caloTune: "NukeCC_AntiNu_Tracker"
+      #MuonMomentum: !MuonMomentum
+      #  min: !GeV 2
+      #  max: !GeV 20
+      #TrackAngle: !TrackAngle
+      #  max: !degrees 20
+    #signal:
+      #Antineutrino: !IsAntineutrino
+      #CC: !IsCC
   reco:
-    Apothem: !Apothem
-      apothem: !mm 850
-    Tracker: *OneTrackTracker
+    LowQ3: !Q3Range
+      min: !MeV 0
+      max: !MeV 400
+      caloTune: "NukeCC_AntiNu_Tracker"
+    OneTrack: !nTracks
+      max: 1
     MinosDeltaT: !MinosDeltaT
       min: !ns -40
       max: !ns 110
@@ -181,6 +180,7 @@ cuts:
       max: !degrees 20
     MuonMomentum: !MuonMomentum
       min: !GeV 2
+      max: !GeV 20
     Antineutrino: !IsAntineutrino
     DeadTime: !DeadDiscriminators
       max: 1
@@ -197,13 +197,16 @@ backgrounds:
 #    Antineutrino: !IsAntineutrino
 
 #!/usr/bin/env ProcessAnaTuples
-#File: EAvailableResolution_StudyOnly.yaml
-#Brief: Study available energy reconstruction resolution.  Needs to be used with a set of Cuts and other configuration details.
+#File: NeutronDetection_StudyOnly.yaml
+#Brief: Study neutron detection efficiency and sources of backgrounds.  Needs to
+#       be used with a selection definition and a list of systematics.
 #Author: Andrew Olivier aolivier@ur.rochester.edu
-
-signal: !q3Resolution
-  name: "q3"
-  variable:
-    caloFile: "$MPARAMFILESROOT/data/Calibrations/energy_calib/CalorimetryTunings.txt"
-    caloTune: "NukeCC_AntiNu_Tracker"
-  binning: [0, 0.4, 0.8, 1.2, 1.5]
+signal: !NeutronDetection
+  name: "Neutron Detection"
+  variable: *neutronCounter
+  binning:
+    edep: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65]
+    angle: [-1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    beta: [-1, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    energy: [10, 12, 14, 16, 18, 20, 23, 26, 30, 35, 40, 45, 50, 55, 60, 65, 70, 85, 100, 150]
+    zDist: [0, 30, 60, 90, 150, 300, 450, 600, 800, 1000, 1250, 1500]

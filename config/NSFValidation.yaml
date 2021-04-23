@@ -3,7 +3,75 @@
 #Brief: Compare to Rob's NSF validation suite in PlotUtils.
 #Author: Andrew Olivier aolivier@ur.rochester.edu
 
-model: *MnvGENIEv1
+systematics:
+  #Beam angle
+  BeamAngleX:
+  BeamAngleY:
+  #Flux
+  Flux:
+  #Genie knobs
+  GENIE_AGKYxF1pi:
+  GENIE_AhtBY:
+  GENIE_BhtBY:
+  GENIE_CCQEPauliSupViaKF:
+  GENIE_CV1uBY:
+  GENIE_CV2uBY:
+  GENIE_EtaNCEL:
+  GENIE_FrAbs_N:
+  GENIE_FrAbs_pi:
+  GENIE_FrCEx_N:
+  GENIE_FrCEx_pi:
+  GENIE_FrElas_N:
+  GENIE_FrElas_pi:
+  GENIE_FrInel_N:
+  GENIE_FrPiProd_N:
+  GENIE_FrPiProd_pi:
+  GENIE_MFP_N:
+  GENIE_MFP_pi:
+  #GENIE_MaCCQEshape:
+  GENIE_MaNCEL:
+  GENIE_MaRES:
+  GENIE_MvRES:
+  #GENIE_NormCCQE:
+  #GENIE_NormCCRES:
+  GENIE_NormDISCC:
+  GENIE_NormNCRES:
+  GENIE_RDecBR1gamma:
+  GENIE_Rvn1pi:
+  GENIE_Rvp1pi:
+  GENIE_Rvn2pi:
+  GENIE_Rvp2pi:
+  GENIE_Theta_Delta2Npi:
+  GENIE_VecFFCCQEshape:
+  #Minos Reconstruction
+  MINOS_Reconstruction_Efficiency:
+  #MINERvA tune systematics.  You might be able to turn some of these off
+  #depending on your model block.
+  Low_Recoil_2p2h_Tune:
+  RPA_HighQ2:
+  RPA_LowQ2:
+  #Muon reconstruction
+  Muon_Energy_Resolution:
+  Muon_Energy_MINOS:
+  Muon_Energy_MINERvA:
+  #Particle response (from Test Beam?)
+  #response_proton:
+  #response_meson:
+  #response_em:
+  #response_other:
+  #response_low_neutron: #TODO: Replace this with something more complicated?
+  #response_mid_neutron: #TODO: Replace this with something more complicated?
+  #response_high_neutron: #TODO: Replace this with something more complicated?
+
+
+model:
+  Flux: !FluxAndCV
+  GENIE: !GENIEPionTunes
+    useNonResPi: true
+    useDeuteriumPionTune: false
+  MINOSEfficiency: !MINOSEfficiency
+  RPASuppression: !RPA
+  Valencia2p2h: !LowRecoil2p2hWeight
 
 app:
   AnaTupleName: &TupleName "CCQENu"
@@ -14,26 +82,32 @@ app:
 signal: !NSFValidation
   name: "h_inclusive" #Match Rob's histogram naming convention
 
+fiducials:
+  Tracker: !Tracker
+    zRange: !IsInTarget
+      truth:
+        min: !mm 5000 #6000
+        max: !mm 10000 #8500
+      reco:
+        min: !mm 5000 #6000
+        max: !mm 10000 #8500
+    apothem:
+      apothem: !mm 850
+
 cuts:
   truth:
-    phaseSpace: #I'm processing CCQENu AnaTuples, so a fiducial phse space cut is implied
+    phaseSpace: #I'm processing CCQENu AnaTuples, so a fiducial phase space cut is implied.  But I have to provide a "fiducials" block anyway to get number of nucleons for a hypothetical cross section extraction :(
     signal:
       Neutrino: !IsNeutrino
       CC: !IsCC
   reco:
     TrackAngle: !TrackAngle
-      max: !degrees 19.996227
+      max: !radians 0.349
     Neutrino: !IsNeutrino
     DeadTime: !DeadDiscriminators
       max: 1
     HasMuon: !HasInteractionVertex
 
-#Names in sidebands' "fails" blocks refer to truth cuts by block name.
-#Backgrounds are well-constrained in the original (LE) inclusive 2D
-#analysis.
 sidebands:
 
-#Backgrounds are defined by the truth::Cuts they pass in addition to
-#failing some regular truth cut.  So, these cuts had better be mutually
-#exclusive with regular truth::Cuts.
 backgrounds:

@@ -1,7 +1,0 @@
-#File: CVOnly.yaml
-#Brief: Use this file to turn off systematics when you're only interested 
-#       in the CV.  It might decrease wall time by a factor of 5 when running
-#       the same job multiple times.  Good for debugging.
-#Author: Andrew Olivier aolivier@ur.rochester.edu
-
-systematics: []
