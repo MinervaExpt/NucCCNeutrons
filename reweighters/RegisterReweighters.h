@@ -6,16 +6,16 @@
 #include "evt/Universe.h"
 
 //reweighters includes
-#include "reweighters/Reweighter.h"
-#include "reweighters/FluxAndCVReweighter.cpp"
-#include "reweighters/FSIReweighter.cpp"
-#include "reweighters/GeantNeutronCVReweighter.cpp"
-#include "reweighters/GENIEReweighter.cpp"
-#include "reweighters/LowQ2PiReweighter.cpp"
-#include "reweighters/LowRecoil2p2hReweighter.cpp"
-#include "reweighters/MKReweighter.cpp"
-#include "reweighters/RPAReweighter.cpp"
-#include "reweighters/MINOSEfficiencyReweighter.cpp"
+#include "PlotUtils/reweighters/Reweighter.h"
+#include "PlotUtils/reweighters/FluxAndCVReweighter.h"
+#include "PlotUtils/reweighters/FSIReweighter.h"
+#include "PlotUtils/reweighters/GeantNeutronCVReweighter.h"
+#include "PlotUtils/reweighters/GENIEReweighter.h"
+#include "PlotUtils/reweighters/LowQ2PiReweighter.h"
+#include "PlotUtils/reweighters/LowRecoil2p2hReweighter.h"
+#include "PlotUtils/reweighters/MKReweighter.h"
+#include "PlotUtils/reweighters/RPAReweighter.h"
+#include "PlotUtils/reweighters/MINOSEfficiencyReweighter.h"
 
 //util includes
 #include "util/Factory.cpp"

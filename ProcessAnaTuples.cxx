@@ -38,7 +38,7 @@
 //TODO: This eventually replaces models
 //reweighters includes
 #include "reweighters/RegisterReweighters.h"
-#include "reweighters/Model.h"
+#include "PlotUtils/reweighters/Model.h"
 
 //app includes
 #include "app/CmdLine.h"

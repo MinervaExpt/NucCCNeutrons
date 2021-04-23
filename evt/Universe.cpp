@@ -36,8 +36,8 @@ namespace evt
 
   double Universe::GetRecoilEnergy() const
   {
-    //return GetDouble((GetAnaToolName() + "_recoilE").c_str());
-    return GetVecElem("recoil_summed_energy", 0); //CCQENu version
+    return GetDouble((GetAnaToolName() + "_recoilE").c_str());
+    //return GetVecElem("recoil_summed_energy", 0); //CCQENu version
   }
 
   units::LorentzVector<MeV> Universe::GetTruthPmu() const

@@ -5,11 +5,11 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //reweighters includes
-#include "reweighters/FluxAndCVReweighter.cpp"
-#include "reweighters/GENIEReweighter.cpp"
-#include "reweighters/LowRecoil2p2hReweighter.cpp"
-#include "reweighters/RPAReweighter.cpp"
-#include "reweighters/MINOSEfficiencyReweighter.cpp"
+#include "PlotUtils/reweighters/FluxAndCVReweighter.h"
+#include "PlotUtils/reweighters/GENIEReweighter.h"
+#include "PlotUtils/reweighters/LowRecoil2p2hReweighter.h"
+#include "PlotUtils/reweighters/RPAReweighter.h"
+#include "PlotUtils/reweighters/MINOSEfficiencyReweighter.h"
 
 //signal includes
 #include "analyses/base/Study.h"
