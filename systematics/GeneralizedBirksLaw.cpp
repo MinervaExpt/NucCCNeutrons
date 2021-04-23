@@ -7,7 +7,7 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //evt includes
-#include "evt/WeightCachedUniverse.h"
+#include "evt/Universe.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -18,7 +18,7 @@
 
 namespace
 {
-  using CV = evt::WeightCachedUniverse; //In case I want to share this code with other analyses.
+  using CV = evt::Universe; //In case I want to share this code with other analyses.
                                         //Make this a class template, name the parameter CV, derive from it,
                                         //and remove this block.
 }
@@ -110,5 +110,5 @@ namespace sys
 //If I share this systematic, this part doesn't go in the shared file.  Instead, it stays in my analysis package.
 namespace
 {
-  plgn::Registrar<evt::WeightCachedUniverse, sys::GeneralizedBirksLaw, typename evt::WeightCachedUniverse::config_t> DropGEANTNeutrons_reg("GeneralizedBirksLaw");
+  plgn::Registrar<evt::Universe, sys::GeneralizedBirksLaw, typename evt::Universe::config_t> DropGEANTNeutrons_reg("GeneralizedBirksLaw");
 }

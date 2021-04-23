@@ -93,10 +93,14 @@ namespace evt
       virtual ~Universe() = default;
 
       //Shared systematics components
-      #include "PlotUtils/SystCalcs/WeightFunctions.h"
       #include "PlotUtils/SystCalcs/MuonFunctions.h"
       #include "PlotUtils/SystCalcs/TruthFunctions.h"
 
+    protected:
+      //TODO: WeightFunctions.h is deprecated, but some systematics still need it.  Remove it entirely.
+      #include "PlotUtils/SystCalcs/WeightFunctions.h"
+
+    public:
       //Configuration interfaces.  The design of the NSF prevents me from
       //doing all configuration in the constructor.
       inline static void SetBlobAlg(const std::string& newAlg) { blobAlg = newAlg; }
@@ -326,6 +330,9 @@ namespace evt
       //Useful for systematic universes.
       std::set<int> fFSToDrop;
   };
+
+  //TODO: Kludge to test removing a feature.  Remove when I'm done with WeightCachedUniverse.
+  using WeightCachedUniverse = Universe;
 }
 
 #endif //EVT_CVUNIVERSE_H

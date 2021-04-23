@@ -17,9 +17,6 @@
 //fiducials includes
 #include "fiducials/Fiducial.h"
 
-//evt includes
-#include "evt/WeightCachedUniverse.h"
-
 //utility includes
 #include "util/Factory.cpp"
 #include "util/Table.h"
@@ -156,7 +153,6 @@ int main(const int argc, const char** argv)
   //std::vector<std::unique_ptr<model::Model>> reweighters;
   std::vector<std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>> reweighters;
   std::vector<std::unique_ptr<fid::Fiducial>> fiducials;
-  evt::WeightCache weights;
   std::string anaTupleName;
 
   //TODO: Move these parameters somehwere that can be shared between applications?
@@ -184,7 +180,7 @@ int main(const int argc, const char** argv)
     if(exampleRecoTree == nullptr) throw std::runtime_error("There is no TTree named " + anaTupleName + " in " + options->TupleFileNames().front() + ".");
     PlotUtils::TreeWrapper exampleTuple(exampleRecoTree);*/
 
-    auto universes = app::getSystematics(&exampleTuple, *options, options->isMC(), weights);
+    auto universes = app::getSystematics(&exampleTuple, *options, options->isMC());
 
     //Send whatever noise PlotUtils makes during setup to a file in the current working directory
     #ifdef NDEBUG
@@ -361,7 +357,6 @@ int main(const int argc, const char** argv)
           for(auto& fid: fiducials)
           {
             cv->SetEntry(entry);
-            weights.SetEntry(*cv);
 
             //Fill "fake data" by treating MC exactly like data but using a weight.
             //This is useful for closure tests and warping studies.

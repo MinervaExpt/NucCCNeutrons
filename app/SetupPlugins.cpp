@@ -23,9 +23,6 @@
 //app includes
 #include "app/CmdLine.h"
 
-//evt includes
-#include "evt/WeightCachedUniverse.h"
-
 //PlotUtils includes
 #include "PlotUtils/ChainWrapper.h"
 #include "PlotUtils/GenieSystematics.h"
@@ -47,7 +44,7 @@ namespace
   //Since I'm dealing with a map<string, vector<>>, just merge with the existing vector<> if the string already exists.
   //To better match what Ben's example for the MasterAnaMacro does, I'm going to map universes to their ShortName()s.
   //This means that the standard that the user sees is the same as the error band names that appear in an output MnvH1D.
-  std::map<std::string, std::vector<evt::WeightCachedUniverse*>>& merge(const std::map<std::string, std::vector<evt::WeightCachedUniverse*>>& from, std::map<std::string, std::vector<evt::WeightCachedUniverse*>>& to)
+  std::map<std::string, std::vector<evt::Universe*>>& merge(const std::map<std::string, std::vector<evt::Universe*>>& from, std::map<std::string, std::vector<evt::Universe*>>& to)
   {
     for(const auto& group: from)
     {
@@ -90,35 +87,35 @@ namespace
   }
 
   //An exhaustive list of all error bands in the NSF
-  std::map<std::string, std::vector<evt::WeightCachedUniverse*>> getStandardSystematics(PlotUtils::ChainWrapper* chain)
+  std::map<std::string, std::vector<evt::Universe*>> getStandardSystematics(PlotUtils::ChainWrapper* chain)
   {
     //TODO: Keep this list up to date
-    auto allErrorBands = PlotUtils::GetAngleSystematicsMap<evt::WeightCachedUniverse>(chain); //TODO: What if I want to change beam angle uncertainties?
-    ::merge(PlotUtils::GetFluxSystematicsMap<evt::WeightCachedUniverse>(chain, evt::Universe::GetNFluxUniverses()), allErrorBands);
-    ::merge(PlotUtils::GetGenieSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetMinosEfficiencySystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::Get2p2hSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetRPASystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetLowQ2PiSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetMuonResolutionSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetMinervaMuonSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetMinosMuonSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    ::merge(PlotUtils::GetGeantHadronSystematicsMap<evt::WeightCachedUniverse>(chain), allErrorBands);
-    //::merge(PlotUtils::GetResponseSystematicsMap<evt::WeightCachedUniverse>(chain, true), allErrorBands); //TODO: flag to turn off neutron response?
+    auto allErrorBands = PlotUtils::GetAngleSystematicsMap<evt::Universe>(chain); //TODO: What if I want to change beam angle uncertainties?
+    ::merge(PlotUtils::GetFluxSystematicsMap<evt::Universe>(chain, evt::Universe::GetNFluxUniverses()), allErrorBands);
+    ::merge(PlotUtils::GetGenieSystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinosEfficiencySystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::Get2p2hSystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::GetRPASystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::GetLowQ2PiSystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMuonResolutionSystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinervaMuonSystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::GetMinosMuonSystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::GetGeantHadronSystematicsMap<evt::Universe>(chain), allErrorBands);
+    //::merge(PlotUtils::GetResponseSystematicsMap<evt::Universe>(chain, true), allErrorBands); //TODO: flag to turn off neutron response?
 
     return allErrorBands;
   }
 
   //Pick systematic universes based on a vector<string>.  A curated list of
   //all systematic universes in the NSF.
-  std::map<std::string, std::vector<evt::WeightCachedUniverse*>> chooseSystematics(const YAML::Node& bandsToChoose, PlotUtils::ChainWrapper* chain)
+  std::map<std::string, std::vector<evt::Universe*>> chooseSystematics(const YAML::Node& bandsToChoose, PlotUtils::ChainWrapper* chain)
   {
     //First, make an exhaustive list of standard error bands in the NSF
     //TODO: Keep this list up to date
     auto allErrorBands  = getStandardSystematics(chain);
 
     //Any custom systematics from NucCCNeutrons are kept in their own list.
-    auto& customSystFactory = plgn::Factory<evt::WeightCachedUniverse, evt::WeightCachedUniverse::config_t>::instance();
+    auto& customSystFactory = plgn::Factory<evt::Universe, evt::Universe::config_t>::instance();
 
     decltype(allErrorBands) result;
     for(const auto& band: bandsToChoose)
@@ -273,10 +270,10 @@ namespace app
     return constraints;
   }
 
-  std::map<std::string, std::vector<evt::Universe*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC, evt::WeightCache& weights)
+  std::map<std::string, std::vector<evt::Universe*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC)
   {
-    std::map<std::string, std::vector<evt::WeightCachedUniverse*>> result;
-    result["cv"].push_back(new evt::WeightCachedUniverse(chw));
+    std::map<std::string, std::vector<evt::Universe*>> result;
+    result["cv"].push_back(new evt::Universe(chw));
 
     //"global" configuration for all MinervaUniverses
     //TODO: Maybe rename the "app" YAML block "physics"?  But everything in the YAML file is physics!  It still needs a better name.
@@ -302,13 +299,12 @@ namespace app
       for(auto& univ: band.second)
       {
         univ->SetHypothesisName(hypothesisName);
-        univ->setWeightCache(weights);
       }
     }
 
-    //Physics code doesn't need to know about WeightCachedUniverse, so cast it away.
-    //This is not automatic because, while WeightCachedUniverse does derive from Universe,
-    //std::vector<WeightCachedUniverse*> does not derive from std::vector<Universe*>.
+    //Physics code doesn't need to know about Universe, so cast it away.
+    //This is not automatic because, while Universe does derive from Universe,
+    //std::vector<Universe*> does not derive from std::vector<Universe*>.
     std::map<std::string, std::vector<evt::Universe*>> asBase; //(result.begin(), result.end());
     for(auto& band: result) asBase.insert(std::make_pair(band.first, std::vector<evt::Universe*>(band.second.begin(), band.second.end())));
 

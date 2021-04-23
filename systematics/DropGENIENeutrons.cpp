@@ -5,7 +5,7 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //evt includes
-#include "evt/WeightCachedUniverse.h"
+#include "evt/Universe.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -19,10 +19,10 @@
 
 namespace sys
 {
-  class DropGENIENeutrons: public evt::WeightCachedUniverse
+  class DropGENIENeutrons: public evt::Universe
   {
     public:
-      DropGENIENeutrons(const YAML::Node& config, evt::WeightCachedUniverse::config_t chw): evt::WeightCachedUniverse(chw),
+      DropGENIENeutrons(const YAML::Node& config, evt::Universe::config_t chw): evt::Universe(chw),
                                                                                             fMaxKEToDrop(config["MaxKEToDrop"].as<MeV>()),
                                                                                             fDist(config["ProbToDrop"].as<double>()),
                                                                                             fGen(std::chrono::system_clock::now().time_since_epoch().count() + getpid())
@@ -79,5 +79,5 @@ namespace sys
 
 namespace
 {
-  plgn::Registrar<evt::WeightCachedUniverse, sys::DropGENIENeutrons, typename evt::WeightCachedUniverse::config_t> DropGENIENeutrons_reg("DropGENIENeutrons");
+  plgn::Registrar<evt::Universe, sys::DropGENIENeutrons, typename evt::Universe::config_t> DropGENIENeutrons_reg("DropGENIENeutrons");
 }

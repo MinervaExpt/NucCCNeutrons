@@ -38,11 +38,6 @@ namespace model
   class Model;
 }
 
-namespace evt
-{
-  class WeightCache;
-}
-
 namespace app
 {
   class CmdLine;
@@ -72,7 +67,7 @@ namespace app
   std::vector<std::unique_ptr<PlotUtils::SignalConstraint<evt::Universe>>> setupTruthConstraints(const YAML::Node& config);
 
   //Load the set of systematics I'm going to process this event with.
-  std::map<std::string, std::vector<evt::Universe*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC, evt::WeightCache& weights);
+  std::map<std::string, std::vector<evt::Universe*>> getSystematics(PlotUtils::ChainWrapper* chw, const app::CmdLine& options, const bool isMC);
 
   //Group together systematic universes that always pass the same set of Cuts.  For now, that
   //just means IsVerticalOnly() universes grouped with the CV.

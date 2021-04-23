@@ -9,6 +9,8 @@
 #include "PlotUtils/NSFDefaults.h"
 #include "PlotUtils/GenieSystematics.cxx" //IsNonResPi()
 #include "PlotUtils/MnvTuneSystematics.cxx" //IsCCRes()
+#include "PlotUtils/MinosMuonEfficiencyCorrection.h"
+#include "PlotUtils/MnvNormalization.h"
 
 //Reweighter includes
 #include "reweighters/Reweighter.h"

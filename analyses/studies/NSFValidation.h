@@ -4,6 +4,13 @@
 //       and use the results with Rob's validation suite in PlotUtils.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+//reweighters includes
+#include "reweighters/FluxAndCVReweighter.cpp"
+#include "reweighters/GENIEReweighter.cpp"
+#include "reweighters/LowRecoil2p2hReweighter.cpp"
+#include "reweighters/RPAReweighter.cpp"
+#include "reweighters/MINOSEfficiencyReweighter.cpp"
+
 //signal includes
 #include "analyses/base/Study.h"
 
@@ -56,6 +63,13 @@ namespace ana
       HIST2D<GeV>* fEMuVersusRPAWeight;
       HIST2D<GeV>* fEMuVersus2p2hWeight;
       HIST2D<GeV>* fEMuVersusFluxWeight;
+
+      //Reweighters I'm going to plot
+      PlotUtils::FluxAndCVReweighter<evt::Universe> fFluxWeighter;
+      PlotUtils::GENIEReweighter<evt::Universe> fGENIEWeighter;
+      PlotUtils::RPAReweighter<evt::Universe> fRPAWeighter;
+      PlotUtils::MINOSEfficiencyReweighter<evt::Universe> fMINOSWeighter;
+      PlotUtils::LowRecoil2p2hReweighter<evt::Universe> f2p2hWeighter;
   };
 }
 

@@ -4,17 +4,17 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //evt includes
-#include "evt/WeightCachedUniverse.h"
+#include "evt/Universe.h"
 
 //util includes
 #include "util/Factory.cpp"
 
 namespace sys
 {
-  class ReweightGenerated2p2h: public evt::WeightCachedUniverse
+  class ReweightGenerated2p2h: public evt::Universe
   {
     public:
-      ReweightGenerated2p2h(const YAML::Node& config, evt::WeightCachedUniverse::config_t chw): evt::WeightCachedUniverse(chw),
+      ReweightGenerated2p2h(const YAML::Node& config, evt::Universe::config_t chw): evt::Universe(chw),
                                                                                                 fOriginalFractionNP(config["OriginalFractionNP"].as<double>(2./3.)),
                                                                                                 fNewFractionNP(config["NewFractionNP"].as<double>())
       {
@@ -64,5 +64,5 @@ namespace sys
 
 namespace
 {
-  plgn::Registrar<evt::WeightCachedUniverse, sys::ReweightGenerated2p2h, typename evt::WeightCachedUniverse::config_t> ReweightGenerated2p2h_reg("ReweightGenerated2p2h");
+  plgn::Registrar<evt::Universe, sys::ReweightGenerated2p2h, typename evt::Universe::config_t> ReweightGenerated2p2h_reg("ReweightGenerated2p2h");
 }

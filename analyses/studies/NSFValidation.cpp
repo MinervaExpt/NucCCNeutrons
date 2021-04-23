@@ -4,6 +4,9 @@
 //       and use the results with Rob's validation suite in PlotUtils.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+//PlotUtils includes
+#include "PlotUtils/Cut.h" //For PlotUtils::detail::empty
+
 //c++ includes
 #include <cmath>
 
@@ -19,7 +22,8 @@
 namespace ana
 {
   NSFValidation::NSFValidation(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
-                               std::map<std::string, std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs)
+                               std::map<std::string, std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
+                               fFluxWeighter(), fGENIEWeighter(true, false), fRPAWeighter(), fMINOSWeighter(), f2p2hWeighter()
   {
     //Bins chosen to match the NSF_ValidationSuite
     const std::vector<double> EMuBins{0, 1, 2, 3, 4, 5, 7, 9, 12, 15, 18, 22, 36, 50, 75, 100, 120};
@@ -45,6 +49,8 @@ namespace ana
 
   void NSFValidation::mcSignal(const evt::Universe& event, const events weight)
   {
+    PlotUtils::detail::empty empty;
+
     const auto muonP = event.GetMuonP();
     const GeV muonE = muonP.E();
     //const units::XYZVector<double> zHat{0, 0, 1};
@@ -53,12 +59,12 @@ namespace ana
     fPTMu->Fill(&event, /*muonP.p().cross(zHat).mag()*/ MeV(event.GetPmu()*sin(event.GetThetamu())), weight);
     fRecoilE->Fill(&event, event.GetRecoilE(), weight); //N.B.: My GetRecoilE() might not always match the NSF_ValidationSuite
 
-    fPMINOSVersusMINOSWeight->Fill(&event, MeV(event.GetPmuMinos()), events(event.GetMinosEfficiencyWeight()), 1_entries);
-    fEMuVersusMINOSWeight->Fill(&event, muonE, events(event.GetMinosEfficiencyWeight()), 1_entries);
-    fEMuVersusGENIEWeight->Fill(&event, muonE, events(event.GetGenieWeight()), 1_entries);
-    fEMuVersusRPAWeight->Fill(&event, muonE, events(event.GetRPAWeight()), 1_entries);
-    fEMuVersus2p2hWeight->Fill(&event, muonE, events(event.GetLowRecoil2p2hWeight()), 1_entries);
-    fEMuVersusFluxWeight->Fill(&event, muonE, events(event.GetFluxAndCVWeight()), 1_entries);
+    fPMINOSVersusMINOSWeight->Fill(&event, MeV(event.GetPmuMinos()), events(fMINOSWeighter.GetWeight(event, empty)), 1_entries);
+    fEMuVersusMINOSWeight->Fill(&event, muonE, events(fMINOSWeighter.GetWeight(event, empty)), 1_entries);
+    fEMuVersusGENIEWeight->Fill(&event, muonE, events(fGENIEWeighter.GetWeight(event, empty)), 1_entries);
+    fEMuVersusRPAWeight->Fill(&event, muonE, events(fRPAWeighter.GetWeight(event, empty)), 1_entries);
+    fEMuVersus2p2hWeight->Fill(&event, muonE, events(f2p2hWeighter.GetWeight(event, empty)), 1_entries);
+    fEMuVersusFluxWeight->Fill(&event, muonE, events(fFluxWeighter.GetWeight(event, empty)), 1_entries);
   }
 
   void NSFValidation::afterAllFiles(const events /*passedSelection*/)
