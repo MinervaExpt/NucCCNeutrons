@@ -20,6 +20,7 @@
 #include "Minuit2/Minuit2Minimizer.h" //TODO: Remove me?
 #include "TMinuitMinimizer.h"
 #include "TGraph.h"
+#include "TGraph2D.h"
 #include "TCanvas.h"
 
 //TODO: Share GetIngredient() and possibly the prefix and background search functions with ExtractCrossSection.
@@ -429,6 +430,63 @@ void printCorrMatrix(const ROOT::Math::Minimizer& minim, const int nPars)
   }
 }
 
+void plotParameterScan(ROOT::Math::Minimizer& minimizer, const Universe& univ, const std::string& bandName, const int whichUniv, const std::vector<double>& CVResults, const std::vector<double>& CVErrors)
+{
+  constexpr unsigned int nStepsMax = 20; //1000
+  const unsigned int nDim = univ.NDim();
+
+  //Let the user see a graph of chi2 values around the minimum chi2.
+  //Useful for debugging suspected bad fits caused by other local minima.
+  //Documentation indicates that this may only work with Minuit-based minimizers.  So not the GSL minimizer.
+  const double* bandResults = minimizer.X();
+  const double* bandErrors = minimizer.Errors();
+
+  //1D scan in each parameter
+  std::vector<double> parMins(nDim), parMaxes(nDim);
+  for(unsigned int whichPar = 0; whichPar < nDim; ++whichPar)
+  {
+    unsigned int nSteps = nStepsMax;
+    double parValues[nStepsMax], chi2Values[nStepsMax];
+    parMins[whichPar] = std::min(bandResults[whichPar] - 5*bandErrors[whichPar], CVResults[whichPar] - 5*CVErrors[whichPar]);
+    parMaxes[whichPar] = std::max(bandResults[whichPar] + 5*bandErrors[whichPar], CVResults[whichPar] + 5*CVErrors[whichPar]);
+    minimizer.Scan(whichPar, nSteps, parValues, chi2Values, parMins[whichPar], parMaxes[whichPar]);
+
+    TGraph graph(nSteps, parValues, chi2Values);
+    const std::string canName = bandName + "_universe_" + std::to_string(whichUniv) + "_parameter_" + std::to_string(whichPar) + "_chi2Scan";
+    TCanvas canvas(canName.c_str(), "{#chi}^{2} Scan");
+
+    graph.Draw();
+    canvas.Print((canName + ".png").c_str());
+  }
+
+  //2D scan in all pairs of parameters
+  for(unsigned int whichFirstPar = 0; whichFirstPar < nDim; ++whichFirstPar)
+  {
+    for(unsigned int whichSecondPar = whichFirstPar + 1; whichSecondPar < nDim; ++whichSecondPar)
+    {
+      TGraph2D graph(nStepsMax * nStepsMax);
+      for(unsigned int firstParStep = 0; firstParStep < nStepsMax; ++firstParStep)
+      {
+        for(unsigned int secondParStep = 0; secondParStep < nStepsMax; ++secondParStep)
+        {
+          const double firstPar = parMins[whichFirstPar] + firstParStep * (parMaxes[whichFirstPar] - parMins[whichFirstPar]) / nStepsMax,
+                       secondPar = parMins[whichSecondPar] + secondParStep * (parMaxes[whichSecondPar] - parMins[whichSecondPar]) / nStepsMax;
+          std::vector<double> allPars(minimizer.X(), minimizer.X() + nDim);
+          allPars[whichFirstPar] = firstPar;
+          allPars[whichSecondPar] = secondPar;
+
+          graph.SetPoint(firstParStep * nStepsMax + secondParStep, firstPar, secondPar, univ(allPars.data()));
+        }
+      }
+
+      std::string canName = bandName + "_universe_" + std::to_string(whichUniv) + "_parameters_" + std::to_string(whichFirstPar) + "_" + std::to_string(whichSecondPar) + "_chi2Scan";
+      TCanvas canvas(canName.c_str(), "{#chi}^{2} Scan");
+      graph.Draw("surf1");
+      canvas.Print((canName + ".png").c_str());
+    }
+  }
+}
+
 int main(const int argc, const char** argv)
 {
   #ifndef NCINTEX
@@ -437,7 +495,8 @@ int main(const int argc, const char** argv)
 
   TH1::AddDirectory(kFALSE); //Don't add any temporary histograms to the output file by default.  Let me delete them myself.
 
-  const bool floatSignal = true;
+  const bool floatSignal = true,
+             fitToSelection = true;
 
   if(argc != 3) //Remember that argv[0] is the executable name
   {
@@ -467,7 +526,7 @@ int main(const int argc, const char** argv)
 
   //const auto crossSectionPrefixes = findCrossSectionPrefixes(*dataFile); //TODO: Maybe this is the longest unique string at the beginning of all keys?
 
-  const std::vector<std::string> fixedBackgroundNames = {"MultiPi", "Other", "0_Neutrons"}; //{"Other", "MultiPi", "0_Neutrons"};
+  const std::vector<std::string> fixedBackgroundNames = {"MultiPi", "Other"}; //{"Other", "MultiPi", "0_Neutrons"};
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
   std::vector<Background*> backgrounds;
@@ -493,6 +552,7 @@ int main(const int argc, const char** argv)
     //Fit the Central Value (CV) backgrounds.  These are the numbers actually subtracted from the data to make it a cross section.
     std::vector<Sideband> cvSidebands;
     for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
+    if(fitToSelection) cvSidebands.emplace_back(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
     Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT);
 
     auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
@@ -520,7 +580,7 @@ int main(const int argc, const char** argv)
 
     for(auto& sideband: cvSidebands) objectiveFunction.scale(sideband, *minimizer);
     Sideband cvSelection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
-    objectiveFunction.scale(cvSelection, *minimizer);
+    if(!fitToSelection) objectiveFunction.scale(cvSelection, *minimizer);
 
     //Get the list of error bands to loop over
     auto referenceHist = GetIngredient<PlotUtils::MnvH1D>(*mcFile, selectionName + "_Signal");
@@ -574,35 +634,15 @@ int main(const int argc, const char** argv)
           minimizer->PrintResults();
           std::cout << "\nCorrelation matrix:\n";
           printCorrMatrix(*minimizer, objectiveFunction.NDim());
-
-          //Let the user see a graph of chi2 values around the minimum chi2.
-          //Useful for debugging suspected bad fits caused by other local minima.
-          //Documentation indicates that this may only work with Minuit-based minimizers.  So not the GSL minimizer.
-          const double* bandResults = minimizer->X();
-          const double* bandErrors = minimizer->Errors();
-
-          for(unsigned int whichPar = 0; whichPar < objectiveFunction.NDim(); ++whichPar)
-          {
-            constexpr unsigned int nStepsMax = 1000;
-            unsigned int nSteps = nStepsMax;
-            double parValues[nStepsMax], chi2Values[nStepsMax];
-            std::cout << "Scanning from " << std::min(bandResults[whichPar] - bandErrors[whichPar], CVResults[whichPar] - CVErrors[whichPar]) << " to " << std::max(bandResults[whichPar] + bandErrors[whichPar], CVResults[whichPar] + CVErrors[whichPar]) << "\n";
-            minimizer->Scan(whichPar, nSteps, parValues, chi2Values,
-                            std::min(bandResults[whichPar] - bandErrors[whichPar], CVResults[whichPar] - CVErrors[whichPar]),
-                            std::max(bandResults[whichPar] + bandErrors[whichPar], CVResults[whichPar] + CVErrors[whichPar]));
-
-            TGraph graph(nSteps, parValues, chi2Values);
-            const std::string canName = bandName + "_universe_" + std::to_string(whichUniv) + "_parameter_" + std::to_string(whichPar) + "_chi2Scan";
-            TCanvas canvas(canName.c_str(), "{#chi}^{2} Scan");
-
-            graph.Draw();
-            canvas.Print((canName + ".png").c_str());
-          }
+          plotParameterScan(*minimizer, objectiveFunction, bandName, whichUniv, CVResults, CVErrors);
         }
 
         for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
-        Sideband selection(cvSelection, bandName, whichUniv);
-        objectiveFunction.scale(selection, *minimizer);
+        if(!fitToSelection)
+        {
+          Sideband selection(cvSelection, bandName, whichUniv);
+          objectiveFunction.scale(selection, *minimizer);
+        }
 
         //TODO: Propagate errors from TMinuit
         //TODO: Print fit diagnostics.  Throw out bad fits if I can come up with a robust scheme to detect some of them.
@@ -620,10 +660,13 @@ int main(const int argc, const char** argv)
           histToUpdate->GetVertErrorBand(bandName)->TH1D::operator=(*cvHist);
         }
       }
-      for(const auto cvHist: cvSelection.floatingHists)
+      if(!fitToSelection)
       {
-        auto histToUpdate = dynamic_cast<PlotUtils::MnvH1D*>(cvHist);
-        histToUpdate->GetVertErrorBand(bandName)->TH1D::operator=(*cvHist);
+        for(const auto cvHist: cvSelection.floatingHists)
+        {
+          auto histToUpdate = dynamic_cast<PlotUtils::MnvH1D*>(cvHist);
+          histToUpdate->GetVertErrorBand(bandName)->TH1D::operator=(*cvHist);
+        }
       }
     } //Loop over error bands
 
@@ -633,7 +676,7 @@ int main(const int argc, const char** argv)
     {
       for(const auto cvHist: cvSideband.floatingHists) cvHist->Write("", TObject::kOverwrite);
     }
-    for(const auto cvHist: cvSelection.floatingHists) cvHist->Write("", TObject::kOverwrite);
+    if(!fitToSelection) for(const auto cvHist: cvSelection.floatingHists) cvHist->Write("", TObject::kOverwrite);
   //} //Loop over fiducial volumes
 
   //TODO: Can I make sure I preserve the order of keys in the file somehow?  Keys that didn't get updated are ending up at the end of the directory list.
