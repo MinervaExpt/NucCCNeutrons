@@ -242,7 +242,7 @@ namespace
   {
     public:
       Universe(const std::vector<Sideband>& sidebands, std::vector<Background*> backgrounds, const double POTRatio,
-               const int firstBin = 1): IBaseFunctionMultiDimTempl<double>(), fSidebands(sidebands), fBackgrounds(backgrounds), fPOTScale(POTRatio), fFirstBin(firstBin)
+               const int firstBin = 1, const int lastBin = -1): IBaseFunctionMultiDimTempl<double>(), fSidebands(sidebands), fBackgrounds(backgrounds), fPOTScale(POTRatio), fFirstBin(firstBin), fLastBin(lastBin)
       {
         //TODO: assert() that all sidebands have same binning
         assert(!fSidebands.empty() && "Requested sideband fit with no sidebands!");
@@ -253,7 +253,7 @@ namespace
           for(const auto& sideband: fSidebands) assert(std::string(sideband.floatingHists[whichBkg]->GetName()).find(fBackgrounds[whichBkg]->name) != std::string::npos && "Sideband and background indices don't match!");
         }
         #endif //NDEBUG
-        fLastBin = fSidebands.front().data.GetXaxis()->GetNbins();
+        if(fLastBin < fFirstBin) fLastBin = fSidebands.front().data.GetXaxis()->GetNbins();
       }
 
       unsigned int NDim() const override
@@ -497,6 +497,8 @@ int main(const int argc, const char** argv)
 
   const bool floatSignal = true,
              fitToSelection = true;
+  const int firstBin = 1,
+            lastBin = 19;
 
   if(argc != 3) //Remember that argv[0] is the executable name
   {
@@ -526,11 +528,11 @@ int main(const int argc, const char** argv)
 
   //const auto crossSectionPrefixes = findCrossSectionPrefixes(*dataFile); //TODO: Maybe this is the longest unique string at the beginning of all keys?
 
-  const std::vector<std::string> fixedBackgroundNames = {"MultiPi", "Other"}; //{"Other", "MultiPi", "0_Neutrons"};
+  const std::vector<std::string> fixedBackgroundNames = {"Other"}; //{"Other", "MultiPi", "0_Neutrons"};
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
   std::vector<Background*> backgrounds;
-  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new ScaledBackground(bkgName)); //LinearBackground(bkgName)); //ScaledBackground(bkgName));
+  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new LinearBackground(bkgName)); //ScaledBackground(bkgName));
   if(floatSignal) backgrounds.push_back(new ScaledBackground("Signal"));
 
   //Program status to return to the operating system.  Nonzero indicates a problem that will stop
@@ -546,14 +548,14 @@ int main(const int argc, const char** argv)
     //Don't include the multi-pi sideband in the fit at all.  I shouldn't need it because its background is insignificant in the selection region.
     //This sideband isn't very pure in MultiPi backgrounds anyway.
     //TODO: Just stop including this sideband in the event loop
-    auto toRemove = std::remove_if(sidebandNames.begin(), sidebandNames.end(), [](const auto& name) { return name.find("MultiPi") != std::string::npos; });
-    sidebandNames.erase(toRemove, sidebandNames.end());
+    /*auto toRemove = std::remove_if(sidebandNames.begin(), sidebandNames.end(), [](const auto& name) { return name.find("MultiPi") != std::string::npos; });
+    sidebandNames.erase(toRemove, sidebandNames.end());*/
 
     //Fit the Central Value (CV) backgrounds.  These are the numbers actually subtracted from the data to make it a cross section.
     std::vector<Sideband> cvSidebands;
     for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
     if(fitToSelection) cvSidebands.emplace_back(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
-    Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT);
+    Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT, firstBin, lastBin);
 
     auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
 
@@ -606,7 +608,7 @@ int main(const int argc, const char** argv)
           nextPar += bkg->nPars();
         }
 
-        Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
+        Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT, firstBin, lastBin);
         assert(nextPar == objectiveFunction.NDim());
         minimizer->SetFunction(objectiveFunction);
 
