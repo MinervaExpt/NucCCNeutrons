@@ -17,8 +17,10 @@
 #include "TDirectoryFile.h"
 #include "TFile.h"
 #include "TParameter.h"
-//#include "Minuit2/Minuit2Minimizer.h" //TODO: Remove me?
+#include "Minuit2/Minuit2Minimizer.h" //TODO: Remove me?
 #include "TMinuitMinimizer.h"
+#include "TGraph.h"
+#include "TCanvas.h"
 
 //TODO: Share GetIngredient() and possibly the prefix and background search functions with ExtractCrossSection.
 //      Put them in util or something.
@@ -123,6 +125,7 @@ namespace
     //functionToFit() tries to model a data/MC ratio for a specific background in a sideband.
     //It takes the bin number and nPars() parameters from the fitter as arguments.
     virtual double functionToFit(const double binCenter, const double* pars) const = 0;
+    virtual double getSqErrOnFunction(const double binCenter, const double* pars, const double* parErrs) const = 0;
     virtual int nPars() const = 0;
 
     virtual void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const = 0;
@@ -172,6 +175,12 @@ namespace
     {
       return pars[0];
     }
+
+    double getSqErrOnFunction(const double /*binCenter*/, const double* /*pars*/, const double* parErrs) const override
+    {
+      return pow<2>(parErrs[0]);
+    }
+
     int nPars() const override { return 1; }
 
     void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const override
@@ -200,6 +209,12 @@ namespace
     double functionToFit(const double binCenter, const double* pars) const override
     {
       return pars[0] + pars[1] * binCenter;
+    }
+
+    double getSqErrOnFunction(const double binCenter, const double* /*pars*/, const double* parErrs) const override
+    {
+      //Assuming no correlation beteen slope and intercept parameters or any other Backgrounds
+      return pow<2>(binCenter * parErrs[0]) + pow<2>(parErrs[1]);
     }
 
     int nPars() const override { return 2; }
@@ -285,6 +300,7 @@ namespace
       void scale(Sideband& toModify, const ROOT::Math::Minimizer& fitParams) const
       {
         const double* parameters = fitParams.X();
+        const double* errors = fitParams.Errors();
 
         int firstParam = 0;
         for(size_t whichBkg = 0; whichBkg < fBackgrounds.size(); ++whichBkg)
@@ -292,11 +308,23 @@ namespace
           const auto bkg = fBackgrounds[whichBkg];
           for(int whichBin = fFirstBin; whichBin < fLastBin; ++whichBin)
           {
-            const double scaleFactor = bkg->functionToFit(toModify.floatingHists[whichBkg]->GetXaxis()->GetBinCenter(whichBin), parameters + firstParam);
+            const double binCenter = toModify.floatingHists[whichBkg]->GetXaxis()->GetBinCenter(whichBin);
+            const double scaleFactor = bkg->functionToFit(binCenter, parameters + firstParam);
 
             auto floatHist = toModify.floatingHists[whichBkg];
             assert(std::string(floatHist->GetName()).find(bkg->name) != std::string::npos && "Background histogram and model name do not match!");
-            floatHist->SetBinContent(whichBin, floatHist->GetBinContent(whichBin) * scaleFactor);
+
+            const double oldContent = floatHist->GetBinContent(whichBin);
+            floatHist->SetBinContent(whichBin, oldContent * scaleFactor);
+
+            //Calculate uncertainty on scaled bin content from fit
+            //Ignore the parameter correlation matrix because I shouldn't be using this fit anyway if the correlation matrix
+            //has large off-diagonal elements.
+            //N.B.: Doing this on non-CV universes unnecessarily increases their size on disk.  We currently don't use statistical
+            //      uncertainty on universe histograms for anything.
+            const double sqErrOnScaleFactor = bkg->getSqErrOnFunction(binCenter, parameters + firstParam, errors + firstParam),
+                         errOnBin = floatHist->GetBinError(whichBin);
+            floatHist->SetBinError(whichBin, std::sqrt(pow<2>(errOnBin) * pow<2>(scaleFactor) + sqErrOnScaleFactor * pow<2>(oldContent))); //Uncerainty on product of uncorrelated random variables
           } //For each bin
 
           firstParam += bkg->nPars();
@@ -365,6 +393,40 @@ namespace
   }
 }
 
+bool checkCovMatrixOffDiagonal(const ROOT::Math::Minimizer& minim, const int nPars)
+{
+  std::vector<double> covMatrix(nPars * nPars, 0);
+  minim.GetCovMatrix(covMatrix.data());
+
+  for(int xPar = 0; xPar < nPars; ++xPar)
+  {
+    for(int yPar = 0; yPar < nPars; ++yPar)
+    {
+      if(xPar == yPar) continue; //Ignore variance on individual parameters
+      if(covMatrix[xPar * nPars + yPar] > 0.1) return false;
+    }
+  }
+
+  return true;
+}
+
+void printCorrMatrix(const ROOT::Math::Minimizer& minim, const int nPars)
+{
+  std::vector<double> covMatrix(nPars * nPars, 0);
+  minim.GetCovMatrix(covMatrix.data());
+  const double* errors = minim.Errors();
+
+  for(int xPar = 0; xPar < nPars; ++xPar)
+  {
+    std::cout << "[";
+    for(int yPar = 0; yPar < nPars-1; ++yPar)
+    { 
+      std::cout << std::fixed << std::setprecision(2) << std::setw(5) << covMatrix[xPar * nPars + yPar]/errors[xPar]/errors[yPar] << ", ";
+    }
+    std::cout << std::fixed << std::setprecision(2) << std::setw(5) << covMatrix[xPar * nPars + nPars-1]/errors[xPar]/errors[nPars-1] << "]\n";
+  }
+}
+
 int main(const int argc, const char** argv)
 {
   #ifndef NCINTEX
@@ -401,11 +463,11 @@ int main(const int argc, const char** argv)
 
   //const auto crossSectionPrefixes = findCrossSectionPrefixes(*dataFile); //TODO: Maybe this is the longest unique string at the beginning of all keys?
 
-  const std::vector<std::string> fixedBackgroundNames = {"MultiPi", "Other"}; //{"Other", "MultiPi", "0_Neutrons"};
+  const std::vector<std::string> fixedBackgroundNames = {"MultiPi", "Other", "0_Neutrons"}; //{"Other", "MultiPi", "0_Neutrons"};
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
   std::vector<Background*> backgrounds;
-  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new LinearBackground(bkgName)); //ScaledBackground(bkgName));
+  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new ScaledBackground(bkgName)); //LinearBackground(bkgName)); //ScaledBackground(bkgName));
 
   //Program status to return to the operating system.  Nonzero indicates a problem that will stop
   //i.e. a cross section extraction script.  I'm going to keep going if an individual fit fails
@@ -428,7 +490,7 @@ int main(const int argc, const char** argv)
     for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
     Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT);
 
-    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
+    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
 
     int nextPar = 0;
     for(auto bkg: backgrounds)
@@ -443,6 +505,13 @@ int main(const int argc, const char** argv)
 
     std::cout << "CV fit results.  Universe fit results will only be printed if the minimization fails or when compiled in debug mode (NDEBUG not defined).\n";
     minimizer->PrintResults();
+    std::cout << "\nCV Correlation Matrix\n";
+    printCorrMatrix(*minimizer, objectiveFunction.NDim());
+
+    //Take a copy of CV fit results before they get overridden!
+    const double cvChi2 = minimizer->MinValue();
+    std::vector<double> CVResults(minimizer->X(), minimizer->X() + objectiveFunction.NDim()),
+                        CVErrors(minimizer->Errors(), minimizer->Errors() + objectiveFunction.NDim());
 
     for(auto& sideband: cvSidebands) objectiveFunction.scale(sideband, *minimizer);
     Sideband cvSelection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
@@ -475,14 +544,55 @@ int main(const int argc, const char** argv)
         Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT);
         assert(nextPar == objectiveFunction.NDim());
         minimizer->SetFunction(objectiveFunction);
+
+        bool printBandInfo = false;
+        #ifndef NDEBUG
+        printBandInfo = true;
+        #endif //NDEBUG
+
         if(minimizer->Minimize() == false)
         {
-          //TODO: I'd like to use cerr here too, but it doesn't seem to stay synchronized with whatever ROOT is doing (probably printf).
-          //TODO: Keep going but make return code nonzero.
           std::cerr << "Fit failed for universe " << whichUniv << " in error band " << bandName
                     << "!  I'm going to save this result and keep going with the other universes anyway...\n";
-          minimizer->PrintResults();
+          printBandInfo = true;
           programStatus = 4;
+        }
+        else if(minimizer->MinValue() > 1.5*cvChi2) //TODO: Add other conditions here like scanning the correlation matrix
+        {
+          std::cerr << "Fit succeeded but warrants further study.\n";
+          printBandInfo = true;
+        }
+
+        if(printBandInfo)
+        {
+          std::cout << bandName << " error band universe " << whichUniv << "\n";
+          minimizer->PrintResults();
+          std::cout << "\nCorrelation matrix:\n";
+          printCorrMatrix(*minimizer, objectiveFunction.NDim());
+
+          //Let the user see a graph of chi2 values around the minimum chi2.
+          //Useful for debugging suspected bad fits caused by other local minima.
+          //Documentation indicates that this may only work with Minuit-based minimizers.  So not the GSL minimizer.
+          const double* bandResults = minimizer->X();
+          const double* bandErrors = minimizer->Errors();
+
+          for(unsigned int whichPar = 0; whichPar < objectiveFunction.NDim(); ++whichPar)
+          {
+            constexpr unsigned int nStepsMax = 1000;
+            unsigned int nSteps = nStepsMax;
+            double parValues[nStepsMax], chi2Values[nStepsMax];
+            std::cout << "Scanning from " << std::min(bandResults[whichPar] - bandErrors[whichPar], CVResults[whichPar] - CVErrors[whichPar]) << " to " << std::max(bandResults[whichPar] + bandErrors[whichPar], CVResults[whichPar] + CVErrors[whichPar]) << "\n";
+            minimizer->Scan(whichPar, nSteps, parValues, chi2Values,
+                            std::min(bandResults[whichPar] - bandErrors[whichPar], CVResults[whichPar] - CVErrors[whichPar]),
+                            std::max(bandResults[whichPar] + bandErrors[whichPar], CVResults[whichPar] + CVErrors[whichPar]));
+
+            TGraph graph(nSteps, parValues, chi2Values);
+            const std::string canName = bandName + "_universe_" + std::to_string(whichUniv) + "_parameter_" + std::to_string(whichPar) + "_chi2Scan";
+            TCanvas canvas(canName.c_str(), "{#chi}^{2} Scan");
+
+            graph.Draw();
+            canvas.Print((canName + ".png").c_str());
+          }
         }
 
         for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);
