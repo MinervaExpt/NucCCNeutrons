@@ -62,7 +62,7 @@ namespace
   struct Sideband
   {
     //Construct a Sideband in the CV
-    Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& floatingBackgroundNames, const std::vector<std::string>& fixedNames)
+    Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& floatingBackgroundNames, const std::vector<std::string>& fixedNames, const bool floatSignal = false)
     {
       //Unfortunately, the data in the selection region has a different naming convention.  It ends with "_Signal".
       //TODO: Just rename histograms in ExtractCrossSection so that data ends with "_Data" in selection region too.  "Signal" is a stupid and confusing name anyway.
@@ -84,14 +84,16 @@ namespace
       fixedSum->Reset();
       for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed));
 
-      //Keep signal contamination fixed too
+      //Let signal float too
       try
       {
-        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
+        if(!floatSignal) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
+        else floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
       }
       catch(const std::runtime_error& e)
       {
-        fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
+        if(!floatSignal) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
+        else floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
       }
     }
 
@@ -435,6 +437,8 @@ int main(const int argc, const char** argv)
 
   TH1::AddDirectory(kFALSE); //Don't add any temporary histograms to the output file by default.  Let me delete them myself.
 
+  const bool floatSignal = true;
+
   if(argc != 3) //Remember that argv[0] is the executable name
   {
     std::cerr << "Expected exactly 2 arguments, but got " << argc-1 << "\n"
@@ -468,6 +472,7 @@ int main(const int argc, const char** argv)
 
   std::vector<Background*> backgrounds;
   for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new ScaledBackground(bkgName)); //LinearBackground(bkgName)); //ScaledBackground(bkgName));
+  if(floatSignal) backgrounds.push_back(new ScaledBackground("Signal"));
 
   //Program status to return to the operating system.  Nonzero indicates a problem that will stop
   //i.e. a cross section extraction script.  I'm going to keep going if an individual fit fails
@@ -487,7 +492,7 @@ int main(const int argc, const char** argv)
 
     //Fit the Central Value (CV) backgrounds.  These are the numbers actually subtracted from the data to make it a cross section.
     std::vector<Sideband> cvSidebands;
-    for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
+    for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
     Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT);
 
     auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
@@ -514,7 +519,7 @@ int main(const int argc, const char** argv)
                         CVErrors(minimizer->Errors(), minimizer->Errors() + objectiveFunction.NDim());
 
     for(auto& sideband: cvSidebands) objectiveFunction.scale(sideband, *minimizer);
-    Sideband cvSelection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames);
+    Sideband cvSelection(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
     objectiveFunction.scale(cvSelection, *minimizer);
 
     //Get the list of error bands to loop over
