@@ -254,7 +254,15 @@ int main(const int argc, const char** argv)
 
       //Basing my unfolding procedure for a differential cross section on Alex's MINERvA 101 talk at https://minerva-docdb.fnal.gov/cgi-bin/private/RetrieveFile?docid=27438&filename=whatsACrossSection.pdf&version=1
 
-      //TODO: How to tie in sideband constraints?
+      //TODO: Remove these debugging plots when done
+      auto toSubtract = std::accumulate(std::next(backgrounds.begin()), backgrounds.end(), (*backgrounds.begin())->Clone(),
+                                        [](auto sum, const auto hist)
+                                        {
+                                          sum->Add(hist);
+                                          return sum;
+                                        });
+      Plot(*toSubtract, "BackgroundSum", prefix);
+
       auto bkgSubtracted = std::accumulate(backgrounds.begin(), backgrounds.end(), folded->Clone(),
                                            [mcPOT, dataPOT](auto sum, const auto hist)
                                            {

@@ -200,24 +200,27 @@ namespace
 
       //min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
       min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
+      min.SetVariableLimits(nextPar, 0.5, 3);
     }
   };
 
   //Fit a line to a sideband's data/MC ratio
   struct LinearBackground: public Background
   {
-    LinearBackground(const std::string& name): Background(name) {}
+    LinearBackground(const std::string& name, const double sumBinWidths): Background(name), fSumBinWidths(sumBinWidths) {}
     virtual ~LinearBackground() = default;
 
     double functionToFit(const double binCenter, const double* pars) const override
     {
-      return pars[0] + pars[1] * binCenter;
+      const double slope = (pars[1] - pars[0]) / fSumBinWidths;
+      return pars[0] + slope * binCenter;
     }
 
     double getSqErrOnFunction(const double binCenter, const double* /*pars*/, const double* parErrs) const override
     {
-      //Assuming no correlation beteen slope and intercept parameters or any other Backgrounds
-      return pow<2>(binCenter * parErrs[0]) + pow<2>(parErrs[1]);
+      //Assuming no correlation between slope and intercept parameters or any other Backgrounds
+      return pow<2>(parErrs[1] * binCenter / fSumBinWidths) + pow<2>((binCenter/fSumBinWidths + 1) * parErrs[0]);
+      //return pow<2>(binCenter * parErrs[1]) + pow<2>(parErrs[0]);  //Old version was wrong!
     }
 
     int nPars() const override { return 2; }
@@ -228,13 +231,18 @@ namespace
       assert(largestSideband != sidebands.end());
 
       auto mcRatio = makeDataMCRatio(*largestSideband, POTRatio);
-      const double interceptGuess = mcRatio->GetBinContent(1);
-      const double slopeGuess = (mcRatio->GetMaximum() - interceptGuess) / (mcRatio->GetXaxis()->GetBinCenter(mcRatio->GetMaximumBin()) - mcRatio->GetXaxis()->GetBinCenter(1));
+      const double firstBinGuess = mcRatio->GetBinContent(1);
+      const double lastBinGuess = mcRatio->GetMaximum();
+      //const double slopeGuess = (mcRatio->GetMaximum() - interceptGuess) / (mcRatio->GetXaxis()->GetBinCenter(mcRatio->GetMaximumBin()) - mcRatio->GetXaxis()->GetBinCenter(1));
 
-      //TODO: Guess parameters based on sidebands
-      min.SetVariable(nextPar, (name + " intercept").c_str(), interceptGuess, interceptGuess/20.);
-      min.SetVariable(nextPar + 1, (name + " slope").c_str(), slopeGuess, slopeGuess/20.);
+      min.SetVariable(nextPar, (name + " first bin").c_str(), firstBinGuess, firstBinGuess/20.);
+      min.SetVariableLimits(nextPar, 0.5, 2);
+      min.SetVariable(nextPar + 1, (name + " last bin").c_str(), lastBinGuess, lastBinGuess/20.);
+      min.SetVariableLimits(nextPar + 1, 0.5, 3);
     }
+
+    private:
+      const double fSumBinWidths;
   };
 
   //Based heavily on code by Aaron Bercellie at Ana/NukeCCPion/ana/ChainWrapper/src/SidebandFitter.cxx.  It's not on CVS though as of March 27, 2021.
@@ -531,8 +539,13 @@ int main(const int argc, const char** argv)
   const std::vector<std::string> fixedBackgroundNames = {"Other"}; //{"Other", "MultiPi", "0_Neutrons"};
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
+  //Figure out sum of bin widths in fit region in case I want to use a linearly scaled background
+  const std::string dummySelectionName = findSelectionName(*mcFile);
+  const auto exampleHist = GetIngredient<PlotUtils::MnvH1D>(*mcFile, dummySelectionName + "_SelectedMCEvents");
+  const double sumBinWidths = exampleHist->GetBinLowEdge(lastBin + 1) - exampleHist->GetBinLowEdge(firstBin);
+
   std::vector<Background*> backgrounds;
-  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new LinearBackground(bkgName)); //ScaledBackground(bkgName));
+  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new LinearBackground(bkgName, sumBinWidths)); //ScaledBackground(bkgName));
   if(floatSignal) backgrounds.push_back(new ScaledBackground("Signal"));
 
   //Program status to return to the operating system.  Nonzero indicates a problem that will stop
@@ -557,7 +570,7 @@ int main(const int argc, const char** argv)
     if(fitToSelection) cvSidebands.emplace_back(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
     Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT, firstBin, lastBin);
 
-    auto* minimizer = new TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
+    auto* minimizer = new ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kMigrad); //TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
 
     int nextPar = 0;
     for(auto bkg: backgrounds)
