@@ -27,14 +27,14 @@ namespace ana
                        std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::Universe*>>& universes);
       virtual ~PerCandidateTree() = default;
 
-      //Do this study only for MC signal events.
+      //Do this study only for MC signal and background events.
       virtual void mcSignal(const evt::Universe& event, const events weight) override;
+      void mcBackground(const evt::Universe& event, const background_t& background, const events weight) override;
 
       //No histograms to normalize
       virtual void afterAllFiles(const events /*passedSelection*/) override {};
 
-      //Do nothing for backgrounds, the Truth tree, and data
-      virtual void mcBackground(const evt::Universe& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
+      //Do nothing for the Truth tree and data
       virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override {};
       virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override {};
 
@@ -75,8 +75,15 @@ namespace ana
         double angle_wrt_z; //Angle w.r.t. the z axis of the detector in radians
       };
 
+      //These functions do the real work so I can reuse the same code in multiple cases
+      void fillMCBranches(const MCCandidate& cand, const std::vector<FSPart>& fs, const units::LorentzVector<mm> vertex);
+      void fillRecoBranches(const std::vector<MCCandidate>::const_iterator cand, const units::LorentzVector<mm> vertex, const std::vector<MCCandidate>& allCands);
+      void connectMCBranches(TTree& tree);
+      void connectRecoBranches(TTree& tree);
+
       //Tree and branches filled for each candidate
       TTree* fMCTree;
+      util::Categorized<TTree, background_t> fBackgroundTrees;
 
       //Truth-matched branches
       double fFSPDG;
