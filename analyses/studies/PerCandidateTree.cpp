@@ -46,7 +46,10 @@ namespace ana
     tree.Branch("EDep", &fEDep);
     tree.Branch("DistFromVertex", &fDistFromVertex);
     tree.Branch("DeltaT", &fDeltaT);
-    tree.Branch("AngleWrtVertex", &fAngleWrtVertex);
+    tree.Branch("AngleWrtZ", &fAngleWrtZ);
+    tree.Branch("AngleTransverseToZ", &fAngleTransverseToZ);
+    tree.Branch("CosineWrtMuon", &fCosineWrtMuon);
+    tree.Branch("SineWrtMuon", &fSineWrtMuon);
     tree.Branch("NDigits", &fNDigits);
     tree.Branch("NClusters", &fNClusters);
     tree.Branch("NCandidates", &fNCandidates);
@@ -62,7 +65,9 @@ namespace ana
 
     //Physics objects I'll need
     const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(),
-                                              event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(),
+                                              event.Getblob_transverse_dist_from_vertex(),
+                                              event.Getblob_first_muon_long(), event.Getblob_first_muon_transverse(),
+                                              event.Getblob_earliest_time(),
                                               event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron(),
                                               event.Getblob_n_digits(), event.Getblob_n_clusters(),
                                               event.Getblob_highest_digit_E());
@@ -89,7 +94,9 @@ namespace ana
 
     //Physics objects I'll need
     const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(),
-                                              event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(),
+                                              event.Getblob_transverse_dist_from_vertex(),
+                                              event.Getblob_first_muon_long(), event.Getblob_first_muon_transverse(),
+                                              event.Getblob_earliest_time(),
                                               event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron(),
                                               event.Getblob_n_digits(), event.Getblob_n_clusters(),
                                               event.Getblob_highest_digit_E());
@@ -136,7 +143,11 @@ namespace ana
     const auto& cand = *whichCand;
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
     fDistFromVertex = sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ)).in<mm>();
-    fAngleWrtVertex = angle(cand, vertex);
+    fAngleTransverseToZ = this->angle(cand, vertex);
+    fAngleWrtZ = atan2(cand.transverse, deltaZ);
+    const mm muonDistance = sqrt(pow<2>(cand.muon_long) + pow<2>(cand.muon_transverse));
+    fCosineWrtMuon = cand.muon_long.in<mm>() / muonDistance.in<mm>();
+    fSineWrtMuon = cand.muon_transverse.in<mm>() / muonDistance.in<mm>();
 
     fEDep = cand.edep.in<MeV>();
     fDeltaT = cand.time.in<ns>();
@@ -152,8 +163,8 @@ namespace ana
     const auto smallestAnglePrefix = std::min_element(allCands.begin(), whichCand, compareAngle);
     const auto smallestAnglePostfix = std::min_element(whichCand+1, allCands.end(), compareAngle);
     fSmallestAngleDiff = 9999; //std::numeric_limits<double>::max();
-    if(smallestAnglePrefix != allCands.end()) fSmallestAngleDiff = fabs(angle(*whichCand, vertex) - angle(*smallestAnglePrefix, vertex));
-    if(smallestAnglePostfix != allCands.end()) fSmallestAngleDiff = std::min(fSmallestAngleDiff, fabs(angle(*whichCand, vertex) - angle(*smallestAnglePostfix, vertex)));
+    if(smallestAnglePrefix != allCands.end()) fSmallestAngleDiff = fabs(this->angle(*whichCand, vertex) - this->angle(*smallestAnglePrefix, vertex));
+    if(smallestAnglePostfix != allCands.end()) fSmallestAngleDiff = std::min(fSmallestAngleDiff, fabs(this->angle(*whichCand, vertex) - this->angle(*smallestAnglePostfix, vertex)));
   }
 
 

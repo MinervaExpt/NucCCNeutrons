@@ -59,6 +59,8 @@ namespace ana
         MeV edep;
         mm z;
         mm transverse;
+        mm muon_long;
+        mm muon_transverse;
         ns time;
         int FS_index; //Mapping from a Candidate to an FSPart by index in the array of FSParts
         mm dist_to_edep_as_neutron; //Distance parent and ancestors travelled that were neutrons
@@ -94,7 +96,10 @@ namespace ana
       double fEDep;
       double fDistFromVertex;
       double fDeltaT;
-      double fAngleWrtVertex;
+      double fAngleWrtZ;
+      double fAngleTransverseToZ;
+      double fCosineWrtMuon;
+      double fSineWrtMuon;
       int fNDigits;
       int fNClusters;
       int fNCandidates;
