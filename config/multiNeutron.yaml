@@ -235,6 +235,14 @@ backgrounds:
     NoNeutrons: !NeutronMultiplicity
       equals: !neutrons 0
       variable: *neutronCounter
+  ProtonsAboveAmitsThresholdOnly:
+    NoPi0s: !NoPi0s
+    NoChargedPions: *noChargedPions
+    HasProtons: !ChargedHadronMultiplicity &hasProtons
+      min: 1
+      angleThreshold: *angleThreshold
+      trackingThresholds:
+        2212: !MeV 120
   #TooManyNeutrons:
   #  NoPi0s: !NoPi0s
   #  NoChargedHadrons: *NoChargedHadrons
