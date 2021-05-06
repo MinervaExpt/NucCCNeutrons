@@ -200,7 +200,7 @@ namespace
 
       //min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
       min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
-      min.SetVariableLimits(nextPar, 0.5, 3);
+      min.SetVariableLimits(nextPar, std::min(0.5, scaleGuess), std::max(2., scaleGuess)); //1.5);
     }
   };
 
@@ -236,9 +236,9 @@ namespace
       //const double slopeGuess = (mcRatio->GetMaximum() - interceptGuess) / (mcRatio->GetXaxis()->GetBinCenter(mcRatio->GetMaximumBin()) - mcRatio->GetXaxis()->GetBinCenter(1));
 
       min.SetVariable(nextPar, (name + " first bin").c_str(), firstBinGuess, firstBinGuess/20.);
-      min.SetVariableLimits(nextPar, 0.5, 2);
+      //min.SetVariableLimits(nextPar, std::min(0.3, firstBinGuess), std::max(2., firstBinGuess)); //1.5);
       min.SetVariable(nextPar + 1, (name + " last bin").c_str(), lastBinGuess, lastBinGuess/20.);
-      min.SetVariableLimits(nextPar + 1, 0.5, 3);
+      //min.SetVariableLimits(nextPar + 1, std::min(0.3, lastBinGuess), std::max(2., lastBinGuess)); //1.5);
     }
 
     private:
@@ -502,6 +502,7 @@ int main(const int argc, const char** argv)
   #endif
 
   TH1::AddDirectory(kFALSE); //Don't add any temporary histograms to the output file by default.  Let me delete them myself.
+  gErrorIgnoreLevel = kWarning; //Silence TCanvas::Print()
 
   const bool floatSignal = true,
              fitToSelection = true;
@@ -536,7 +537,7 @@ int main(const int argc, const char** argv)
 
   //const auto crossSectionPrefixes = findCrossSectionPrefixes(*dataFile); //TODO: Maybe this is the longest unique string at the beginning of all keys?
 
-  const std::vector<std::string> fixedBackgroundNames = {"Other"}; //{"Other", "MultiPi", "0_Neutrons"};
+  const std::vector<std::string> fixedBackgroundNames = {"Other", "ProtonsAboveAmitsThresholdOnly", "0_Neutrons", "MultiPi"}; //{"Other", "MultiPi", "0_Neutrons"};
   const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
 
   //Figure out sum of bin widths in fit region in case I want to use a linearly scaled background
@@ -561,8 +562,8 @@ int main(const int argc, const char** argv)
     //Don't include the multi-pi sideband in the fit at all.  I shouldn't need it because its background is insignificant in the selection region.
     //This sideband isn't very pure in MultiPi backgrounds anyway.
     //TODO: Just stop including this sideband in the event loop
-    /*auto toRemove = std::remove_if(sidebandNames.begin(), sidebandNames.end(), [](const auto& name) { return name.find("MultiPi") != std::string::npos; });
-    sidebandNames.erase(toRemove, sidebandNames.end());*/
+    auto toRemove = std::remove_if(sidebandNames.begin(), sidebandNames.end(), [](const auto& name) { return name.find("MultiPi") != std::string::npos; });
+    sidebandNames.erase(toRemove, sidebandNames.end());
 
     //Fit the Central Value (CV) backgrounds.  These are the numbers actually subtracted from the data to make it a cross section.
     std::vector<Sideband> cvSidebands;
