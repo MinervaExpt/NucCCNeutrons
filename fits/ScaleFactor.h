@@ -6,13 +6,13 @@
 #define FIT_SCALEFACTOR_H
 
 //Fit includes
-#include "fit/Background.h"
+#include "fits/Background.h"
 
 namespace fit
 {
   struct ScaleFactor: public Background
   {
-    ScaleFactor(const std::string& name, const double /*sumBinWidths*/): Background(name) {}
+    ScaleFactor(const std::string& name, const double sumBinWidths): Background(name, sumBinWidths) {}
     virtual ~ScaleFactor() = default;
                                                                                                                                                              
     double functionToFit(const double /*binCenter*/, const double* pars) const override;

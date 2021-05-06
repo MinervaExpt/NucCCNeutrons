@@ -6,14 +6,14 @@
 #define FIT_LINEARFIT_H
 
 //fit includes
-#include "fit/Background.h"
+#include "fits/Background.h"
 
 namespace fit
 {
   class LinearFit: public Background
   {
     public:
-      LinearFit(const std::string& name, const double sumBinWidths): Background(name), fSumBinWidths(sumBinWidths) {}
+      LinearFit(const std::string& name, const double sumBinWidths): Background(name, sumBinWidths), fSumBinWidths(sumBinWidths) {}
       virtual ~LinearFit() = default;
 
       double functionToFit(const double binCenter, const double* pars) const override;

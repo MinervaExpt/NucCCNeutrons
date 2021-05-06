@@ -7,6 +7,13 @@
 #include "fits/Universe.h"
 #include "fits/Background.h"
 
+//util includes
+#include "util/units.h" //Kludge to fix problem with radians which comes up in vector.h
+#include "util/mathWithUnits.h"
+
+//ROOT includes
+#include "Math/Minimizer.h"
+
 //c++ includes
 #include <cassert>
 #include <numeric> //std::accumulate in c++14
@@ -15,7 +22,7 @@
 namespace fit
 {
   Universe::Universe(const std::vector<Sideband>& sidebands, std::vector<Background*> backgrounds, const double POTRatio,
-                     const int firstBin = 1, const int lastBin = -1): IBaseFunctionMultiDimTempl<double>(), fSidebands(sidebands), fBackgrounds(backgrounds), fPOTScale(POTRatio), fFirstBin(firstBin), fLastBin(lastBin)
+                     const int firstBin, const int lastBin): IBaseFunctionMultiDimTempl<double>(), fSidebands(sidebands), fBackgrounds(backgrounds), fPOTScale(POTRatio), fFirstBin(firstBin), fLastBin(lastBin)
   {
     //TODO: assert() that all sidebands have same binning
     assert(!fSidebands.empty() && "Requested sideband fit with no sidebands!");
@@ -29,13 +36,13 @@ namespace fit
     if(fLastBin < fFirstBin) fLastBin = fSidebands.front().data.GetXaxis()->GetNbins();
   }
  
-  unsigned int Universe::NDim() const override
+  unsigned int Universe::NDim() const 
   {
     return std::accumulate(fBackgrounds.begin(), fBackgrounds.end(), 0l, [](const int sum, const Background* bkg) { return sum + bkg->nPars(); });
   }
  
   //Chi squared objective function that some ROOT fitter will optimize in parameters
-  double Universe::DoEval(const double* parameters) const override
+  double Universe::DoEval(const double* parameters) const 
   {
     //Add the chi2 statistic for each sideband together with the others.  Assuming the same
     //binning in each sideband N, each sideband's chi2 has N-1 degrees of freedom.  So, they
@@ -66,6 +73,7 @@ namespace fit
           floatingSum += sideband.floatingHists[whichBackground]->GetBinContent(whichBin) * backgroundFitFuncs[whichBackground];
         }
         //Don't add to chi2 if denominator is < 32-bit floating point precision.
+        using namespace units;
         if(dataErr > 1e-10) chi2 += pow<2>((floatingSum + sideband.fixedSum->GetBinContent(whichBin))*fPOTScale - dataContent)/pow<2>(dataErr); //dataContent;
       }
     } //For each bin
@@ -101,6 +109,7 @@ namespace fit
         //      uncertainty on universe histograms for anything.
         const double sqErrOnScaleFactor = bkg->getSqErrOnFunction(binCenter, parameters + firstParam, errors + firstParam),
                      errOnBin = floatHist->GetBinError(whichBin);
+        using namespace units;
         floatHist->SetBinError(whichBin, std::sqrt(pow<2>(errOnBin) * pow<2>(scaleFactor) + sqErrOnScaleFactor * pow<2>(oldContent))); //Uncerainty on product of uncorrelated random variables
       } //For each bin
  
@@ -109,7 +118,7 @@ namespace fit
   } //scale()
  
   //Required for ROOT fittable function base class :(
-  IBaseFunctionMultiDimTempl<double>* Universe::Clone() const override
+  ROOT::Math::IBaseFunctionMultiDimTempl<double>* Universe::Clone() const 
   {
     return new Universe(fSidebands, fBackgrounds, fPOTScale, fFirstBin);
   }

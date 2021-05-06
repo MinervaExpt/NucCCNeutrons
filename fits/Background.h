@@ -46,7 +46,7 @@ namespace fit
       std::string name; //This background scales all histograms with this string in their names
 
       template <class DERIVED>
-      using Registrar = util::Registrar<Background, DERIVED, std::string&, double>;
+      using Registrar = plgn::Registrar<Background, DERIVED, std::string&, double>;
   
     //Helper functions for guessing parameter starting values
     protected:

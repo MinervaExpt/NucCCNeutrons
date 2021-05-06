@@ -15,6 +15,14 @@
 //c++ includes
 #include <vector>
 
+namespace ROOT
+{
+  namespace Math
+  {
+    class Minimizer;
+  }
+}
+
 namespace fit
 {
   class Background;

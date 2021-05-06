@@ -18,6 +18,7 @@
 
 //Get the unit definitions for my analysis
 #include "util/units.h"
+#include "util/vector.h"
 
 //c++ includes
 #include <numeric>

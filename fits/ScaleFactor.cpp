@@ -3,7 +3,7 @@
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
 //Fit includes
-#include "fit/ScaleFactor.h"
+#include "fits/ScaleFactor.h"
 
 //util includes
 #include "util/mathWithUnits.h" //For pow<>()
@@ -12,19 +12,23 @@
 //ROOT includes
 #include "Math/Minimizer.h"
 
+//c++ includes
+#include <cassert>
+
 namespace fit
 {
-  double ScaleFactor::functionToFit(const double /*binCenter*/, const double* pars) const override
+  double ScaleFactor::functionToFit(const double /*binCenter*/, const double* pars) const 
   {
     return pars[0];
   }
                                                                                                                                                            
-  double ScaleFactor::getSqErrOnFunction(const double /*binCenter*/, const double* /*pars*/, const double* parErrs) const override
+  double ScaleFactor::getSqErrOnFunction(const double /*binCenter*/, const double* /*pars*/, const double* parErrs) const 
   {
+    using namespace units;
     return pow<2>(parErrs[0]);
   }
                                                                                                                                                            
-  void ScaleFactor::guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const override
+  void ScaleFactor::guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const 
   {
     const auto largestSideband = getMostPureSideband(sidebands);
     assert(largestSideband != sidebands.end());
@@ -44,5 +48,5 @@ namespace fit
 
 namespace
 {
-  fit::Background::Registrar<fit::ScaleFactor> reg_scaleFactor("ScaleFactor");
+  //fit::Background::Registrar<fit::ScaleFactor> reg_scaleFactor("ScaleFactor");
 }

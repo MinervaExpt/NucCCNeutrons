@@ -17,38 +17,38 @@
 namespace fit
 {
   //Construct a Sideband in the CV
-  Sideband::Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& floatingBackgroundNames, const std::vector<std::string>& fixedNames, const bool floatSignal = false)
+  Sideband::Sideband(const std::string& sidebandName, TDirectoryFile& dataDir, TDirectoryFile& mcDir, const std::vector<std::string>& floatingBackgroundNames, const std::vector<std::string>& fixedNames, const bool floatSignal)
   {
     //Unfortunately, the data in the selection region has a different naming convention.  It ends with "_Signal".
     //TODO: Just rename histograms in ExtractCrossSection so that data ends with "_Data" in selection region too.  "Signal" is a stupid and confusing name anyway.
     try
     { 
-      data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Data")->GetCVHistoWithStatError();  
+      data = util::GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Data")->GetCVHistoWithStatError();  
     }
     catch(const std::runtime_error& e)
     { 
-      data = GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal")->GetCVHistoWithStatError();
+      data = util::GetIngredient<PlotUtils::MnvH1D>(dataDir, sidebandName + "_Signal")->GetCVHistoWithStatError();
     }
 
     for(const auto bkg: floatingBackgroundNames)
     {
-      floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg));
+      floatingHists.push_back(util::GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + bkg));
     }
 
     fixedSum.reset(static_cast<PlotUtils::MnvH1D*>(floatingHists.front()->Clone()));
     fixedSum->Reset();
-    for(const auto& fixed: fixedNames) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed));
+    for(const auto& fixed: fixedNames) fixedSum->Add(util::GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_Background_" + fixed));
 
     //Let signal float too
     try
     {
-      if(!floatSignal) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
-      else floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
+      if(!floatSignal) fixedSum->Add(util::GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
+      else floatingHists.push_back(util::GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_TruthSignal"));
     }
     catch(const std::runtime_error& e)
     {
-      if(!floatSignal) fixedSum->Add(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
-      else floatingHists.push_back(GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
+      if(!floatSignal) fixedSum->Add(util::GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
+      else floatingHists.push_back(util::GetIngredient<PlotUtils::MnvH1D>(mcDir, sidebandName + "_SelectedMCEvents"));
     }
   }
 

@@ -16,7 +16,7 @@
 
 namespace fit
 {
-  struct Sideband
+  class Sideband
   {
     public:
       //Construct a Sideband in the CV
@@ -33,7 +33,6 @@ namespace fit
 
       //Make the compiler happy.
       Sideband(const Sideband& parent);
-    }
   };
 }
 

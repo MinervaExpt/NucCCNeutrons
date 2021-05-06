@@ -5,9 +5,6 @@
 //Usage: FitSidebands <data.root> <mc.root>
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-//Fit includes
-#include "fit/Background.h"
-
 //PlotUtils includes
 #include "PlotUtils/MnvH1D.h"
 
