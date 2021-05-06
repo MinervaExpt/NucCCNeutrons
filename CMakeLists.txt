@@ -73,6 +73,7 @@ add_subdirectory(cuts)
 add_subdirectory(reweighters)
 add_subdirectory(fiducials)
 add_subdirectory(systematics)
+add_subdirectory(fits)
 
 #Build main executables
 add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets> $<TARGET_OBJECTS:fiducials> $<TARGET_OBJECTS:systematics>) #$<TARGET_OBJECTS:reweighters>)
