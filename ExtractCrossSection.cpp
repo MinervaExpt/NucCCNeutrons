@@ -7,6 +7,9 @@
 //
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
+//util includes
+#include "util/GetIngredient.h"
+
 //UnfoldUtils includes
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
@@ -61,19 +64,6 @@ namespace std
   };
 }
 
-//Get a cross section ingredient histogram or TObject with a useful message on failure
-template <class TYPE>
-TYPE* GetIngredient(TDirectoryFile& dir, const std::string& ingredient)
-{
-  TObject* obj = dir.Get(ingredient.c_str());
-  if(obj == nullptr) throw std::runtime_error("Failed to get " + ingredient + " in " + dir.GetName());
-
-  auto typed = dynamic_cast<TYPE*>(obj);
-  if(typed == nullptr) throw std::runtime_error(std::string("Found ") + obj->GetName() + ", but it's not the right kind of TObject.");
-
-  return typed;
-}
-
 //Plot a step in cross section extraction.
 void Plot(PlotUtils::MnvH1D& hist, const std::string& stepName, const std::string& prefix)
 {
@@ -107,12 +97,6 @@ void Plot(PlotUtils::MnvH1D& hist, const std::string& stepName, const std::strin
 
   plotter.DrawErrorSummary(&hist, "TR", true, true, 1e-5, false, "Other");
   can.Print((prefix + "_" + stepName + "_otherUncertainties.png").c_str());
-}
-
-template <class TYPE>
-TYPE* GetIngredient(TDirectoryFile& dir, const std::string& ingredient, const std::string& prefix)
-{
-  return GetIngredient<TYPE>(dir, prefix + "_" + ingredient);
 }
 
 //Unfolding function from Aaron Bercelle
@@ -213,19 +197,19 @@ int main(const int argc, const char** argv)
     if(endOfPrefix != std::string::npos) crossSectionPrefixes.push_back(keyName.substr(0, endOfPrefix));
   }
 
-  const double mcPOT = GetIngredient<TParameter<double>>(*mcFile, "POTUsed")->GetVal(),
-               dataPOT = GetIngredient<TParameter<double>>(*dataFile, "POTUsed")->GetVal();
+  const double mcPOT = util::GetIngredient<TParameter<double>>(*mcFile, "POTUsed")->GetVal(),
+               dataPOT = util::GetIngredient<TParameter<double>>(*dataFile, "POTUsed")->GetVal();
 
   for(const auto& prefix: crossSectionPrefixes)
   {
     try
     {
-      auto flux = GetIngredient<PlotUtils::MnvH1D>(*mcFile, "reweightedflux_integrated", prefix);
-      auto folded = GetIngredient<PlotUtils::MnvH1D>(*dataFile, "Signal", prefix);
+      auto flux = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, "reweightedflux_integrated", prefix);
+      auto folded = util::GetIngredient<PlotUtils::MnvH1D>(*dataFile, "Signal", prefix);
       Plot(*folded, "data", prefix);
-      auto migration = GetIngredient<PlotUtils::MnvH2D>(*mcFile, "Migration", prefix);
-      auto effNum = GetIngredient<PlotUtils::MnvH1D>(*mcFile, "EfficiencyNumerator", prefix);
-      auto effDenom = GetIngredient<PlotUtils::MnvH1D>(*mcFile, "EfficiencyDenominator", prefix);
+      auto migration = util::GetIngredient<PlotUtils::MnvH2D>(*mcFile, "Migration", prefix);
+      auto effNum = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, "EfficiencyNumerator", prefix);
+      auto effDenom = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, "EfficiencyDenominator", prefix);
       auto simEventRate = effDenom->Clone(); //Make a copy for later
 
       const auto fiducialFound = std::find_if(mcFile->GetListOfKeys()->begin(), mcFile->GetListOfKeys()->end(),
@@ -237,7 +221,7 @@ int main(const int argc, const char** argv)
                                               });
       if(fiducialFound == mcFile->GetListOfKeys()->end()) throw std::runtime_error("Failed to find a number of nucleons that matches prefix " + prefix);
 
-      auto nNucleons = GetIngredient<TParameter<double>>(*mcFile, (*fiducialFound)->GetName()); //Dan: Use the same truth fiducial volume for all extractions.  The acceptance correction corrects data back to this fiducial even if the reco fiducial cut is different.
+      auto nNucleons = util::GetIngredient<TParameter<double>>(*mcFile, (*fiducialFound)->GetName()); //Dan: Use the same truth fiducial volume for all extractions.  The acceptance correction corrects data back to this fiducial even if the reco fiducial cut is different.
 
       //Look for backgrounds with <prefix>_<analysis>_Background_<name>
       std::vector<PlotUtils::MnvH1D*> backgrounds;
@@ -245,7 +229,7 @@ int main(const int argc, const char** argv)
       {
         if(std::string(key->GetName()).find(prefix + "_Background_") != std::string::npos)
         {
-          backgrounds.push_back(GetIngredient<PlotUtils::MnvH1D>(*mcFile, key->GetName()));
+          backgrounds.push_back(util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, key->GetName()));
         }
       }
 

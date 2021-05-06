@@ -94,7 +94,7 @@ add_dependencies(ProcessAnaTuples generateGitVersion)
 target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
 target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} PlotUtils UnfoldUtils)
 target_link_libraries(SwapSysUnivWithCV ${ROOT_LIBRARIES} PlotUtils)
-target_link_libraries(FitSidebands ${ROOT_LIBRARIES} PlotUtils)
+target_link_libraries(FitSidebands ${ROOT_LIBRARIES} PlotUtils $<TARGET_OBJECTS:backgroundFits> fits util yaml-cpp)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 install(TARGETS ExtractCrossSection DESTINATION bin)
