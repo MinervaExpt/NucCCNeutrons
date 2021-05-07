@@ -82,7 +82,7 @@ add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library
 add_executable(ExtractCrossSection ExtractCrossSection.cpp)
 add_executable(SwapSysUnivWithCV SwapSysUnivWithCV.cpp)
-add_executable(FitSidebands FitSidebands.cpp)
+add_executable(FitSidebands FitSidebands.cpp $<TARGET_OBJECTS:backgroundFits>)
 
 #Build libraries that main executables depend on
 add_subdirectory(units)
@@ -94,7 +94,7 @@ add_dependencies(ProcessAnaTuples generateGitVersion)
 target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
 target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} PlotUtils UnfoldUtils)
 target_link_libraries(SwapSysUnivWithCV ${ROOT_LIBRARIES} PlotUtils)
-target_link_libraries(FitSidebands ${ROOT_LIBRARIES} PlotUtils $<TARGET_OBJECTS:backgroundFits> fits util yaml-cpp)
+target_link_libraries(FitSidebands ${ROOT_LIBRARIES} PlotUtils fits util yaml-cpp)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 install(TARGETS ExtractCrossSection DESTINATION bin)

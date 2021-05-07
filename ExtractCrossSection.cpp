@@ -153,8 +153,8 @@ PlotUtils::MnvH1D* normalize(PlotUtils::MnvH1D* efficiencyCorrected, PlotUtils::
   efficiencyCorrected->Divide(efficiencyCorrected, fluxIntegral);
 
   efficiencyCorrected->Scale(1./nNucleons/POT);
-  efficiencyCorrected->Scale(1., "width");
   efficiencyCorrected->Scale(1.e4); //Flux histogram is in m^-2, but convention is to report cm^2
+  efficiencyCorrected->Scale(1., "width");
 
   return efficiencyCorrected;
 }

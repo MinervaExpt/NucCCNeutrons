@@ -1,3 +1,3 @@
 install(FILES multiNeutron.yaml NeutronDetection_lowq3.yaml NeutronDetection_highq3.yaml InclusivePzPT.yaml InclusivePzPTWithCCQENu.yaml NSFValidation.yaml EAvailableResolution_StudyOnly.yaml NeutronDetection_StudyOnly.yaml NeutronMultiplicity_StudyOnly.yaml NeutronPurity_StudyOnly.yaml DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-install(FILES Targets.yaml CommonModels.yaml StandardSystematics.yaml DESTINATION bin)
+install(FILES Targets.yaml CommonModels.yaml StandardSystematics.yaml exampleFit.yaml DESTINATION bin)

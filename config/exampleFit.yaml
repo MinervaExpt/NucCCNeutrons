@@ -1,0 +1,12 @@
+fitToSelection: true
+range:
+  lastBin: 19
+fits:
+  signal: !ScaleFactor
+    min: 0.5
+  1_Neutron: !LinearFit
+  0_Neutrons: !LinearFit
+  ChargedPions: !LinearFit
+  NeutralPionsOnly: !LinearFit
+  #MultiPi: !LinearFit
+ignoreSidebands: ["MultiPi"]
