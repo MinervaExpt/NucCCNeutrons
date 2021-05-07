@@ -12,20 +12,7 @@ namespace fit
 {
   struct ScaleFactor: public Background
   {
-    ScaleFactor(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths), fHasScaleMin(false), fHasScaleMax(false)
-    {
-      if(config["min"])
-      {
-        fHasScaleMin = true;
-        fScaleMin = config["min"].as<double>();
-      }
-      if(config["max"])
-      {
-        fHasScaleMax = true;
-        fScaleMax = config["max"].as<double>();
-      }
-    }
-
+    ScaleFactor(const YAML::Node& config, const std::string& name, const double sumBinWidths);
     virtual ~ScaleFactor() = default;
                                                                                                                                                              
     double functionToFit(const double /*binCenter*/, const double* pars) const override;

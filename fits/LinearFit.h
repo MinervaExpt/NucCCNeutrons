@@ -13,7 +13,7 @@ namespace fit
   class LinearFit: public Background
   {
     public:
-      LinearFit(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths), fSumBinWidths(sumBinWidths) {}
+      LinearFit(const YAML::Node& config, const std::string& name, const double sumBinWidths);
       virtual ~LinearFit() = default;
 
       double functionToFit(const double binCenter, const double* pars) const override;
@@ -23,6 +23,17 @@ namespace fit
 
     private:
       const double fSumBinWidths;
+
+      //TODO: This delayed configuration is getting too verbose
+      bool fHasFirstBinMin;
+      double fFirstBinMin;
+      bool fHasFirstBinMax;
+      double fFirstBinMax;
+
+      bool fHasLastBinMin;
+      double fLastBinMin;
+      bool fHasLastBinMax;
+      double fLastBinMax;
   };
 }
 

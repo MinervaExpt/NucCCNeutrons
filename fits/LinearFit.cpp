@@ -17,7 +17,43 @@
 
 namespace fit
 {
-  double LinearFit::functionToFit(const double binCenter, const double* pars) const 
+  LinearFit::LinearFit(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths), fSumBinWidths(sumBinWidths), fHasFirstBinMin(false), fHasFirstBinMax(false), fHasLastBinMin(false), fHasLastBinMax(false)
+ {
+   if(config.IsMap())
+   {
+     if(config["firstBin"])
+     {
+       if(config["firstBin"]["min"])
+       {
+         fHasFirstBinMin = true;
+         fFirstBinMin = config["firstBin"]["min"].as<double>();
+       }
+
+       if(config["firstBin"]["max"])
+       {
+         fHasFirstBinMax = true;
+         fFirstBinMax = config["firstBin"]["max"].as<double>();
+       }
+     }
+
+     if(config["lastBin"])
+     {
+       if(config["lastBin"]["min"])
+       {
+         fHasLastBinMin = true;
+         fLastBinMin = config["lastBin"]["min"].as<double>();
+       }
+
+       if(config["lastBin"]["max"])
+       {
+         fHasLastBinMax = true;
+         fLastBinMax = config["lastBin"]["max"].as<double>();
+       }
+     }
+  }
+ }
+
+  double LinearFit::functionToFit(const double binCenter, const double* pars) const
   {
     const double slope = (pars[1] - pars[0]) / fSumBinWidths;
     return pars[0] + slope * binCenter;
@@ -41,9 +77,22 @@ namespace fit
     //const double slopeGuess = (mcRatio->GetMaximum() - interceptGuess) / (mcRatio->GetXaxis()->GetBinCenter(mcRatio->GetMaximumBin()) - mcRatio->GetXaxis()->GetBinCenter(1));
 
     min.SetVariable(nextPar, (name + " first bin").c_str(), firstBinGuess, firstBinGuess/20.);
-    //min.SetVariableLimits(nextPar, std::min(0.3, firstBinGuess), std::max(2., firstBinGuess)); //1.5);
+
+    if(fHasFirstBinMin)
+    {
+      if(fHasFirstBinMax) min.SetVariableLimits(nextPar, std::min(firstBinGuess, fFirstBinMin), std::max(firstBinGuess, fFirstBinMax));
+      else min.SetVariableLowerLimit(nextPar, std::min(firstBinGuess, fFirstBinMin));
+    }
+    else if(fHasFirstBinMax) min.SetVariableUpperLimit(nextPar, std::max(firstBinGuess, fFirstBinMax));
+
     min.SetVariable(nextPar + 1, (name + " last bin").c_str(), lastBinGuess, lastBinGuess/20.);
-    //min.SetVariableLimits(nextPar + 1, std::min(0.3, lastBinGuess), std::max(2., lastBinGuess)); //1.5);
+
+    if(fHasLastBinMin)
+    {
+      if(fHasLastBinMax) min.SetVariableLimits(nextPar + 1, std::min(firstBinGuess, fLastBinMin), std::max(firstBinGuess, fLastBinMax));
+      else min.SetVariableLowerLimit(nextPar + 1, std::min(firstBinGuess, fLastBinMin));  
+    }
+    else if(fHasLastBinMax) min.SetVariableUpperLimit(nextPar + 1, std::max(firstBinGuess, fLastBinMax));
   }
 }
 

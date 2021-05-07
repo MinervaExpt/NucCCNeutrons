@@ -9,8 +9,6 @@
 #include "fits/Sideband.h"
 #include "fits/Universe.h"
 #include "fits/Background.h"
-#include "fits/ScaleFactor.h" //TODO: Replace me with Factory later
-#include "fits/LinearFit.h" //TODO: Replace me with Factory later
 
 //util includes
 #include "util/mathWithUnits.h"
@@ -270,7 +268,7 @@ int main(const int argc, const char** argv)
       {
         backgrounds.emplace_back(plgn::Factory<fit::Background, const std::string&, double>::instance().Get(config["fits"][bkgName], bkgName, sumBinWidths).release());
       }
-      catch(const YAML::Exception& e)
+      catch(const std::exception& e)
       {
         std::cerr << "Failed to configure a fit for a background named " << bkgName << " because of a YAML error:\n" << e.what() << "\n";
         return 5;
