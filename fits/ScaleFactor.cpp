@@ -42,7 +42,12 @@ namespace fit
                                                                                                                                                            
     //min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
     min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
-    min.SetVariableLimits(nextPar, std::min(0.5, scaleGuess), std::max(2., scaleGuess)); //1.5);
+    if(fHasScaleMin)
+    {
+      if(fHasScaleMax) min.SetVariableLimits(nextPar, std::min(fScaleMin, scaleGuess), std::max(fScaleMax, scaleGuess));
+      else min.SetVariableLowerLimit(nextPar, std::min(fScaleMin, scaleGuess));
+    }
+    else if(fHasScaleMax) min.SetVariableUpperLimit(nextPar, std::max(fScaleMax, scaleGuess));
   }
 }
 

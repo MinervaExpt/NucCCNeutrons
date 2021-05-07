@@ -12,7 +12,20 @@ namespace fit
 {
   struct ScaleFactor: public Background
   {
-    ScaleFactor(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths) {}
+    ScaleFactor(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths), fHasScaleMin(false), fHasScaleMax(false)
+    {
+      if(config["min"])
+      {
+        fHasScaleMin = true;
+        fScaleMin = config["min"].as<double>();
+      }
+      if(config["max"])
+      {
+        fHasScaleMax = true;
+        fScaleMax = config["max"].as<double>();
+      }
+    }
+
     virtual ~ScaleFactor() = default;
                                                                                                                                                              
     double functionToFit(const double /*binCenter*/, const double* pars) const override;
@@ -20,6 +33,12 @@ namespace fit
     int nPars() const override { return 1; }
                                                                                                                                                              
     void guessInitialParameters(ROOT::Math::Minimizer& min, const int nextPar, const std::vector<Sideband>& sidebands, const double POTRatio) const override;
+
+    private:
+      bool fHasScaleMin;
+      double fScaleMin;
+      bool fHasScaleMax;
+      double fScaleMax;
   };
 }
 
