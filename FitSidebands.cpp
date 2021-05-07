@@ -201,18 +201,19 @@ int main(const int argc, const char** argv)
   }
 
   std::string mcBaseName = argv[3];
-  mcBaseName = mcBaseName.substr(0, mcBaseName.find(".root"));
-  if(gSystem->CopyFile(argv[3], (mcBaseName + "_constrainedBy_" + argv[1] + ".root").c_str()) != 0)
+  mcBaseName = mcBaseName.substr(0, mcBaseName.find(".root")) + "_constrainedBy_" + argv[1];
+  mcBaseName = mcBaseName.substr(0, mcBaseName.find(".yaml")) + ".root";
+  if(gSystem->CopyFile(argv[3], mcBaseName.c_str()) != 0)
   {
     std::cerr << "Failed to copy file with MC histograms named " << argv[2] << "\n";
     return 3;
   }
-  auto mcFile = TFile::Open((mcBaseName + "_constrained" + argv[1] + ".root").c_str(), "UPDATE");
+  auto mcFile = TFile::Open(mcBaseName.c_str(), "UPDATE");
 
   YAML::Node config;
   try
   {
-    config = YAML::Load(argv[1]);
+    config = YAML::LoadFile(argv[1]);
   }
   catch(const YAML::Exception& e)
   {
@@ -224,9 +225,24 @@ int main(const int argc, const char** argv)
   const std::string dummySelectionName = findSelectionName(*mcFile);
   const auto exampleHist = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, dummySelectionName + "_SelectedMCEvents");
 
-  const auto fitToSelection = config["fitToSelection"].as<bool>(false);
-  const int firstBin = config["range"]["first"].as<int>(1),
-            lastBin = config["range"]["last"].as<int>(exampleHist->GetXaxis()->GetNbins());
+  bool fitToSelection = false;
+  int firstBin = 1, lastBin = exampleHist->GetXaxis()->GetNbins();
+
+  try
+  {
+    if(config["fitToSelection"]) fitToSelection = config["fitToSelection"].as<bool>();
+    if(config["range"])
+    {
+      firstBin = config["range"]["firstBin"].as<int>(firstBin);
+      lastBin = config["range"]["lastBin"].as<int>(lastBin);
+    }
+  }
+  catch(const YAML::Exception& e)
+  {
+    std::cerr << "Failed to set up fitToSelection or fit range because:\n" << e.what() << "\n";
+    return 5;
+  }
+
   //fixedBackgroundNames is now inferred to be every Background that isn't listed in the YAML file
   //const auto fixedBackgroundNames = config["fixedBackgrounds"].as<std::vector<std::string>>({"Other"}); //{"Other", "ProtonsAboveAmitsThresholdOnly", "0_Neutrons", "MultiPi"}; //{"Other", "MultiPi", "0_Neutrons"};
 
@@ -250,7 +266,15 @@ int main(const int argc, const char** argv)
     if(config["fits"][bkgName])
     {
       backgroundsToFit.push_back(bkgName);
-      backgrounds.emplace_back(plgn::Factory<fit::Background, const std::string&, double>::instance().Get(config["fits"][bkgName], bkgName, sumBinWidths).release());
+      try
+      {
+        backgrounds.emplace_back(plgn::Factory<fit::Background, const std::string&, double>::instance().Get(config["fits"][bkgName], bkgName, sumBinWidths).release());
+      }
+      catch(const YAML::Exception& e)
+      {
+        std::cerr << "Failed to configure a fit for a background named " << bkgName << " because of a YAML error:\n" << e.what() << "\n";
+        return 5;
+      }
     }
     else fixedBackgroundNames.push_back(bkgName);
   }
