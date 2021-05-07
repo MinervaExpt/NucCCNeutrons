@@ -49,5 +49,5 @@ namespace fit
 
 namespace
 {
-  //fit::Background::Registrar<fit::LinearFit> reg_linearFit("LinearFit");
+  fit::Background::Registrar<fit::LinearFit> reg_linearFit("LinearFit");
 }

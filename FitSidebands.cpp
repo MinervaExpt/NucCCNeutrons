@@ -15,6 +15,7 @@
 //util includes
 #include "util/mathWithUnits.h"
 #include "util/GetIngredient.h"
+#include "util/Factory.cpp"
 
 //PlotUtils includes
 #include "PlotUtils/MnvH1D.h"
@@ -33,6 +34,9 @@
 #include "TGraph.h"
 #include "TGraph2D.h"
 #include "TCanvas.h"
+
+//yaml-cpp include for configuration
+#include "yaml-cpp/yaml.h"
 
 namespace
 {
@@ -63,7 +67,7 @@ namespace
     return std::vector<std::string>(uniquePrefixes.begin(), uniquePrefixes.end());
   }
 
-  std::vector<std::string> findBackgroundNames(TDirectoryFile& dir, const std::vector<std::string>& fixedBackgrounds)
+  std::vector<std::string> findBackgroundNames(TDirectoryFile& dir)
   {
     const std::string tag = "_Background_";
     std::set<std::string> uniqueBackgrounds;
@@ -74,8 +78,7 @@ namespace
       if(bkgLocation != std::string::npos)
       {
         const std::string bkgName = keyName.substr(bkgLocation + tag.length(), std::string::npos);
-        if(std::find(fixedBackgrounds.begin(), fixedBackgrounds.end(), bkgName) == fixedBackgrounds.end())
-          uniqueBackgrounds.insert(bkgName);
+        uniqueBackgrounds.insert(bkgName);
       }
     }
 
@@ -183,50 +186,80 @@ int main(const int argc, const char** argv)
   TH1::AddDirectory(kFALSE); //Don't add any temporary histograms to the output file by default.  Let me delete them myself.
   gErrorIgnoreLevel = kWarning; //Silence TCanvas::Print()
 
-  const bool floatSignal = true,
-             fitToSelection = true;
-  const int firstBin = 1,
-            lastBin = 19;
-
-  if(argc != 3) //Remember that argv[0] is the executable name
+  if(argc != 4) //Remember that argv[0] is the executable name
   {
-    std::cerr << "Expected exactly 2 arguments, but got " << argc-1 << "\n"
-              << "USAGE: FitSidebands <data.root> <mc.root>\n";
+    std::cerr << "Expected exactly 3 arguments, but got " << argc-1 << "\n"
+              << "USAGE: FitSidebands <config.yaml> <data.root> <mc.root>\n";
     return 1;
   }
 
-  auto dataFile = TFile::Open(argv[1], "READ");
+  auto dataFile = TFile::Open(argv[2], "READ");
   if(!dataFile)
   {
-    std::cerr << "Failed to open file with data histograms named " << argv[1] << "\n";
+    std::cerr << "Failed to open file with data histograms named " << argv[2] << "\n";
     return 2;
   }
 
-  std::string mcBaseName = argv[2];
+  std::string mcBaseName = argv[3];
   mcBaseName = mcBaseName.substr(0, mcBaseName.find(".root"));
-  if(gSystem->CopyFile(argv[2], (mcBaseName + "_constrained.root").c_str()) != 0)
+  if(gSystem->CopyFile(argv[3], (mcBaseName + "_constrainedBy_" + argv[1] + ".root").c_str()) != 0)
   {
     std::cerr << "Failed to copy file with MC histograms named " << argv[2] << "\n";
     return 3;
   }
-  auto mcFile = TFile::Open((mcBaseName + "_constrained.root").c_str(), "UPDATE");
+  auto mcFile = TFile::Open((mcBaseName + "_constrained" + argv[1] + ".root").c_str(), "UPDATE");
 
+  YAML::Node config;
+  try
+  {
+    config = YAML::Load(argv[1]);
+  }
+  catch(const YAML::Exception& e)
+  {
+    std::cerr << "Failed to configure sideband fit from " << argv[1] << " because:\n" << e.what() << "\n";
+    return 4;
+  }
+
+  //Configure this program using the input YAML file
+  const std::string dummySelectionName = findSelectionName(*mcFile);
+  const auto exampleHist = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, dummySelectionName + "_SelectedMCEvents");
+
+  const auto fitToSelection = config["fitToSelection"].as<bool>(false);
+  const int firstBin = config["range"]["first"].as<int>(1),
+            lastBin = config["range"]["last"].as<int>(exampleHist->GetXaxis()->GetNbins());
+  //fixedBackgroundNames is now inferred to be every Background that isn't listed in the YAML file
+  //const auto fixedBackgroundNames = config["fixedBackgrounds"].as<std::vector<std::string>>({"Other"}); //{"Other", "ProtonsAboveAmitsThresholdOnly", "0_Neutrons", "MultiPi"}; //{"Other", "MultiPi", "0_Neutrons"};
+
+  //Figure out where the rest of the histograms belong by context
   const double mcPOT = util::GetIngredient<TParameter<double>>(*mcFile, "POTUsed")->GetVal(),
                dataPOT = util::GetIngredient<TParameter<double>>(*dataFile, "POTUsed")->GetVal();
 
   //const auto crossSectionPrefixes = findCrossSectionPrefixes(*dataFile); //TODO: Maybe this is the longest unique string at the beginning of all keys?
 
-  const std::vector<std::string> fixedBackgroundNames = {"Other", "ProtonsAboveAmitsThresholdOnly", "0_Neutrons", "MultiPi"}; //{"Other", "MultiPi", "0_Neutrons"};
-  const auto backgroundsToFit = findBackgroundNames(*mcFile, fixedBackgroundNames);
+  const auto allBackgrounds = findBackgroundNames(*mcFile);
 
   //Figure out sum of bin widths in fit region in case I want to use a linearly scaled background
-  const std::string dummySelectionName = findSelectionName(*mcFile);
-  const auto exampleHist = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, dummySelectionName + "_SelectedMCEvents");
   const double sumBinWidths = exampleHist->GetBinLowEdge(lastBin + 1) - exampleHist->GetBinLowEdge(firstBin);
 
+  //TODO: YAML-ify this with Factory.  Perhaps hold all backgrounds not listed constant?
   std::vector<fit::Background*> backgrounds;
-  for(const auto& bkgName: backgroundsToFit) backgrounds.push_back(new fit::LinearFit(bkgName, sumBinWidths)); //fit::ScaleFactor(bkgName, sumBinWidths));
-  if(floatSignal) backgrounds.push_back(new fit::ScaleFactor("Signal", sumBinWidths));
+  std::vector<std::string> fixedBackgroundNames, backgroundsToFit;
+  bool floatSignal = false;
+  for(const auto& bkgName: allBackgrounds)
+  {
+    if(config["fits"][bkgName])
+    {
+      backgroundsToFit.push_back(bkgName);
+      backgrounds.emplace_back(plgn::Factory<fit::Background, const std::string&, double>::instance().Get(config["fits"][bkgName], bkgName, sumBinWidths).release());
+    }
+    else fixedBackgroundNames.push_back(bkgName);
+  }
+  if(config["fits"]["signal"]) //Treating the signal as something that can be fit needs to be handled specially because
+                               //signal histograms annoyingly have a different naming convention.
+  {
+    floatSignal = true;
+    backgrounds.emplace_back(plgn::Factory<fit::Background, const std::string&, double>::instance().Get(config["fits"]["signal"], "Signal", sumBinWidths).release());
+  }
 
   //Program status to return to the operating system.  Nonzero indicates a problem that will stop
   //i.e. a cross section extraction script.  I'm going to keep going if an individual fit fails
@@ -238,11 +271,11 @@ int main(const int argc, const char** argv)
     const std::string selectionName = findSelectionName(*mcFile);
     /*const*/ std::vector<std::string> sidebandNames = findSidebandNames(*mcFile, selectionName);
 
-    //Don't include the multi-pi sideband in the fit at all.  I shouldn't need it because its background is insignificant in the selection region.
-    //This sideband isn't very pure in MultiPi backgrounds anyway.
-    //TODO: Just stop including this sideband in the event loop
-    auto toRemove = std::remove_if(sidebandNames.begin(), sidebandNames.end(), [](const auto& name) { return name.find("MultiPi") != std::string::npos; });
-    sidebandNames.erase(toRemove, sidebandNames.end());
+    for(const auto nameToIgnore: config["ignoreSidebands"])
+    {
+      auto toRemove = std::remove_if(sidebandNames.begin(), sidebandNames.end(), [&nameToIgnore](const auto& name) { return name.find(nameToIgnore.as<std::string>()) != std::string::npos; });
+      sidebandNames.erase(toRemove, sidebandNames.end());
+    }
 
     //Fit the Central Value (CV) backgrounds.  These are the numbers actually subtracted from the data to make it a cross section.
     std::vector<fit::Sideband> cvSidebands;

@@ -48,5 +48,5 @@ namespace fit
 
 namespace
 {
-  //fit::Background::Registrar<fit::ScaleFactor> reg_scaleFactor("ScaleFactor");
+  fit::Background::Registrar<fit::ScaleFactor> reg_scaleFactor("ScaleFactor");
 }

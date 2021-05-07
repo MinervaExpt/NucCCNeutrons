@@ -12,7 +12,7 @@ namespace fit
 {
   struct ScaleFactor: public Background
   {
-    ScaleFactor(const std::string& name, const double sumBinWidths): Background(name, sumBinWidths) {}
+    ScaleFactor(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths) {}
     virtual ~ScaleFactor() = default;
                                                                                                                                                              
     double functionToFit(const double /*binCenter*/, const double* pars) const override;

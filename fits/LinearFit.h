@@ -13,7 +13,7 @@ namespace fit
   class LinearFit: public Background
   {
     public:
-      LinearFit(const std::string& name, const double sumBinWidths): Background(name, sumBinWidths), fSumBinWidths(sumBinWidths) {}
+      LinearFit(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths), fSumBinWidths(sumBinWidths) {}
       virtual ~LinearFit() = default;
 
       double functionToFit(const double binCenter, const double* pars) const override;

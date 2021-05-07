@@ -12,6 +12,9 @@
 //ROOT includes
 #include "TH1D.h"
 
+//yaml-cpp include for configuration
+#include "yaml-cpp/yaml.h"
+
 //c++ includes
 #include <memory>
 #include <string>
@@ -32,7 +35,8 @@ namespace fit
   class Background
   {
     public:
-      Background(const std::string& bkgdName, const double /*sumBinWidths*/): name(bkgdName) {}
+      //TODO: Get parameter limits from config
+      Background(const YAML::Node& config, const std::string& bkgdName, const double /*sumBinWidths*/): name(bkgdName) {}
       virtual ~Background() = default;
   
       //functionToFit() tries to model a data/MC ratio for a specific background in a sideband.
@@ -46,7 +50,7 @@ namespace fit
       std::string name; //This background scales all histograms with this string in their names
 
       template <class DERIVED>
-      using Registrar = plgn::Registrar<Background, DERIVED, std::string&, double>;
+      using Registrar = plgn::Registrar<Background, DERIVED, const std::string&, double>;
   
     //Helper functions for guessing parameter starting values
     protected:
