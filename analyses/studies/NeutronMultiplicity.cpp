@@ -59,7 +59,7 @@ namespace ana
     template <class CAND>
     bool countAsReco(const CAND& cand, const units::LorentzVector<mm>& vertex) const
     {
-      return (cand.z - vertex.z() < this->fRecoMaxZDist) && (cand.edep > this->fRecoMinEDep) && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtMuon(vertex, cand)) > fMinZCosine) && (DistFromVertex(vertex, cand) > fVertexBoxDist) && (fabs(CosineWrtMuon(vertex, cand)) > fPi0RemovalCosineMin) && (fabs(CosineWrtMuon(vertex, cand)) < fPi0RemovalCosineMax);
+      return (cand.z - vertex.z() < this->fRecoMaxZDist) && (cand.edep > this->fRecoMinEDep) && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtZAxis(vertex, cand)) > fMinZCosine) && (DistFromVertex(vertex, cand) > fVertexBoxDist) && (fabs(CosineWrtZAxis(vertex, cand)) > fPi0RemovalCosineMin) && (fabs(CosineWrtZAxis(vertex, cand)) < fPi0RemovalCosineMax);
     }
 
     template <class FS>

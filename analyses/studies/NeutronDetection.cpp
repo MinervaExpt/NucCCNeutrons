@@ -45,7 +45,13 @@ namespace ana
                                                                                                                      config["binning"]["edep"].as<std::vector<double>>(),
                                                                                                                      config["binning"]["angle"].as<std::vector<double>>(),
                                                                                                                      config["binning"]["zDist"].as<std::vector<double>>(),
-                                                                                                                     config["binning"]["beta"].as<std::vector<double>>())
+                                                                                                                     config["binning"]["beta"].as<std::vector<double>>()),
+                                                                                                   fThreeDCandCosineResiduals(pdgCategories, dir, "CosineResidual3DCands", "Residual",
+                                                                                                                              config["binning"]["angle"].as<std::vector<double>>(), univs),
+                                                                                                   fTwoDCandCosineResiduals(pdgCategories, dir, "CosineResidual2DCands", "Residual",
+                                                                                                                            config["binning"]["angle"].as<std::vector<double>>(), univs),
+                                                                                                   fAllCandCosineResiduals(pdgCategories, dir, "CosineResidualAllCands", "Residual",
+                                                                                                                           config["binning"]["angle"].as<std::vector<double>>(), univs)
   {
     const auto energyBins = config["binning"]["energy"].as<std::vector<double>>();
     const auto angleBins = config["binning"]["angle"].as<std::vector<double>>();
@@ -64,7 +70,7 @@ namespace ana
 
   void NeutronDetection::data(const evt::Universe& event, const events weight)
   {
-    const auto cands = event.Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time());
+    const auto cands = event.Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_nViews());
     const auto vertex = event.GetVtx();
 
     for(const auto& cand: cands)
@@ -79,7 +85,7 @@ namespace ana
     const neutrons weightPerNeutron = weight.in<events>();
 
     //Physics objects I'll need
-    const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron());
+    const auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_nViews(), event.Getblob_FS_index(), event.Getblob_geant_dist_to_edep_as_neutron());
     const auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetTruthMatchedangle_wrt_z(), event.GetFSMomenta());
     const auto vertex = event.GetVtx();
 
@@ -105,6 +111,14 @@ namespace ana
         }
 
         fPDGToObservables[pdg].Fill(event, weightPerNeutron, cand, vertex);
+
+        if(cand.FS_index >= 0)
+        {
+          const double cosineResidual = CosineWrtZAxis(vertex, cand) - fs[cand.FS_index].angle_wrt_z;
+          if(cand.nViews > 1) fThreeDCandCosineResiduals[pdg].FillUniverse(event, cosineResidual, weightPerNeutron.in<neutrons>());
+          else fTwoDCandCosineResiduals[pdg].FillUniverse(event, cosineResidual, weightPerNeutron.in<neutrons>());
+          fAllCandCosineResiduals[pdg].FillUniverse(event, cosineResidual, weightPerNeutron.in<neutrons>());
+        }
       }
     }
 

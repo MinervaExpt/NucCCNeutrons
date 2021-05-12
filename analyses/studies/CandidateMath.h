@@ -25,7 +25,7 @@ namespace ana
   }
 
   template <class CANDIDATE>
-  double CosineWrtMuon(const units::LorentzVector<mm>& vertex, const CANDIDATE& cand)
+  double CosineWrtZAxis(const units::LorentzVector<mm>& vertex, const CANDIDATE& cand)
   {
     using namespace units;
     const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?

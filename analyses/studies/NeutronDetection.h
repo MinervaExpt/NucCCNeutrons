@@ -9,6 +9,7 @@
 
 //variables includes
 #include "analyses/studies/NeutronMultiplicity.cpp"
+#include "analyses/studies/CandidateMath.h"
 
 //util includes
 #include "util/Categorized.h"
@@ -52,6 +53,7 @@ namespace ana
         mm z;
         mm transverse;
         ns time;
+        int nViews;
       };
 
       struct MCCandidate
@@ -60,6 +62,7 @@ namespace ana
         mm z;
         mm transverse;
         ns time;
+        int nViews;
         int FS_index; //Mapping from a Candidate to an FSPart by index in the array of FSParts
         mm dist_to_edep_as_neutron; //Distance parent and ancestors travelled that were neutrons
       };
@@ -86,10 +89,10 @@ namespace ana
         void Fill(const evt::Universe& event, const neutrons weightPerNeutron, const CANDIDATE& cand, const units::LorentzVector<mm>& vertex)
         {
           using namespace units;
-          const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
-          const mm dist = sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ));
-          const double angle = deltaZ.in<mm>() / sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ)).template in<mm>();
-          const double beta = dist.in<mm>() / cand.time.template in<ns>() / 300.; //Speed of light is 300mm/ns
+          //const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
+          //const mm dist = DistFromVertex(vertex, cand); //sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ));
+          const double angle = CosineWrtZAxis(vertex, cand); //deltaZ.in<mm>() / sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ)).template in<mm>();
+          const double beta = Beta(vertex, cand); //dist.in<mm>() / cand.time.template in<ns>() / 300.; //Speed of light is 300mm/ns
                                                                                                                         
           fEDeps.Fill(&event, cand.edep, weightPerNeutron);
           fAngles.FillUniverse(&event, angle, weightPerNeutron.in<neutrons>());
@@ -131,6 +134,11 @@ namespace ana
       Observables* fDataCands; //Neutron candidate observables in data
 
       units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, neutrons, events>* fCandsPerFSNeutron;
+
+      //Residuals (reco - true) on theta w.r.t. the z axis
+      util::Categorized<PlotUtils::HistWrapper<evt::Universe>, int> fThreeDCandCosineResiduals;
+      util::Categorized<PlotUtils::HistWrapper<evt::Universe>, int> fTwoDCandCosineResiduals;
+      util::Categorized<PlotUtils::HistWrapper<evt::Universe>, int> fAllCandCosineResiduals;
   };
 }
 
