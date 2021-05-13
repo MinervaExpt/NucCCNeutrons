@@ -47,11 +47,11 @@ namespace ana
                                                                                                                      config["binning"]["zDist"].as<std::vector<double>>(),
                                                                                                                      config["binning"]["beta"].as<std::vector<double>>()),
                                                                                                    fThreeDCandCosineResiduals(pdgCategories, dir, "CosineResidual3DCands", "Residual",
-                                                                                                                              config["binning"]["angle"].as<std::vector<double>>(), univs),
+                                                                                                                              36, -180, 180, univs),
                                                                                                    fTwoDCandCosineResiduals(pdgCategories, dir, "CosineResidual2DCands", "Residual",
-                                                                                                                            config["binning"]["angle"].as<std::vector<double>>(), univs),
+                                                                                                                            36, -180, 180, univs),
                                                                                                    fAllCandCosineResiduals(pdgCategories, dir, "CosineResidualAllCands", "Residual",
-                                                                                                                           config["binning"]["angle"].as<std::vector<double>>(), univs)
+                                                                                                                           36, -180, 180, univs)
   {
     const auto energyBins = config["binning"]["energy"].as<std::vector<double>>();
     const auto angleBins = config["binning"]["angle"].as<std::vector<double>>();
@@ -114,10 +114,10 @@ namespace ana
 
         if(cand.FS_index >= 0)
         {
-          const double cosineResidual = CosineWrtZAxis(vertex, cand) - fs[cand.FS_index].angle_wrt_z;
-          if(cand.nViews > 1) fThreeDCandCosineResiduals[pdg].FillUniverse(event, cosineResidual, weightPerNeutron.in<neutrons>());
-          else fTwoDCandCosineResiduals[pdg].FillUniverse(event, cosineResidual, weightPerNeutron.in<neutrons>());
-          fAllCandCosineResiduals[pdg].FillUniverse(event, cosineResidual, weightPerNeutron.in<neutrons>());
+          const radians thetaResidual = acos(CosineWrtZAxis(vertex, cand)) - acos(fs[cand.FS_index].angle_wrt_z);
+          if(cand.nViews > 1) fThreeDCandCosineResiduals[pdg].Fill(&event, thetaResidual, weightPerNeutron);
+          else fTwoDCandCosineResiduals[pdg].Fill(&event, thetaResidual, weightPerNeutron);
+          fAllCandCosineResiduals[pdg].Fill(&event, thetaResidual, weightPerNeutron);
         }
       }
     }

@@ -166,6 +166,7 @@ int main(const int argc, const char** argv)
 
     //Name of the AnaTuple to read
     anaTupleName = options->ConfigFile()["app"]["AnaTupleName"].as<std::string>("NucCCNeutron");
+    const bool overrideTruthCuts = options->ConfigFile()["app"]["overrideTruthCuts"].as<bool>(false);
 
     //MnvHadronReweight needs a TreeWrapper because it tries to connect to the tree as soon as it is created.
     //TODO: Lots of error checking :(
@@ -248,6 +249,12 @@ int main(const int argc, const char** argv)
       for(auto constraint: fid->phaseSpace) truthPhaseSpace.emplace(truthPhaseSpace.begin(), constraint);
       for(auto sig: fid->signalDef) truthSignal.emplace(truthSignal.begin(), sig);
       for(auto cut: fid->recoCuts) recoCuts.emplace(recoCuts.begin(), cut);
+
+      if(overrideTruthCuts)
+      {
+        truthSignal.clear();
+        truthPhaseSpace.clear();
+      }
 
       decltype(recoCuts) sidebandCuts;
       fid->sidebands = app::setupSidebands(options->ConfigFile()["sidebands"], dirForFid, fid->backgrounds, universes, recoCuts, sidebandCuts);

@@ -32,6 +32,14 @@ namespace ana
     return deltaZ.in<mm>() / sqrt(pow<2>(cand.transverse) + pow<2>(deltaZ)).template in<mm>();
   }
 
+  template <class CANDIDATE>
+  radians ThetaWrtZAxis(const units::LorentzVector<mm>& vertex, const CANDIDATE& cand)
+  {
+    using namespace units;
+    const mm deltaZ = cand.z - (vertex.z() - 17_mm); //TODO: 17mm is half a plane width.  Correction for targets?
+    return atan2(cand.transverse.template in<mm>(), deltaZ.in<mm>());
+  }
+
   //Fraction of speed of light
   template <class CANDIDATE>
   double Beta(const units::LorentzVector<mm>& vertex, const CANDIDATE& cand)

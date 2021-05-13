@@ -136,9 +136,10 @@ namespace ana
       units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, neutrons, events>* fCandsPerFSNeutron;
 
       //Residuals (reco - true) on theta w.r.t. the z axis
-      util::Categorized<PlotUtils::HistWrapper<evt::Universe>, int> fThreeDCandCosineResiduals;
-      util::Categorized<PlotUtils::HistWrapper<evt::Universe>, int> fTwoDCandCosineResiduals;
-      util::Categorized<PlotUtils::HistWrapper<evt::Universe>, int> fAllCandCosineResiduals;
+      using HIST = units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, degrees, neutrons>;
+      util::Categorized<HIST, int> fThreeDCandCosineResiduals;
+      util::Categorized<HIST, int> fTwoDCandCosineResiduals;
+      util::Categorized<HIST, int> fAllCandCosineResiduals;
   };
 }
 
