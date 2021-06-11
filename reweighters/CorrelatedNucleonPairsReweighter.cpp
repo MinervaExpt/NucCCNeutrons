@@ -63,7 +63,7 @@ class CorrelatedNucleonPairsReweighter: public PlotUtils::Reweighter<UNIVERSE, E
 
 namespace
 {
-  plgn::Registrar<PlotUtils::Reweighter<evt::Universe, PlotUtils::detail::empty>> reg_nucleonPairReweight("CorrelatedNucleonPairsReweighter");
+  plgn::Registrar<PlotUtils::Reweighter<evt::Universe, PlotUtils::detail::empty>, CorrelatedNucleonPairsReweighter<evt::Universe, PlotUtils::detail::empty>> reg_nucleonPairReweight("CorrelatedNucleonPairsReweighter");
 }
 
 #endif //CORRELATEDNUCLEONPAIRSREWEIGHTER_H
