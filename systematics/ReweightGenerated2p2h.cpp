@@ -45,6 +45,31 @@ namespace sys
         return 1.0;
       }
 
+      double GetWeightRatioToCV() const override
+      {
+        if(GetInt("mc_intType")!=8) return 1.0;
+
+        if(GetInt("mc_targetZ")<2)
+        {
+          return 1.0; //There is no 2p2h on hydrogen.
+        }
+
+        bool isnnorpp = false;
+        bool isnp = false;
+        //now target analysis
+        int target = GetInt("mc_targetNucleon");
+        if(target-2000000200==0 || target-2000000200==2) isnnorpp = true;
+        if(target-2000000200==1) isnp = true;
+
+        //TODO: These might need to be divided by the CV weight?  I guess this isn't a systematic on any specific Reweighter though.
+        //      It's currently designed to override the MINERvA 2p2h tune, but I don't think it should even do that.
+        //TODO: Perhaps this is really a Reweighter rather than a Universe?  Seems like it.
+        if(isnnorpp) return (1 - fNewFractionNP) / (1 - fOriginalFractionNP);
+        else if(isnp) return fNewFractionNP / fOriginalFractionNP;
+
+        //else that should never happen
+        return 1.0;
+      }
 
       std::string ShortName() const override
       {
