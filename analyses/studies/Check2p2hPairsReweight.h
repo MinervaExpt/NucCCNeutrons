@@ -14,8 +14,8 @@
 #include "util/Categorized.h"
 #include "util/WithUnits.h"
 
-#ifndef ANA_NSFVALIDATION_H
-#define ANA_NSFVALIDATION_H
+#ifndef ANA_CHECK2P2HPAIRSREWEIGHT_H
+#define ANA_CHECK2P2HPAIRSREWEIGHT_H
 
 namespace ana
 {
@@ -54,4 +54,4 @@ namespace ana
   };
 }
 
-#endif //ANA_NSFVALIDATION_H
+#endif //ANA_CHECK2P2HPAIRSREWEIGHT_H

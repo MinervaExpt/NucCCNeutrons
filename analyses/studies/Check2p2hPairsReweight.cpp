@@ -28,11 +28,11 @@ namespace ana
 {
   Check2p2hPairsReweight::Check2p2hPairsReweight(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass, std::vector<background_t>& backgrounds,
                                std::map<std::string, std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
-                               fEAvailSmearingByNucleonPair(::nucleonCategories, dir, "EAvailSmearing", "{E}_{available, true};{E}_{available, reco}", config["EAvailBins"].as<std::vector<double>>(), config["EAvailBins"].as<std::vector<double>>(), univs), fVariable(config["EAvail"]),
+                               fEAvailSmearingByNucleonPair(::nucleonCategories, dir, "EAvailSmearing", "E_{available, true};E_{available, reco}", config["EAvailBins"].as<std::vector<double>>(), config["EAvailBins"].as<std::vector<double>>(), univs), fVariable(config["EAvail"]),
                                fQ0Q3ByNucleonPair(::nucleonCategories, dir, "q0_q3", "q_{0, true};q_{3, true}", config["q3Bins"].as<std::vector<double>>(), config["q0Bins"].as<std::vector<double>>(), univs)
   {
     fTargetNucleons = dir.make<PlotUtils::HistWrapper<evt::Universe>>("TargetNucleons", "Target Nucleons for 2p2h Interactions;PDG Code", 3, 0, 3, univs);
-    fEAvailSmearingAll2p2h = dir.make<units::WithUnits<PlotUtils::Hist2DWrapper<evt::Universe>, MeV, MeV, events>>("EAvailSmearing", "2p2h {E}_{available} Smearing;{E}_{available, true};{E}_{available, reco}", config["EAvailBins"].as<std::vector<double>>(), config["EAvailBins"].as<std::vector<double>>(), univs);
+    fEAvailSmearingAll2p2h = dir.make<units::WithUnits<PlotUtils::Hist2DWrapper<evt::Universe>, MeV, MeV, events>>("EAvailSmearing", "2p2h E_{available} Smearing;E_{available, true};E_{available, reco}", config["EAvailBins"].as<std::vector<double>>(), config["EAvailBins"].as<std::vector<double>>(), univs);
     fQ0Q3Overall = dir.make<HIST2D<GeV, GeV>>("q0_q3_allEvents", "All Events Phase Space;q_{3, true};q_{0, true}", config["q3Bins"].as<std::vector<double>>(), config["q0Bins"].as<std::vector<double>>(), univs);
   }
 
