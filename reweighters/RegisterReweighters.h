@@ -16,6 +16,7 @@
 #include "PlotUtils/reweighters/MKReweighter.h"
 #include "PlotUtils/reweighters/RPAReweighter.h"
 #include "PlotUtils/reweighters/MINOSEfficiencyReweighter.h"
+#include "PlotUtils/reweighters/SuSAFromValencia2p2hReweighter.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -47,6 +48,7 @@ namespace
   static DefaultRegistrar<MKReweighter> mkReg("MKModel");
   static DefaultRegistrar<RPAReweighter> rpaReg("RPA");
   static DefaultRegistrar<MINOSEfficiencyReweighter> minosReg("MINOSEfficiency");
+  static DefaultRegistrar<SuSAFromValencia2p2hReweighter> susa2p2hReg("SuSA2p2h");
 
   //A dedicated Registrar for each Reweighter that needs constructor arguments
   class FSIRegistrar: public plgn::RegistrarBase<PlotUtils::Reweighter<evt::Universe>>
