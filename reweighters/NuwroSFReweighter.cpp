@@ -52,44 +52,6 @@ class NuWroSFReweighter: public PlotUtils::Reweighter<UNIVERSE, EVENT>
                                       lepton = univ.GetVecDouble("mc_primFSLepton"),
                                       initNuc = univ.GetVecDouble("mc_initNucVec");
 
-      //TODO: If I do this my way, I'm reading the 4-momentum components many more times than Tejin did
-      /*const auto eventRecord = univ.Get<EventRecordParticle>(univ.GetVec<int>("mc_er_status"),
-                                                             univ.GetVec<int>("mc_er_ID"),
-                                                             univ.GetVec<int>("mc_er_FD"),
-                                                             univ.GetVec<int>("mc_er_LD"),
-                                                             univ.GetVec<MeV>("mc_er_Px"),
-                                                             univ.GetVec<MeV>("mc_er_Py"),
-                                                             univ.GetVec<MeV>("mc_er_Pz"),
-                                                             univ.GetVec<MeV>("mc_er_E"),
-                                                            );
-
-      const auto whichPart = std::find_if(eventRecord.begin(), eventRecord.end(),
-                                          [](const auto& part)
-                                          {
-                                            if(part.status != 14) return false;
-                                            return ((part.PDGCode == 2212 || part.PDGCode == 2112) && part.FD == part.LD);
-                                          });
-      if(whichPart == eventRecord.end()) return 1.; //not sure what this is, let's just return 1.  Comment from Tejin's original algorithm.
-
-      //Tejin's original code that doesn't use std::find_if
-      int nucleon_index = -1;
-      const nPart = univ.GetInt("mc_er_nPart");
-      for(int whichPart = 0; whichPart < nPart; ++whichPart)
-      {
-        if(univ.GetInt("mc_er_status", whichPart) != 14) continue;
-        if((univ.GetInt("mc_er_ID", whichPart) == 2212 || univ.GetInt("mc_er_ID" == 2112)) && univ.GetInt("mc_er_FD", whichPart) == univ.GetInt("mc_er_LD", whichPart))
-        {
-          nucleon_index = whichPart;
-          break;
-        }
-      }
-
-      if(nucleon_index < 0) return 1.; //not sure what this is, let's just return 1.  Comment from Tejin's original algorithm.
-
-      const units::LorentzVector<MeV> istNucInNucleus(univ.GetDouble("mc_er_Px", nucleon_index), univ.GetDouble("mc_er_Py", nucleon_index), univ.GetDouble("mc_er_Pz", nucleon_index), univ.GetDouble("mc_er_E", nucleon_index));
-
-      const units::LorentzVector<MeV> istNucInNucleus(whichPart->Px, whichPart->Py, whichPart->Pz, whichPart->E);*/
-
       const auto qSq = units::fabs((neutrino - lepton).mass()),
                  kf = initNuc.p().mag();
       const int qSqBin = fWeightHist->GetXaxis()->FindBin(qSq.in<GeV>()),
@@ -102,19 +64,6 @@ class NuWroSFReweighter: public PlotUtils::Reweighter<UNIVERSE, EVENT>
 
   private:
     TH2D* fWeightHist; //Contains reweight values produced by Tejin with dedicated NuWro and GENIE generator samples using NUISSANCE
-
-    //TODO: Tejin commented out the code where he uses it.  I don't think I actually need it.
-    /*struct EventRecordParticle
-    {
-      int status;
-      int PDGCode;
-      int FD;
-      int LD;
-      MeV Px;
-      MeV Py;
-      MeV Pz;
-      MeV E;
-    };*/
 };
 
 namespace
