@@ -50,8 +50,10 @@ namespace units
       }
     };
 
-    template <class ...PRODS>
-    struct unit<productTag<PRODS...>>
+    //TODO: This doesn't work unfortunately.  How do I know whether units::quantity<productTag<GeV, GeV>, std::ratio<1, 1000000>, double> is MeV * MeV or keV * TeV?
+    //      Just avoid putting derived units on axes for now :(
+    template <class RATIO, class FLOAT_TYPE, class ...PRODS>
+    struct unit<units::quantity<productTag<PRODS...>, RATIO, FLOAT_TYPE>>
     {
       static std::string name()
       {

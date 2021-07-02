@@ -28,6 +28,14 @@ template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
 class NuWroSFReweighter: public PlotUtils::Reweighter<UNIVERSE, EVENT>
 {
   public:
+    struct EventRecordParticle
+    {
+      int status;
+      int PDGCode;
+      int FD;
+      int LD;
+    };
+
     NuWroSFReweighter(const YAML::Node& /*config*/): PlotUtils::Reweighter<UNIVERSE, EVENT>()
     {
       //TODO: If you need to change the reweight file name often for debugging,
@@ -35,10 +43,10 @@ class NuWroSFReweighter: public PlotUtils::Reweighter<UNIVERSE, EVENT>
       const char* mParamLocation = std::getenv("MPARAMFILESROOT");
       if(!mParamLocation) throw std::runtime_error("MPARAMFILESROOT needs to be set to use NuWroSFReweighter, but it's not set.");
 
-      std::unique_ptr<TFile> nuWroReweightFile(TFile::Open((std::string(mParamLocation) + "data/Reweight/q0q3ProtonWeight.root").c_str()));
+      std::unique_ptr<TFile> nuWroReweightFile(TFile::Open((std::string(mParamLocation) + "/data/Reweight/q0q3ProtonWeight.root").c_str()));
       if(!nuWroReweightFile) throw std::runtime_error("Failed to find a file at MPARAMFILESROOT/data/Reweight/q0q3ProtonWeight.root"); //TODO: Doesn't ROOT print a warning about this automatically?
 
-      fWeightHist = dynamic_cast<TH2D*>(nuWroReweightFile->Get("nuwroLFG_mnvGENIEv2_qsq_kF_qelike_qe_oth_ratio")->Clone());
+      fWeightHist = dynamic_cast<TH2D*>(nuWroReweightFile->Get("nuwroSF_mnvGENIEv2_qsq_kF_qelike_qe_oth_ratio")->Clone());
     }
 
     virtual ~NuWroSFReweighter() = default;
@@ -48,14 +56,29 @@ class NuWroSFReweighter: public PlotUtils::Reweighter<UNIVERSE, EVENT>
       if(univ.GetInt("mc_intType") != 1 || univ.GetInt("mc_current") != 1) return 1.0; //not CCQE
       if(univ.GetInt("mc_targetZ") != 6) return 1.0; //Reweight files designed only for Carbon originally
 
+      //Mysterious condition on finding an FS nucleon that Tejin included.  He used to use this
+      //nucleon for calculating kf, but that code was commented out.
+      const auto eventRecord = univ.template Get<EventRecordParticle>(univ.GetVecInt("mc_er_status"),
+                                                                      univ.GetVecInt("mc_er_ID"),
+                                                                      univ.GetVecInt("mc_er_FD"),
+                                                                      univ.GetVecInt("mc_er_LD"));
+      const auto nucleon = std::find_if(eventRecord.begin(), eventRecord.end(),
+                                        [](const auto& part)
+                                        {
+                                          if(part.status != 14) return false;
+                                          return ((part.PDGCode == 2212 || part.PDGCode == 2112) && part.FD == part.LD);
+                                        });
+      if(nucleon == eventRecord.end()) return 1.; //Original comment from Tejin: not sure what this is, let's just return 1.
+
       const units::LorentzVector<MeV> neutrino = univ.GetVecDouble("mc_incomingPartVec"),
                                       lepton = univ.GetVecDouble("mc_primFSLepton"),
                                       initNuc = univ.GetVecDouble("mc_initNucVec");
 
-      const auto qSq = units::fabs((neutrino - lepton).mass()),
-                 kf = initNuc.p().mag();
+      const auto qSq = units::sqrt(-(neutrino - lepton).m2());
+      const auto kf = initNuc.p().mag();
       const int qSqBin = fWeightHist->GetXaxis()->FindBin(qSq.in<GeV>()),
                 kfBin = fWeightHist->GetYaxis()->FindBin(kf.in<GeV>());
+      if(qSqBin > fWeightHist->GetNbinsX() || kfBin > fWeightHist->GetNbinsY()) return 1;
       return fWeightHist->GetBinContent(qSqBin, kfBin);
     }
 

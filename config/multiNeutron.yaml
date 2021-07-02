@@ -155,17 +155,16 @@ cuts:
   truth:
     phaseSpace:
       MuonMomentum: !MuonMomentum
-        min: !GeV 2
-        max: !GeV 20
+        min: !GeV 1.5
+        max: !GeV 60
       TrackAngle: !TrackAngle
         max: !degrees 20
     signal:
       LowEAvailable: &EAvailCut !EAvailRange
-        min: &smallNegativeNumber !GeV -1 #-1e-3
+        min: &smallNegativeNumber !GeV -1
         max: &maxEAvail !MeV 100
       ManyNeutrons: &ManyNeutrons !NeutronMultiplicity
         min: !neutrons 2
-        #max: !neutrons 3
         variable: *neutronCounter
       Antineutrino: !IsAntineutrino
       CC: !IsCC
@@ -175,52 +174,19 @@ cuts:
       max: *maxEAvail
       EAvailable: *neutronCounter
     ManyNeutrons: *ManyNeutrons
-    #Pi0DirectionCut: !NoPi0Candidates #TODO: Make this part of candidate definition so that candidates that are pi0-like have their energy included in EAvail
-    #  neutronCounter: *neutronCounter
-    #  blobAngleMin: 0.45
-    #  blobAngleMax: 0.95
     MinosDeltaT: !MinosDeltaT
       min: !ns -40
       max: !ns 110
     TrackAngle: !TrackAngle
       max: !degrees 20
     MuonMomentum: !MuonMomentum
-      min: !GeV 2
-      max: !GeV 20
+      min: !GeV 1.5
+      max: !GeV 60
     Antineutrino: !IsAntineutrino
     DeadTime: !DeadDiscriminators
       max: 1
+
 backgrounds:
-  #NeutralCurrent:
-  #  NC: !IsNC
-  #WrongSignMuon:
-  #  Neutrino: !IsNeutrino
-  ChargedPions:
-    NoPi0s: !NoPi0s
-    HasChargedPions: &hasChargedPions !ChargedHadronMultiplicity
-      equals: 1
-      angleThrshold: &angleThreshold !degrees 90
-      trackingThresholds: &pionThresholds
-        211: !MeV 35
-        -211: !MeV 35
-  NeutralPionsOnly:
-    NoChargedPions: &noChargedPions !ChargedHadronMultiplicity
-      equals: 0
-      angleThreshold: *angleThreshold
-      trackingThresholds: *pionThresholds
-    HasPi0s: &hasPi0s !ChargedHadronMultiplicity
-      equals: 1
-      angleThreshold: !degrees 90
-      trackingThresholds:
-        111: !MeV 0
-  MultiPi:
-    HasMultiPions: !ChargedHadronMultiplicity
-      min: 2
-      angleThrshold: &angleThreshold !degrees 90
-      trackingThresholds: &pionThresholds
-        211: !MeV 35
-        -211: !MeV 35
-        111: !MeV 0
   "1 Neutron":
     LowEAvail: *EAvailCut
     Antineutrino: !IsAntineutrino
@@ -235,79 +201,26 @@ backgrounds:
     NoNeutrons: !NeutronMultiplicity
       equals: !neutrons 0
       variable: *neutronCounter
-  ProtonsAboveAmitsThresholdOnly:
-    NoPi0s: !NoPi0s
-    NoChargedPions: *noChargedPions
-    HasProtons: !ChargedHadronMultiplicity &hasProtons
-      min: 1
-      angleThreshold: *angleThreshold
-      trackingThresholds:
-        2212: !MeV 120
-  #TooManyNeutrons:
-  #  NoPi0s: !NoPi0s
-  #  NoChargedHadrons: *NoChargedHadrons
-  #  ManyNeutrons: !NeutronMultiplicity
-  #    min: !neutrons 4
-  #    variable: *neutronCounter
+  HighEAvail:
+    HighEAvailable: &EAvailCut !EAvailRange
+      min: *maxEAvail
+      max: !GeV 100
+      #max: &EAvailForSideband !MeV 200
+
 signal: !MuonPTSignal
   name: "MuonPTSignal"
   variable:
   binning: &pTBins [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.5, 2.0, 2.5]
  
 sidebands:
-  Pi0: !MuonPTSideband
-    name: "Pi0"
+  HighEAvail: !MuonPTSideband
+    name: "HighEAvail"
     fails: ["LowEAvailable"]
     passes:
-      #A looser available energy cut to clamp down on multi-pi events
-      LowEAvailable: !RecoilERange
-        min: *smallNegativeNumber
-        max: &EAvailForPions !MeV 200
+      HighEAvailable: !RecoilERange
+        min: *maxEAvail
+        max: !MeV 200
         EAvailable: *neutronCounter
-      Pi0DirectionCut: !HasPi0Candidate
-        neutronCounter: *neutronCounter
-        blobAngleMin: 0.95
-      AtLeast3Candidates: !NeutronMultiplicity
-        min: !neutrons 3
-        variable: *neutronCounter
-      NoHadronTracks: !nTracks
-        max: 1
-    variable:
-    binning: *pTBins
-  ChargedHadrons: !MuonPTSideband
-    name: "Charged Hadrons"
-    fails: ["LowEAvailable"]
-    passes:
-      #A looser available energy cut to clamp down on multi-pi events
-      LowEAvailable: !RecoilERange
-        min: *smallNegativeNumber
-        max: *EAvailForPions
-        EAvailable: *neutronCounter
-      HasHadronTracks: !nTracks
-        min: 2
-      Pi0DirectionCut: !NoPi0Candidates
-        neutronCounter: *neutronCounter
-        blobAngleMin: 0.45
-        blobAngleMax: 0.95
-    variable:
-    binning: *pTBins
-  #TODO: I want to require either 2 pi0s, 2 charged pions, or one of each
-  MultiPi: !MuonPTSideband
-    name: "Multiple Pions"
-    fails: ["LowEAvailable"]
-    passes:
-      LowEAvailable: !RecoilERange
-        min: *smallNegativeNumber
-        max: *EAvailForPions
-        EAvailable: *neutronCounter
-      HasHadronTracks: !nTracks
-        min: 2
-      Pi0DirectionCut: !HasPi0Candidate
-        neutronCounter: *neutronCounter
-        blobAngleMin: 0.95
-      AtLeast3Candidates: !NeutronMultiplicity
-        min: !neutrons 3
-        variable: *neutronCounter
     variable:
     binning: *pTBins
   QELike: !MuonPTSideband
@@ -317,20 +230,7 @@ sidebands:
       UpToOneCandidate: !NeutronMultiplicity
         max: !neutrons 1
         variable: *neutronCounter
-      Pi0DirectionCut: !NoPi0Candidates
-        neutronCounter: *neutronCounter
-        blobAngleMin: 0.45
-        blobAngleMax: 0.95
       NoHadronTracks: !nTracks
         max: 1
     variable:
     binning: *pTBins
-  #ManyNeutrons: !MuonPTSideband
-  #  name: "ManyNeutrons"
-  #  fails: ["ManyNeutrons"]
-  #  passes:
-  #    ManyCandidates: !NeutronMultiplicity
-  #      min: !neutrons 3
-  #      variable: *neutronCounter
-  #  variable:
-  #  binning: *pTBins

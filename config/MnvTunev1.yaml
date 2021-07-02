@@ -1,0 +1,8 @@
+model:
+  Flux: !FluxAndCV
+  GENIE: !GENIEPionTunes
+    useNonResPi: true
+    useDeuteriumPionTune: false
+  MINOSEfficiency: !MINOSEfficiency
+  RPASuppression: !RPA
+  Valencia2p2h: !LowRecoil2p2hWeight

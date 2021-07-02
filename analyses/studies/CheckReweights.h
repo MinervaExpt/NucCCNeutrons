@@ -1,4 +1,4 @@
-//File: Check2p2hPairsReweight.h
+//File: CheckReweights.h
 //Brief: Plots 3 physics quantities for validating New Systematics Framework
 //       systematic universe usage.  Run over CCQENu with an empty signal definition
 //       and use the results with Rob's validation suite in PlotUtils.
@@ -14,17 +14,17 @@
 #include "util/Categorized.h"
 #include "util/WithUnits.h"
 
-#ifndef ANA_CHECK2P2HPAIRSREWEIGHT_H
-#define ANA_CHECK2P2HPAIRSREWEIGHT_H
+#ifndef ANA_CHECKREWEIGHTS_H
+#define ANA_CHECKREWEIGHTS_H
 
 namespace ana
 {
-  class Check2p2hPairsReweight: public Study
+  class CheckReweights: public Study
   {
     public:
-      Check2p2hPairsReweight(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
+      CheckReweights(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
                        std::vector<background_t>& backgrounds, std::map<std::string, std::vector<evt::Universe*>>& universes);
-      virtual ~Check2p2hPairsReweight() = default;
+      virtual ~CheckReweights() = default;
 
       //Do this study only for MC signal events.
       virtual void mcSignal(const evt::Universe& event, const events weight) override;
@@ -48,10 +48,11 @@ namespace ana
       util::Categorized<HIST2D<MeV, MeV>, int> fEAvailSmearingByNucleonPair;
       HIST2D<MeV, MeV>* fEAvailSmearingAll2p2h;
       util::Categorized<HIST2D<GeV, GeV>, int> fQ0Q3ByNucleonPair;
-      HIST2D<GeV, GeV>* fQ0Q3Overall;
+      HIST2D<GeV, GeV>* fQ0Q3Overall; //Compare to slides 7-8 of https://minerva-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=25386&filename=SuSA-20191219.pdf&version=4
+      HIST2D<GeV, GeV>* fkfQ2Overall; //Compare to slides 14-15 of https://minerva-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=27245&filename=013_collaboration_meeting.pdf&version=1
 
       ana::EAvailable fVariable;
   };
 }
 
-#endif //ANA_CHECK2P2HPAIRSREWEIGHT_H
+#endif //ANA_CHECKREWEIGHTS_H

@@ -68,6 +68,7 @@
     {\
       static constexpr auto name = #unitName;\
     };\
+\
   }
 //End of DECLARE_RELATED_UNIT macro
 
