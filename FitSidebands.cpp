@@ -224,7 +224,7 @@ int main(const int argc, const char** argv)
   const auto exampleHist = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, dummySelectionName + "_SelectedMCEvents");
 
   bool fitToSelection = false;
-  int firstBin = 1, lastBin = exampleHist->GetXaxis()->GetNbins();
+  int firstBin = 1, lastBin = exampleHist->GetXaxis()->GetNbins() + 1;
 
   try
   {
