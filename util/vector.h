@@ -243,6 +243,18 @@ namespace units
       //Alignment to SCALAR[4] should be guaranteed
       SCALAR fX, fY, fZ, fT;
   };
+
+  template <class SCALAR>
+  std::ostream& operator <<(std::ostream& os, const XYZVector<SCALAR>& vec)
+  {
+    return os << "(" << vec.x() << ", " << vec.y() << ", " << vec.z() << ")";
+  }
+
+  template <class SCALAR>
+  std::ostream& operator <<(std::ostream& os, const LorentzVector<SCALAR>& vec)
+  {
+    return os << "(" << vec.x() << ", " << vec.y() << ", " << vec.z() << ", " << vec.E() << ")";
+  }
 }
 
 #endif //UNITS_VECTOR_H

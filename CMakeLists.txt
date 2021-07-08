@@ -78,13 +78,14 @@ add_subdirectory(systematics)
 add_subdirectory(fits)
 
 #Build main executables
-add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets> $<TARGET_OBJECTS:fiducials> $<TARGET_OBJECTS:systematics>) #$<TARGET_OBJECTS:reweighters>)
+add_executable(ProcessAnaTuples ProcessAnaTuples.cxx $<TARGET_OBJECTS:studies> $<TARGET_OBJECTS:truthCuts> $<TARGET_OBJECTS:truthTargets> $<TARGET_OBJECTS:recoCuts> $<TARGET_OBJECTS:recoTargets> $<TARGET_OBJECTS:fiducials> $<TARGET_OBJECTS:systematics> $<TARGET_OBJECTS:reweighters>)
 #This TARGET_OBJECTS song and dance solves the problem of the compiler
 #refusing to link in self-registering libraries!  I learned about it from
 #https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/Object-Library
 add_executable(ExtractCrossSection ExtractCrossSection.cpp)
 add_executable(SwapSysUnivWithCV SwapSysUnivWithCV.cpp)
 add_executable(FitSidebands FitSidebands.cpp $<TARGET_OBJECTS:backgroundFits>)
+add_executable(MergeAndScaleByPOT MergeAndScaleByPOT.cpp)
 
 #Build libraries that main executables depend on
 add_subdirectory(units)
@@ -97,11 +98,13 @@ target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase s
 target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} MAT UnfoldUtils)
 target_link_libraries(SwapSysUnivWithCV ${ROOT_LIBRARIES} MAT)
 target_link_libraries(FitSidebands ${ROOT_LIBRARIES} MAT fits util yaml-cpp)
+target_link_libraries(MergeAndScaleByPOT ${ROOT_LIBRARIES} MAT)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 install(TARGETS ExtractCrossSection DESTINATION bin)
 install(TARGETS SwapSysUnivWithCV DESTINATION bin)
 install(TARGETS FitSidebands DESTINATION bin)
+install(TARGETS MergeAndScaleByPOT DESTINATION bin)
 
 configure_file(setup.sh.in setup_${PROJECT_NAME}.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_${PROJECT_NAME}.sh DESTINATION bin)
