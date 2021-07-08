@@ -12,7 +12,7 @@
 #include "TH2D.h"
 
 //Reweighter includes
-#include "PlotUtils/reweighters/Reweighter.h"
+#include "PlotUtils/Reweighter.h"
 
 //util includes
 #include "util/Factory.cpp"
