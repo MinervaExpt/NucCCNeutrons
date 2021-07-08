@@ -9,7 +9,7 @@
 #include "analyses/base/Study.h"
 
 //reweighters includes
-#include "PlotUtils/reweighters/Reweighter.h"
+#include "PlotUtils/Reweighter.h"
 
 //PlotUtils includes
 #include "PlotUtils/Cut.h"

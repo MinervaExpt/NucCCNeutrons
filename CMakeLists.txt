@@ -56,9 +56,11 @@ include_directories(${YAML_CPP_INCLUDE_DIR})
 
 #find_package(BaseUnits REQUIRED) #TODO: Reformat the CMake system in BaseUnits.  I'm embedding it for now to get started.
 
-find_package(PlotUtils REQUIRED)
-include_directories(${PlotUtils_INCLUDE_DIR})
-message("Included PlotUtils from ${PlotUtils_INCLUDE_DIR}")
+find_package(MAT REQUIRED)
+include_directories(${MAT_INCLUDE_DIR})
+
+find_package(MAT-MINERvA REQUIRED)
+include_directories(${MAT-MINERvA_INCLUDE_DIR})
 
 find_package(UnfoldUtils REQUIRED)
 include_directories(${UnfoldUtils_INCLUDE_DIR})
@@ -91,10 +93,10 @@ add_subdirectory(config)
 add_subdirectory(app)
 
 add_dependencies(ProcessAnaTuples generateGitVersion)
-target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app)
-target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} PlotUtils UnfoldUtils)
-target_link_libraries(SwapSysUnivWithCV ${ROOT_LIBRARIES} PlotUtils)
-target_link_libraries(FitSidebands ${ROOT_LIBRARIES} PlotUtils fits util yaml-cpp)
+target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app MAT MAT-MINERvA)
+target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} MAT UnfoldUtils)
+target_link_libraries(SwapSysUnivWithCV ${ROOT_LIBRARIES} MAT)
+target_link_libraries(FitSidebands ${ROOT_LIBRARIES} MAT fits util yaml-cpp)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 install(TARGETS ExtractCrossSection DESTINATION bin)
