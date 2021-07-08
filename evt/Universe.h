@@ -94,12 +94,12 @@ namespace evt
       virtual ~Universe() = default;
 
       //Shared systematics components
-      #include "PlotUtils/SystCalcs/MuonFunctions.h"
-      #include "PlotUtils/SystCalcs/TruthFunctions.h"
+      #include "PlotUtils/MuonFunctions.h"
+      #include "PlotUtils/TruthFunctions.h"
 
     protected:
       //TODO: WeightFunctions.h is deprecated, but some systematics still need it.  Remove it entirely.
-      #include "PlotUtils/SystCalcs/WeightFunctions.h"
+      #include "PlotUtils/WeightFunctions.h"
 
     public:
       //Configuration interfaces.  The design of the NSF prevents me from
