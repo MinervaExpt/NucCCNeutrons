@@ -204,6 +204,7 @@ int main(const int argc, const char** argv)
 
       //N.B.: There's a technical reason why it's really hard to use util::Directory for a TParameter.
       auto nNucleons = new TParameter<double>((config.first.as<std::string>() + "_FiducialNucleons").c_str(), fid->NNucleons(options->isMC()));
+      nNucleons->SetMergeMode('f'); //Use the first value -> don't add them
       nNucleons->Write();
 
       try

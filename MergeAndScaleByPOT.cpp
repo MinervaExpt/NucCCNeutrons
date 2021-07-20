@@ -132,18 +132,6 @@ int main(const int argc, const char** argv)
   const std::string firstFileName = argv[1],
                     outFileName = baseName(firstFileName) + "_merged.root";
 
-  //Start with a copy of the first file
-  const int copyStatus = gSystem->CopyFile(firstFileName.c_str(), outFileName.c_str(), kFALSE);
-  std::unique_ptr<TFile> outFile(TFile::Open(outFileName.c_str(), "UPDATE"));
-
-  if(copyStatus || !outFile)
-  {
-    std::cerr << "Failed to create a file named " << outFileName
-              << ".  Copy exited with status " << copyStatus
-              << ".  If the file already exists, I refuse to overwrite it.\n\n" << USAGE;
-    return badOutputFile;
-  }
-
   bool scaleToDataPOT = false;
   {
     const auto firstDataFileName = dirName(firstFileName) + "/" + baseName(firstFileName).substr(0, baseName(firstFileName).find("MC")) + "Data.root";
@@ -152,31 +140,36 @@ int main(const int argc, const char** argv)
     else std::cout << "WARNING: Not scaling MC to data POT.  Failed to find a data file, named " << firstDataFileName << ", to match " << firstFileName << ".\n";
   }
 
+  //Copy input file's objects into memory.  I need to keep my own copy
+  //because even TFileDirectory::Get() seems to be overwriting the
+  //memory object by whatever is in the file when I open another file
+  //in between uses.
+  std::map<std::string, TObject*> mergeResult;
+  std::unique_ptr<TFile> firstFile(TFile::Open(firstFileName.c_str(), "READ"));
+
+  for(auto entry: *firstFile->GetListOfKeys())
+  {
+    auto key = static_cast<TKey*>(entry);
+    mergeResult[key->GetName()] = key->ReadObj()->Clone();
+  }
+
   //Scale the copied input file to the data POT
   if(scaleToDataPOT)
   {
-    std::unique_ptr<TFile> firstFile(TFile::Open(firstFileName.c_str(), "READ"));
     const double scale = getPOTScale(*firstFile);
 
-    for(auto entry: *outFile->GetListOfKeys())
+    for(auto& entry: mergeResult)
     {
-      auto key = static_cast<TKey*>(entry);
-      auto th1 = dynamic_cast<TH1*>(key->ReadObj());
-      if(th1)
-      {
-        th1->Scale(scale);
-        //outFile->cd();
-        //th1->Write(key->GetName());
-      }
+      auto th1 = dynamic_cast<TH1*>(entry.second);
+      if(th1) th1->Scale(scale);
     }
   }
-  outFile->SaveSelf(kTRUE);
 
-  //Collect metadata from inFile
-  const auto firstCommitHash = dynamic_cast<const TNamed*>(outFile->Get("NucCCNeutronsGitCommitHash"));
+  //Collect metadata from firstFile
+  const auto firstCommitHash = dynamic_cast<const TNamed*>(firstFile->Get("NucCCNeutronsGitCommitHash"));
   if(!firstCommitHash)
   {
-    std::cerr << "Failed to find a commit hash in " << outFileName << ".\n\n" << USAGE;
+    std::cerr << "Failed to find a commit hash in " << firstFileName << ".\n\n" << USAGE;
     return unknownFileObject;
   }
 
@@ -205,20 +198,15 @@ int main(const int argc, const char** argv)
       }
     }
 
-    if(!checkMetadata(*outFile, *inFile)) return badMetadata;
-    const int keysDiff = inFile->GetListOfKeys()->GetEntries() - outFile->GetListOfKeys()->GetEntries();
-    if(keysDiff != 0) std::cout << "WARNING: " << inFileName << " has " << keysDiff << " keys that are not in " << firstFileName << ".  They will NOT be merged!  Continuing merging anyway...\n";
+    if(!checkMetadata(*firstFile, *inFile)) return badMetadata;
 
-    //outFile->cd(); //TODO: Delete me.  Doesn't help.
-    for(auto entry: *outFile->GetListOfKeys())
+    for(auto& entry: mergeResult)
     {
-      auto key = static_cast<TKey*>(entry);
-      const auto obj = inFile->Get(key->GetName());
-      auto mergeWith = outFile->Get(key->GetName()); //key->ReadObj();
+      const auto obj = inFile->Get(entry.first.c_str());
+      auto mergeWith = entry.second;
       if(!obj)
       {
-        std::cerr << "Found an object, " << key->GetClassName() << " " << key->GetName() << ", in " << firstFileName << " that is not in " << inFileName << ".\n\n" << USAGE;
-        key->Print();
+        std::cerr << "Found an object, " << mergeWith->ClassName() << " " << entry.first << ", in " << firstFileName << " that is not in " << inFileName << ".\n\n" << USAGE;
         return unknownFileObject;
       }
 
@@ -230,27 +218,35 @@ int main(const int argc, const char** argv)
       }
       else if(dynamic_cast<const TParameter<double>*>(obj))
       {
+        if(entry.first.find("_FiducialNucleons") != std::string::npos && !(mergeWith->TestBit(TParameter<double>::kFirst) || mergeWith->TestBit(TParameter<double>::kLast) || mergeWith->TestBit(TParameter<double>::kMin) || mergeWith->TestBit(TParameter<double>::kMax)))
+          std::cout << "WARNING: Merging number of fiducial nucleons.  This shouldn't change between mergeable files!\n";
         assert(dynamic_cast<TParameter<double>>(mergeWith));
-        std::cout << "mergeWith had value " << static_cast<TParameter<double>*>(mergeWith)->GetVal() << "\n";
         TList toMerge;
         toMerge.Add(obj);
         static_cast<TParameter<double>*>(mergeWith)->Merge(&toMerge);
-        std::cout << "mergeWith now has value " << static_cast<TParameter<double>*>(mergeWith)->GetVal() << "\n";
       }
-      else if(!strcmp(key->GetClassName(), "TNamed")) {} //Ignore these for now.  Could be playlist or version metadata
+      else if(!strcmp(mergeWith->ClassName(), "TNamed")) {} //Ignore these for now.  Could be playlist or version metadata
       else
       {
-        std::cerr << "Found an object, " << key->GetClassName() << " " << key->GetName() << ", that I don't know how to merge.\n\n" << USAGE;
+        std::cerr << "Found an object, " << mergeWith->ClassName() << " " << entry.first << ", that I don't know how to merge.\n\n" << USAGE;
         return unknownFileObject;
       }
-      //TODO: Recurse on TDirectories
-
-      outFile->cd();
-      mergeWith->Write(key->GetName()); //, TObject::kOverwrite); //Awesome, this leads to memory corruption...
-      //key->WriteFile(1, outFile.get()); //TODO: Why does this crash?  I haven't found any good documentation for it yet.
+      //TODO: Recurse on TDirectories.  My simple map of object names to TObjects probably won't work well with TDirectory anyway.
     }
-    outFile->SaveSelf(kTRUE); //Write();
   }
+
+  //Save memory objects into outFile
+  std::unique_ptr<TFile> outFile(TFile::Open(outFileName.c_str(), "CREATE"));
+                                                                                          
+  if(!outFile)
+  {
+    std::cerr << "Failed to create a file named " << outFileName
+              << ".  If the file already exists, I refuse to overwrite it.\n\n" << USAGE;
+    return badOutputFile;
+  }
+
+  outFile->cd();
+  for(auto entry: mergeResult) entry.second->Write();  
 
   return success;
 }
