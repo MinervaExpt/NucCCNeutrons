@@ -165,11 +165,12 @@ int main(const int argc, const char** argv)
       if(th1)
       {
         th1->Scale(scale);
-        outFile->cd();
-        th1->Write(key->GetName());
+        //outFile->cd();
+        //th1->Write(key->GetName());
       }
     }
   }
+  outFile->SaveSelf(kTRUE);
 
   //Collect metadata from inFile
   const auto firstCommitHash = dynamic_cast<const TNamed*>(outFile->Get("NucCCNeutronsGitCommitHash"));
@@ -208,11 +209,12 @@ int main(const int argc, const char** argv)
     const int keysDiff = inFile->GetListOfKeys()->GetEntries() - outFile->GetListOfKeys()->GetEntries();
     if(keysDiff != 0) std::cout << "WARNING: " << inFileName << " has " << keysDiff << " keys that are not in " << firstFileName << ".  They will NOT be merged!  Continuing merging anyway...\n";
 
+    //outFile->cd(); //TODO: Delete me.  Doesn't help.
     for(auto entry: *outFile->GetListOfKeys())
     {
       auto key = static_cast<TKey*>(entry);
       const auto obj = inFile->Get(key->GetName());
-      auto mergeWith = key->ReadObj();
+      auto mergeWith = outFile->Get(key->GetName()); //key->ReadObj();
       if(!obj)
       {
         std::cerr << "Found an object, " << key->GetClassName() << " " << key->GetName() << ", in " << firstFileName << " that is not in " << inFileName << ".\n\n" << USAGE;
@@ -229,9 +231,11 @@ int main(const int argc, const char** argv)
       else if(dynamic_cast<const TParameter<double>*>(obj))
       {
         assert(dynamic_cast<TParameter<double>>(mergeWith));
+        std::cout << "mergeWith had value " << static_cast<TParameter<double>*>(mergeWith)->GetVal() << "\n";
         TList toMerge;
         toMerge.Add(obj);
         static_cast<TParameter<double>*>(mergeWith)->Merge(&toMerge);
+        std::cout << "mergeWith now has value " << static_cast<TParameter<double>*>(mergeWith)->GetVal() << "\n";
       }
       else if(!strcmp(key->GetClassName(), "TNamed")) {} //Ignore these for now.  Could be playlist or version metadata
       else
@@ -243,8 +247,9 @@ int main(const int argc, const char** argv)
 
       outFile->cd();
       mergeWith->Write(key->GetName()); //, TObject::kOverwrite); //Awesome, this leads to memory corruption...
+      //key->WriteFile(1, outFile.get()); //TODO: Why does this crash?  I haven't found any good documentation for it yet.
     }
-    outFile->Write();
+    outFile->SaveSelf(kTRUE); //Write();
   }
 
   return success;
