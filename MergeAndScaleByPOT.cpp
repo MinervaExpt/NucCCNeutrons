@@ -75,10 +75,9 @@ std::string baseName(const std::string& fileName)
   return fileName.substr(lastSlash+1, fileName.find('.', lastSlash) - lastSlash - 1);
 }
 
-double getPOTScale(TFile& mcFile)
+double getDataPOT(TFile& mcFile)
 {
-  //Get POT scale
-  double scaleFactor = 1.;
+  //Get data POT corresponding to the playlist of mcFile
   const std::string mcFileName = mcFile.GetName();
   const auto dataFileName = dirName(mcFileName) + "/" + baseName(mcFileName).substr(0, baseName(mcFileName).find("MC")) + "Data.root";
   std::unique_ptr<TFile> dataFile(TFile::Open(dataFileName.c_str(), "READ"));
@@ -87,23 +86,65 @@ double getPOTScale(TFile& mcFile)
   const auto dataPOT = static_cast<TParameter<double>*>(dataFile->Get("POTUsed"));
   if(!dataPOT) throw std::runtime_error(std::string("Succeeded in opening ") + dataFileName + " to scale POT for " + mcFileName + "  because the first file had a \"Data.root\" file, but I can't get the POT from this data file.");
                                                                                                                                    
-  scaleFactor = dataPOT->GetVal();
-                                                                                                                                     
-  const auto mcPOT = static_cast<TParameter<double>*>(mcFile.Get("POTUsed"));
-  if(!mcPOT) throw std::runtime_error(std::string("Failed to find POT in ") + mcFileName + ".");
-
-  return scaleFactor/mcPOT->GetVal();
+  return dataPOT->GetVal();
 }
 
-bool checkMetadata(TFile& lhs, TFile& rhs)
+double getMyPOT(TFile& mcFile)
+{
+  const auto myPOT = static_cast<TParameter<double>*>(mcFile.Get("POTUsed"));
+  if(!myPOT) throw std::runtime_error(std::string("Failed to find POT in ") + mcFile.GetName() + ".");
+
+  return myPOT->GetVal();
+}
+
+bool checkMetadata(TFile& lhs, TFile& rhs, const std::map<std::string, TParameter<double>*>& fiducials)
 {
   //Check NucCCNeutrons commit hash
   const auto lhsCommitHash = dynamic_cast<const TNamed*>(lhs.Get("NucCCNeutronsGitCommitHash")),
              rhsCommitHash = dynamic_cast<const TNamed*>(rhs.Get("NucCCNeutronsGitCommitHash"));
+
+  if(!rhsCommitHash)
+  {
+    std::cerr << rhs.GetName() << " doesn't have a commit hash!\n";
+    return false;
+  }
+
   if(strcmp(lhsCommitHash->GetName(), rhsCommitHash->GetName()))
   {
     std::cerr << lhs.GetName() << " has a different commit hash from " << rhs.GetName() << "\n";
     return false;
+  }
+
+  //Check playlist
+  const auto lhsPlaylist = dynamic_cast<const TNamed*>(lhs.Get("playlist")),
+             rhsPlaylist = dynamic_cast<const TNamed*>(rhs.Get("playlist"));
+  if(!rhsPlaylist)
+  {
+    std::cerr << rhs.GetName() << " doesn't have a playlist!\n";
+    return false;
+  }
+
+  if(strcmp(lhsPlaylist->GetName(), rhsPlaylist->GetName()))
+  {
+    std::cerr << lhs.GetName() << " is from playlist " << lhsPlaylist->GetName() << ", but " << rhs.GetName() << " is from playlist " << rhsPlaylist->GetName();
+    return false;
+  }
+
+  //Check number of target nucleons ~= fiducial volume
+  for(auto fiducial: fiducials)
+  {
+    const auto rhsFiducial = dynamic_cast<const TParameter<double>*>(rhs.Get(fiducial.first.c_str()));
+    if(!rhsFiducial)
+    {
+      std::cerr << rhs.GetName() << " doesn't have a number of nucleons for " << fiducial.first << "\n";
+      return false;
+    }
+
+    if(rhsFiducial->GetVal() != fiducial.second->GetVal())
+    {
+      std::cerr << rhs.GetName() << " has a different number of target nucleons from " << lhs.GetName() << ".  They probably came from processing different fiducial volumes!\n";
+      return false;
+    }
   }
 
   //Put PlotUtils commit hash etc. here.
@@ -144,33 +185,80 @@ int main(const int argc, const char** argv)
   //because even TFileDirectory::Get() seems to be overwriting the
   //memory object by whatever is in the file when I open another file
   //in between uses.
-  std::map<std::string, TObject*> mergeResult;
+  //Keep number of nucleons, POT, and flux separate because they need to be merged differently.
+  std::map<std::string, TObject*> mergedSamples;
+  std::map<std::string, TParameter<double>*> mergedNucleons, mergedPOT;
+  std::map<std::string, TH1*> mergedFlux;
   std::unique_ptr<TFile> firstFile(TFile::Open(firstFileName.c_str(), "READ"));
 
   for(auto entry: *firstFile->GetListOfKeys())
   {
     auto key = static_cast<TKey*>(entry);
-    mergeResult[key->GetName()] = key->ReadObj()->Clone();
+    const std::string keyName = key->GetName();
+    auto obj = key->ReadObj()->Clone();
+
+    if(keyName.find("_FiducialNucleons") != std::string::npos)
+    {
+      auto param = dynamic_cast<TParameter<double>*>(obj);
+      assert(param && "Number of nucleons is not a TParameter<double>!");
+      mergedNucleons[keyName] = param;
+    }
+    else if(!strcmp(key->GetName(), "POTUsed"))
+    {
+      auto param = dynamic_cast<TParameter<double>*>(obj);
+      assert(param && "POTUsed is not a TParameter<double>!");
+      mergedPOT[keyName] = param;
+    }
+    else if(keyName.find("_reweightedflux_integrated") != std::string::npos)
+    {
+      auto hist = dynamic_cast<TH1*>(obj);
+      assert(hist && "Flux is not derived from TH1!");
+      mergedFlux[keyName] = hist;
+    }
+    else if(strcmp(obj->ClassName(), "TNamed")) mergedSamples[keyName] = obj;
   }
+
+  //Ensure that metadata is in expected format in firstFile.
+  //Otherwise, checkMetadata() comparisons later might crash!
+  if(!checkMetadata(*firstFile, *firstFile, mergedNucleons)) return badMetadata;
+
+  double totalDataPOT = 0,
+         totalMCPOT = 0;
 
   //Scale the copied input file to the data POT
   if(scaleToDataPOT)
   {
-    const double scale = getPOTScale(*firstFile);
-
-    for(auto& entry: mergeResult)
+    try
     {
-      auto th1 = dynamic_cast<TH1*>(entry.second);
-      if(th1) th1->Scale(scale);
+      const double dataPOT = getDataPOT(*firstFile);
+      const double mcPOT = getMyPOT(*firstFile);
+      const double scale = dataPOT / mcPOT;
+
+      std::cout << "Scaling by " << dataPOT << " / " << mcPOT << " = " << scale << " for file " << firstFile->GetName() << "\n";
+
+      for(auto& entry: mergedSamples)
+      {
+        auto th1 = dynamic_cast<TH1*>(entry.second);
+        if(th1) th1->Scale(scale);
+      }
+
+      totalDataPOT = dataPOT;
+      totalMCPOT = mcPOT;
+    }
+    catch(const std::exception& e)
+    {
+      std::cerr << "Failed to scale " << firstFile->GetName() << "'s histograms because:\n" << e.what() << "\n\n" << USAGE;
+      return badMetadata;
     }
   }
-
-  //Collect metadata from firstFile
-  const auto firstCommitHash = dynamic_cast<const TNamed*>(firstFile->Get("NucCCNeutronsGitCommitHash"));
-  if(!firstCommitHash)
+  else
   {
-    std::cerr << "Failed to find a commit hash in " << firstFileName << ".\n\n" << USAGE;
-    return unknownFileObject;
+    totalDataPOT = getMyPOT(*firstFile);
+  }
+
+  for(auto flux: mergedFlux)
+  {
+    flux.second->Scale(totalDataPOT);
   }
 
   for(int whichFile = 2; whichFile < argc; ++whichFile)
@@ -187,20 +275,32 @@ int main(const int argc, const char** argv)
       return inputFileFailed;
     }
 
-    double scale = 1.;
+    double scale = 1., dataPOT = 0., mcPOT = 0.;
     if(scaleToDataPOT)
     {
-      try { scale = getPOTScale(*inFile); }
+      try
+      {
+        dataPOT = getDataPOT(*inFile);
+        mcPOT = getMyPOT(*inFile);
+        scale = dataPOT / mcPOT;
+      }
       catch(const std::runtime_error& e)
       {
-        std::cerr << "Failed to get POT scale for " << inFileName << " because:\n" << e.what() << "\n\n" << USAGE;
+        std::cerr << "Failed to scale " << inFileName << "'s histograms because:\n" << e.what() << "\n\n" << USAGE;
         return inputFileFailed;
       }
     }
+    else dataPOT = getMyPOT(*inFile);
 
-    if(!checkMetadata(*firstFile, *inFile)) return badMetadata;
+    std::cout << "Scaling by " << dataPOT << " / " << mcPOT << " = " << scale << " for file " << inFile->GetName() << "\n";
 
-    for(auto& entry: mergeResult)
+    totalDataPOT += dataPOT;
+    totalMCPOT += mcPOT;
+
+    if(!checkMetadata(*firstFile, *inFile, mergedNucleons)) return badMetadata;
+
+    //Merge histograms
+    for(auto& entry: mergedSamples)
     {
       const auto obj = inFile->Get(entry.first.c_str());
       auto mergeWith = entry.second;
@@ -216,22 +316,36 @@ int main(const int argc, const char** argv)
         assert(dynamic_cast<TH1*>(mergeWith));
         static_cast<TH1*>(mergeWith)->Add(static_cast<const TH1*>(obj), scale);
       }
-      else if(dynamic_cast<const TParameter<double>*>(obj))
-      {
-        if(entry.first.find("_FiducialNucleons") != std::string::npos && !(mergeWith->TestBit(TParameter<double>::kFirst) || mergeWith->TestBit(TParameter<double>::kLast) || mergeWith->TestBit(TParameter<double>::kMin) || mergeWith->TestBit(TParameter<double>::kMax)))
-          std::cout << "WARNING: Merging number of fiducial nucleons.  This shouldn't change between mergeable files!\n";
-        assert(dynamic_cast<TParameter<double>>(mergeWith));
-        TList toMerge;
-        toMerge.Add(obj);
-        static_cast<TParameter<double>*>(mergeWith)->Merge(&toMerge);
-      }
-      else if(!strcmp(mergeWith->ClassName(), "TNamed")) {} //Ignore these for now.  Could be playlist or version metadata
       else
       {
         std::cerr << "Found an object, " << mergeWith->ClassName() << " " << entry.first << ", that I don't know how to merge.\n\n" << USAGE;
         return unknownFileObject;
       }
       //TODO: Recurse on TDirectories.  My simple map of object names to TObjects probably won't work well with TDirectory anyway.
+    }
+
+    //Merge POT
+    for(auto& pot: mergedPOT)
+    {
+      const auto param = dynamic_cast<TParameter<double>*>(inFile->Get(pot.first.c_str()));
+      if(!param)
+      {
+        std::cerr << "POT in " << inFile->GetName() << " either doesn't exist or is not a TParameter<double>!\n\n" << USAGE;
+        return unknownFileObject;
+      }
+      pot.second->SetVal(pot.second->GetVal() + param->GetVal());
+    }
+
+    //Merge flux
+    for(auto& flux: mergedFlux)
+    {
+      const auto hist = dynamic_cast<TH1*>(inFile->Get(flux.first.c_str()));
+      if(!hist)
+      {
+        std::cerr << "Flux histogram at " << flux.first << " in " << inFile->GetName() << " either doesn't exist or is not derived from TH1!\n\n" << USAGE;
+        return unknownFileObject;
+      }
+      flux.second->Add(hist, dataPOT); //I'll divide by total data POT at the end of this program
     }
   }
 
@@ -246,7 +360,19 @@ int main(const int argc, const char** argv)
   }
 
   outFile->cd();
-  for(auto entry: mergeResult) entry.second->Write();  
+  std::cout << "Scaling by " << totalMCPOT << " / " << totalDataPOT << " = " << totalMCPOT / totalDataPOT << "\n";
+  for(auto entry: mergedSamples)
+  {
+    if(scaleToDataPOT && dynamic_cast<TH1*>(entry.second)) static_cast<TH1*>(entry.second)->Scale(totalMCPOT / totalDataPOT);
+    entry.second->Write();  
+  }
+  for(auto entry: mergedPOT) entry.second->Write();
+  for(auto entry: mergedNucleons) entry.second->Write();
+  for(auto entry: mergedFlux)
+  {
+    entry.second->Scale(1./totalDataPOT);
+    entry.second->Write();
+  }
 
   return success;
 }
