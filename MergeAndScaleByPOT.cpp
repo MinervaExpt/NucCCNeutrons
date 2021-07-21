@@ -213,9 +213,14 @@ int main(const int argc, const char** argv)
     {
       auto hist = dynamic_cast<TH1*>(obj);
       assert(hist && "Flux is not derived from TH1!");
+      hist->SetDirectory(nullptr);
       mergedFlux[keyName] = hist;
     }
-    else if(strcmp(obj->ClassName(), "TNamed")) mergedSamples[keyName] = obj;
+    else if(strcmp(obj->ClassName(), "TNamed"))
+    {
+      if(dynamic_cast<TH1*>(obj)) static_cast<TH1*>(obj)->SetDirectory(nullptr);
+      mergedSamples[keyName] = obj;
+    }
   }
 
   //Ensure that metadata is in expected format in firstFile.
@@ -238,8 +243,15 @@ int main(const int argc, const char** argv)
 
       for(auto& entry: mergedSamples)
       {
-        auto th1 = dynamic_cast<TH1*>(entry.second);
-        if(th1) th1->Scale(scale);
+        /*auto th1 = dynamic_cast<TH1*>(entry.second);
+        if(th1) th1->Scale(scale);*/
+
+        if(dynamic_cast<PlotUtils::MnvH1D*>(entry.second)) static_cast<PlotUtils::MnvH1D*>(entry.second)->Scale(scale);
+        else
+        {
+          assert(dynamic_cast<PlotUtils::MnvH2D*>(entry.second));
+          static_cast<PlotUtils::MnvH2D*>(entry.second)->Scale(scale);
+        }
       }
 
       totalDataPOT = dataPOT;
@@ -311,12 +323,22 @@ int main(const int argc, const char** argv)
       }
 
       //Do per-object merging.  Only merge objects I care about.  Fail if any other found.
-      if(dynamic_cast<const TH1*>(obj)) //Covers both MnvH1/2D and TH1D
+      /*if(dynamic_cast<const TH1*>(obj)) //Covers both MnvH1/2D and TH1D
       {
         assert(dynamic_cast<TH1*>(mergeWith));
         static_cast<TH1*>(obj)->Scale(scale);
         static_cast<TH1*>(mergeWith)->Add(static_cast<const TH1*>(obj));
         //static_cast<TH1*>(mergeWith)->Add(static_cast<const TH1*>(obj), scale);
+      }*/
+      if(dynamic_cast<const PlotUtils::MnvH1D*>(obj))
+      {
+        assert(dynamic_cast<PlotUtils::MnvH1D*>(mergeWith));
+        static_cast<PlotUtils::MnvH1D*>(obj)->Add(static_cast<const PlotUtils::MnvH1D*>(obj), scale);
+      }
+      else if(dynamic_cast<const PlotUtils::MnvH2D*>(obj))
+      {
+        assert(dynamic_cast<PlotUtils::MnvH2D*>(mergeWith));
+        static_cast<PlotUtils::MnvH2D*>(obj)->Add(static_cast<const PlotUtils::MnvH2D*>(obj), scale);
       }
       else
       {
@@ -341,15 +363,31 @@ int main(const int argc, const char** argv)
     //Merge flux
     for(auto& flux: mergedFlux)
     {
-      const auto hist = dynamic_cast<TH1*>(inFile->Get(flux.first.c_str()));
+      /*const auto hist = dynamic_cast<PlotUtils::MnvH1D*>(inFile->Get(flux.first.c_str()));
       if(!hist)
       {
         std::cerr << "Flux histogram at " << flux.first << " in " << inFile->GetName() << " either doesn't exist or is not derived from TH1!\n\n" << USAGE;
         return unknownFileObject;
       }
       hist->Scale(dataPOT);
-      flux.second->Add(hist);
+      flux.second->Add(hist);*/
       //flux.second->Add(hist, dataPOT); //I'll divide by total data POT at the end of this program
+
+      const auto obj = inFile->Get(flux.first.c_str());
+      if(dynamic_cast<const PlotUtils::MnvH1D*>(obj))
+      {
+        assert(dynamic_cast<PlotUtils::MnvH1D*>(flux.second));
+        static_cast<PlotUtils::MnvH1D*>(flux.second)->Add(static_cast<const PlotUtils::MnvH1D*>(obj));
+      }
+      else if(dynamic_cast<const PlotUtils::MnvH2D*>(obj))
+      {
+        assert(dynamic_cast<PlotUtils::MnvH2D*>(flux.second));
+        static_cast<PlotUtils::MnvH2D*>(flux.second)->Add(static_cast<const PlotUtils::MnvH2D*>(obj));
+      }
+      else
+      {
+        std::cerr << "Flux histogram at " << flux.first << " in " << inFile->GetName() << " either doesn't exist or is not derived from MnvH1D or MnvH2D!\n\n" << USAGE;
+      }
     }
   }
 
@@ -367,7 +405,7 @@ int main(const int argc, const char** argv)
   std::cout << "Scaling by " << totalMCPOT << " / " << totalDataPOT << " = " << totalMCPOT / totalDataPOT << "\n";
   for(auto entry: mergedSamples)
   {
-    if(scaleToDataPOT && dynamic_cast<TH1*>(entry.second)) static_cast<TH1*>(entry.second)->Scale(totalMCPOT / totalDataPOT);
+    if(scaleToDataPOT && dynamic_cast<PlotUtils::MnvH1D*>(entry.second)) static_cast<PlotUtils::MnvH1D*>(entry.second)->Scale(totalMCPOT / totalDataPOT);
     entry.second->Write();  
   }
   for(auto entry: mergedPOT) entry.second->Write();
