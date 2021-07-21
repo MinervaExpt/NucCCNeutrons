@@ -314,7 +314,9 @@ int main(const int argc, const char** argv)
       if(dynamic_cast<const TH1*>(obj)) //Covers both MnvH1/2D and TH1D
       {
         assert(dynamic_cast<TH1*>(mergeWith));
-        static_cast<TH1*>(mergeWith)->Add(static_cast<const TH1*>(obj), scale);
+        static_cast<TH1*>(obj)->Scale(scale);
+        static_cast<TH1*>(mergeWith)->Add(static_cast<const TH1*>(obj));
+        //static_cast<TH1*>(mergeWith)->Add(static_cast<const TH1*>(obj), scale);
       }
       else
       {
@@ -345,7 +347,9 @@ int main(const int argc, const char** argv)
         std::cerr << "Flux histogram at " << flux.first << " in " << inFile->GetName() << " either doesn't exist or is not derived from TH1!\n\n" << USAGE;
         return unknownFileObject;
       }
-      flux.second->Add(hist, dataPOT); //I'll divide by total data POT at the end of this program
+      hist->Scale(dataPOT);
+      flux.second->Add(hist);
+      //flux.second->Add(hist, dataPOT); //I'll divide by total data POT at the end of this program
     }
   }
 
