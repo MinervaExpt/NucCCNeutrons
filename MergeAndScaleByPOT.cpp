@@ -270,7 +270,15 @@ int main(const int argc, const char** argv)
 
   for(auto flux: mergedFlux)
   {
-    flux.second->Scale(totalDataPOT);
+    if(dynamic_cast<PlotUtils::MnvH1D*>(flux.second))
+    {
+      static_cast<PlotUtils::MnvH1D*>(flux.second)->Scale(totalDataPOT);
+    }
+    else
+    {
+      assert(dynamic_cast<PlotUtils::MnvH2D*>(flux.second));
+      static_cast<PlotUtils::MnvH2D*>(flux.second)->Scale(totalDataPOT);
+    }
   }
 
   for(int whichFile = 2; whichFile < argc; ++whichFile)
@@ -402,17 +410,28 @@ int main(const int argc, const char** argv)
   }
 
   outFile->cd();
-  std::cout << "Scaling by " << totalMCPOT << " / " << totalDataPOT << " = " << totalMCPOT / totalDataPOT << "\n";
   for(auto entry: mergedSamples)
   {
-    if(scaleToDataPOT && dynamic_cast<PlotUtils::MnvH1D*>(entry.second)) static_cast<PlotUtils::MnvH1D*>(entry.second)->Scale(totalMCPOT / totalDataPOT);
+    if(scaleToDataPOT && dynamic_cast<PlotUtils::MnvH1D*>(entry.second))
+    {
+      std::cout << "Scaling by " << totalMCPOT << " / " << totalDataPOT << " = " << totalMCPOT / totalDataPOT << "\n";
+      static_cast<PlotUtils::MnvH1D*>(entry.second)->Scale(totalMCPOT / totalDataPOT);
+    }
     entry.second->Write();  
   }
   for(auto entry: mergedPOT) entry.second->Write();
   for(auto entry: mergedNucleons) entry.second->Write();
   for(auto entry: mergedFlux)
   {
-    entry.second->Scale(1./totalDataPOT);
+    if(dynamic_cast<PlotUtils::MnvH1D*>(entry.second))
+    {
+      static_cast<PlotUtils::MnvH1D*>(entry.second)->Scale(1./totalDataPOT);
+    }
+    else
+    {
+      assert(dynamic_cast<PlotUtils::MnvH2D*>(entry.second));
+      static_cast<PlotUtils::MnvH2D*>(entry.second)->Scale(1./totalDataPOT);
+    }
     entry.second->Write();
   }
 
