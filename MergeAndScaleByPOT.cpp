@@ -341,12 +341,12 @@ int main(const int argc, const char** argv)
       if(dynamic_cast<const PlotUtils::MnvH1D*>(obj))
       {
         assert(dynamic_cast<PlotUtils::MnvH1D*>(mergeWith));
-        static_cast<PlotUtils::MnvH1D*>(obj)->Add(static_cast<const PlotUtils::MnvH1D*>(obj), scale);
+        static_cast<PlotUtils::MnvH1D*>(mergeWith)->Add(static_cast<const PlotUtils::MnvH1D*>(obj), scale);
       }
       else if(dynamic_cast<const PlotUtils::MnvH2D*>(obj))
       {
         assert(dynamic_cast<PlotUtils::MnvH2D*>(mergeWith));
-        static_cast<PlotUtils::MnvH2D*>(obj)->Add(static_cast<const PlotUtils::MnvH2D*>(obj), scale);
+        static_cast<PlotUtils::MnvH2D*>(mergeWith)->Add(static_cast<const PlotUtils::MnvH2D*>(obj), scale);
       }
       else
       {
@@ -385,12 +385,12 @@ int main(const int argc, const char** argv)
       if(dynamic_cast<const PlotUtils::MnvH1D*>(obj))
       {
         assert(dynamic_cast<PlotUtils::MnvH1D*>(flux.second));
-        static_cast<PlotUtils::MnvH1D*>(flux.second)->Add(static_cast<const PlotUtils::MnvH1D*>(obj));
+        static_cast<PlotUtils::MnvH1D*>(flux.second)->Add(static_cast<const PlotUtils::MnvH1D*>(obj), dataPOT);
       }
       else if(dynamic_cast<const PlotUtils::MnvH2D*>(obj))
       {
         assert(dynamic_cast<PlotUtils::MnvH2D*>(flux.second));
-        static_cast<PlotUtils::MnvH2D*>(flux.second)->Add(static_cast<const PlotUtils::MnvH2D*>(obj));
+        static_cast<PlotUtils::MnvH2D*>(flux.second)->Add(static_cast<const PlotUtils::MnvH2D*>(obj), dataPOT);
       }
       else
       {

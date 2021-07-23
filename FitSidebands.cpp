@@ -191,7 +191,7 @@ int main(const int argc, const char** argv)
     return 1;
   }
 
-  auto dataFile = TFile::Open(argv[2], "READ");
+  std::unique_ptr<TFile> dataFile(TFile::Open(argv[2], "READ"));
   if(!dataFile)
   {
     std::cerr << "Failed to open file with data histograms named " << argv[2] << "\n";
@@ -206,7 +206,7 @@ int main(const int argc, const char** argv)
     std::cerr << "Failed to copy file with MC histograms named " << argv[2] << "\n";
     return 3;
   }
-  auto mcFile = TFile::Open(mcBaseName.c_str(), "UPDATE");
+  std::unique_ptr<TFile> mcFile(TFile::Open(mcBaseName.c_str(), "UPDATE"));
 
   YAML::Node config;
   try
