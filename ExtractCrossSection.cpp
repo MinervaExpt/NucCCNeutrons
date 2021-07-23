@@ -103,7 +103,7 @@ void Plot(PlotUtils::MnvH1D& hist, const std::string& stepName, const std::strin
 //TODO: Trim it down a little?  Remove that static?
 PlotUtils::MnvH1D* UnfoldHist( PlotUtils::MnvH1D* h_folded, PlotUtils::MnvH2D* h_migration, int num_iter )
 {
-  static MinervaUnfold::MnvUnfold unfold;
+  /*static*/ MinervaUnfold::MnvUnfold unfold;
   PlotUtils::MnvH1D* h_unfolded = nullptr;
 
   //bool bUnfolded = false;
@@ -175,14 +175,14 @@ int main(const int argc, const char** argv)
   }
 
   const int nIterations = std::stoi(argv[1]);
-  auto dataFile = TFile::Open(argv[2], "READ");
+  std::unique_ptr<TFile> dataFile(TFile::Open(argv[2], "READ"));
   if(!dataFile)
   {
     std::cerr << "Failed to open data file " << argv[2] << ".\n";
     return 2;
   }
 
-  auto mcFile = TFile::Open(argv[3], "READ");
+  std::unique_ptr<TFile> mcFile(TFile::Open(argv[3], "READ"));
   if(!mcFile)
   {
     std::cerr << "Failed to open MC file " << argv[3] << ".\n";
@@ -256,7 +256,7 @@ int main(const int argc, const char** argv)
                                            });
       Plot(*bkgSubtracted, "backgroundSubtracted", prefix);
 
-      auto outFile = TFile::Open((prefix + "_crossSection.root").c_str(), "CREATE");
+      std::unique_ptr<TFile> outFile(TFile::Open((prefix + "_crossSection.root").c_str(), "CREATE"));
       if(!outFile)
       {
         std::cerr << "Could not create a file called " << prefix + "_crossSection.root" << ".  Does it already exist?\n";
