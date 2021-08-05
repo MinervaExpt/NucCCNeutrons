@@ -384,7 +384,9 @@ int main(const int argc, const char** argv)
           minimizer->PrintResults();
           std::cout << "\nCorrelation matrix:\n";
           printCorrMatrix(*minimizer, objectiveFunction.NDim());
+          #ifndef NDEBUG
           plotParameterScan(*minimizer, objectiveFunction, bandName, whichUniv, CVResults, CVErrors);
+          #endif //NDEBUG
         }
 
         for(auto& sideband: sidebands) objectiveFunction.scale(sideband, *minimizer);

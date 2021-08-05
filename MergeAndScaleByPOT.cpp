@@ -412,10 +412,18 @@ int main(const int argc, const char** argv)
   outFile->cd();
   for(auto entry: mergedSamples)
   {
-    if(scaleToDataPOT && dynamic_cast<PlotUtils::MnvH1D*>(entry.second))
+    if(scaleToDataPOT)
     {
       std::cout << "Scaling by " << totalMCPOT << " / " << totalDataPOT << " = " << totalMCPOT / totalDataPOT << "\n";
-      static_cast<PlotUtils::MnvH1D*>(entry.second)->Scale(totalMCPOT / totalDataPOT);
+      if(dynamic_cast<PlotUtils::MnvH1D*>(entry.second))
+      {
+        static_cast<PlotUtils::MnvH1D*>(entry.second)->Scale(totalMCPOT / totalDataPOT);
+      }
+      else
+      {
+        assert(dynamic_cast<PlotUtils::MnvH2D*>(entry.second));
+        static_cast<PlotUtils::MnvH2D*>(entry.second)->Scale(totalMCPOT / totalDataPOT);
+      }
     }
     entry.second->Write();  
   }
