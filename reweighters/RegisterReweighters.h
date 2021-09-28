@@ -17,6 +17,7 @@
 #include "PlotUtils/RPAReweighter.h"
 #include "PlotUtils/MINOSEfficiencyReweighter.h"
 #include "PlotUtils/SuSAFromValencia2p2hReweighter.h"
+#include "weighters/NeutronInelasticReweighter.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -107,4 +108,23 @@ namespace
   };
 
   static LowQ2PionRegistrar regLowQ2Pi("LowQ2PionTune");
+
+  class NeutronInelasticRegistrar: public plgn::RegistrarBase<PlotUtils::Reweighter<evt::Universe>>
+  {
+    public:
+      NeutronInelasticRegistrar(const std::string& name)
+      {
+        auto& reg = plgn::Factory<PlotUtils::Reweighter<evt::Universe>>::instance();
+        reg.Add(name, this);
+      }
+
+      virtual ~NeutronInelasticRegistrar() = default;
+
+      std::unique_ptr<PlotUtils::Reweighter<evt::Universe>> NewPlugin(const YAML::Node& config)
+      {
+        return std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>(new NeutronInelasticReweighter<evt::Universe>(config.as<std::map<std::string, std::vector<int>>>())); //TODO: YAML arguments here
+      }
+  };
+
+  static NeutronInelasticRegistrar regNeutronInelastic("NeutronInelastic");
 }
