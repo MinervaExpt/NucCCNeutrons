@@ -17,7 +17,47 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <map>
 #include <set>
+#include <functional>
+#include <type_traits>
+
+namespace
+{
+  //Check whether a CATegory is std::hash<>able.  Soft of a missing piece of the STL because
+  //it wasn't guaranteed to work pre-c++17.  As long as you're using a c++17-era STL, this should work
+  //regardless of compiler standard.
+  //Solution taken from https://stackoverflow.com/questions/12753997/check-if-type-is-hashable
+  /*template <class CAT, typename T = std::void_t<>>
+  struct is_hashable: std::false_type {};
+                                                                                                       
+  template <class CAT>
+  struct is_hashable<CAT, std::void_t<decltype(std::declval<std::hash<CAT>>()(std::declval<CAT>()))>>: std::true_type {};*/
+
+  //This version, copied nearly verbatim, works while mine doesn't.  Looks like I was missing a parenthese
+  /*template <typename T, typename = std::void_t<>>
+  struct is_hashable : std::false_type { };
+  
+  template <typename T>
+  struct is_hashable<T, std::void_t<decltype(std::declval<std::hash<T>>()(std::declval<T>()))>> : std::true_type { };*/
+
+  //TODO: This works, but it picks std::map<> for everything
+  template <class CAT, class VALUE, typename = std::void_t<>>
+  struct map_t { using type = std::map<CAT, VALUE>; };
+
+  template <class CAT, class VALUE>
+  struct map_t<CAT, VALUE, std::void_t<decltype(std::declval<std::hash<CAT>>()(std::declval<CAT>()))>>
+  {
+    using type = std::unordered_map<CAT, VALUE>;
+  };
+
+  //TODO: This caused an error that seemed to be using std::map for everything!
+  /*template <class CAT, class VALUE, typename = std::void_t<decltype(std::declval<std::hash<CAT>>()(std::declval<CAT>()))>>
+  struct map_t { using type = std::unordered_map<CAT, VALUE>; };
+
+  template <class CAT, class VALUE>
+  struct map_t<CAT, VALUE, std::void_t<>> { using type = std::map<CAT, VALUE>; };*/
+}
 
 namespace util
 {
@@ -47,11 +87,13 @@ namespace util
       template <class CAT>
       struct lookup
       {
-        std::unordered_map<CAT, HIST*> map;
+        //typename std::enable_if<::is_hashable<CAT>::value, std::unordered_map<CAT, HIST*>>::type map;
+        typename map_t<CAT, HIST*>::type map;
 
         HIST*& operator [](const CAT& key) { return map[key]; }
 
-        typename std::unordered_map<CAT, HIST*>::const_iterator find(const CAT& key) const { return map.find(key); }
+        //typename std::unordered_map<CAT, HIST*>::const_iterator find(const CAT& key) const { return map.find(key); }
+        auto find(const CAT& key) const -> decltype(map.find(key)) { return map.find(key); }
       };
 
       //Special case: Don't hold on to a copy of unique_ptr<>.  Take an
@@ -59,12 +101,27 @@ namespace util
       template <class CAT>
       struct lookup<std::unique_ptr<CAT>>
       {
-        std::unordered_map<CAT*, HIST*> map;
+        //typename std::enable_if<::is_hashable<CAT>::value, std::unordered_map<CAT*, HIST*>>::type map;
+        typename map_t<CAT*, HIST*>::type map;
+        static_assert(std::is_same<typename map_t<CAT*, HIST*>::type, std::unordered_map<CAT*, HIST*>>::value, "Using std::map for unique_ptr<> where unordered_map<> should be used!");
 
         HIST*& operator [](const std::unique_ptr<CAT>& key) { return map[key.get()]; }
 
-        typename std::unordered_map<CAT*, HIST*>::const_iterator find(const std::unique_ptr<CAT>& key) const { return map.find(key.get()); }
+        //typename std::unordered_map<CAT*, HIST*>::const_iterator find(const std::unique_ptr<CAT>& key) const { return map.find(key.get()); }
+        auto find(const std::unique_ptr<CAT>& key) const -> decltype(map.find(key.get())) { return map.find(key.get()); }
       };
+
+      //Special case when CAT isn't hashable.
+      //TODO: It might be more elegant to write a struct template that resolves to either std::unordered_map<> or std::map<>.
+      /*template <class CAT>
+      struct lookup<CAT>
+      {
+        std::map<CAT, HIST*> map; //Use regular comparison instead.  This is slower than std::unordered_map<>, but it works with things like std::multiset<>
+                                                                                                                                                             
+        HIST*& operator [](const CAT& key) { return map[key]; }
+                                                                                                                                                             
+        typename std::unordered_map<CAT, HIST*>::const_iterator find(const CAT& key) const { return map.find(key); }
+      };*/
 
     public:
       //CATEGORIES is an iterable container of objects like NamedCategory<>
