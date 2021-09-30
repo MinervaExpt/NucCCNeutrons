@@ -33,7 +33,10 @@ namespace
 
   std::vector<util::NamedCategory<std::multiset<int>>> childrenToChannelName = {util::NamedCategory<std::multiset<int>>{{{1000060120, 2112}}, "nGamma"},
                                                                                 util::NamedCategory<std::multiset<int>>{{{1000020040, 1000020040, 1000020040, 2112}}, "threeAlpha"},
-                                                                                util::NamedCategory<std::multiset<int>>{{{1000050110, 2112, 2212}}, "Bnp"}
+                                                                                util::NamedCategory<std::multiset<int>>{{{1000050110, 2112, 2212}}, "Bnp"},
+                                                                                util::NamedCategory<std::multiset<int>>{{{1000040090, 1000020040}}, "BeAlpha"},
+                                                                                util::NamedCategory<std::multiset<int>>{{{1000050120, 2212}}, "Bp"},
+                                                                                util::NamedCategory<std::multiset<int>>{{{1000060110, 2112, 2112}}, "Cnn"}
                                                                                };
 
   constexpr MeV neutronMass = 939.6;
@@ -44,51 +47,78 @@ namespace ana
   MoNAReweightValidation::MoNAReweightValidation(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
                                    std::vector<background_t>& backgrounds, std::map<std::string,
                                    std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
-                                                                         fTruthNeutronKEPerInteractionMode(childrenToChannelName, dir, "Neutron KE", "Among Signal Events", 20, 0, 4000, univs),
-                                                                         fSelectedNeutronKEPerInteractionMode(childrenToChannelName, dir, "Neutron KE", "Among Selected Events", 20, 0, 4000, univs)
+                                                                         fTruthNeutronKEPerInteractionMode(childrenToChannelName, dir, "Neutron KE", "Among Signal Events", 20, 0, 150, univs),
+                                                                         fSelectedNeutronKEPerInteractionMode(childrenToChannelName, dir, "Neutron KE", "Among Selected Events", 20, 0, 150, univs)
   {
   }
 
-  void MoNAReweightValidation::mcSignal(const evt::Universe& univ, const events weight)
+  template <class FUNC>
+  void loopAllNeutrons(const evt::Universe& univ, const FUNC&& func)
   {
     const std::string prefix = "truth_neutronInelasticReweight"; //Beginning of branch names for inelastic reweighting
     const auto startEnergyPerPoint = univ.GetVec<MeV>((prefix + "InitialE").c_str());
 
+    const int nNeutrons = univ.GetInt((prefix + "NPaths").c_str());
     const auto nInelasticChildren = univ.GetVecInt((prefix + "NInelasticChildren").c_str()),
-               allInelChildren = univ.GetVecInt((prefix + "InelasticChildPDGs").c_str());
+               allInelChildren = univ.GetVecInt((prefix + "InelasticChildPDGs").c_str()),
+               nPointsPerNeutron = univ.GetVecInt((prefix + "NTrajPointsSaved").c_str()),
+               materialPerPoint = univ.GetVecInt((prefix + "Nuke").c_str()),
+               intCodePerPoint = univ.GetVecInt((prefix + "IntCodePerSegment").c_str());
 
-    int endInelasticChild = 0;
-    for(int whichNeutron = 0; whichNeutron < startEnergyPerPoint.size(); ++whichNeutron)
+    if(!nPointsPerNeutron.empty())
     {
-      const int startInelasticChild = endInelasticChild;
-      endInelasticChild += nInelasticChildren[whichNeutron];
+      int endPoint = 0,
+          endInelasticChild = 0;
+      for(int whichNeutron = 0; whichNeutron < nNeutrons; ++whichNeutron)
+      {
+        const int startInelasticChild = endInelasticChild,
+                  startPoint = endPoint;
+        endInelasticChild += nInelasticChildren[whichNeutron];
+        endPoint += nPointsPerNeutron[whichNeutron];
 
-      std::multiset<int> inelasticChildren(allInelChildren.begin() + startInelasticChild, allInelChildren.begin() + endInelasticChild);
-      inelasticChildren.erase(22); //Ignore photons because GEANT tends to emit extra low energy photons to distribute binding energy
+        //assert(endPoint > 0 && "Found a neutron with no trajectory points saved for reweighting!"); //Apparently, this really happens :(
+        if(startPoint != endPoint)
+        {
+          const int intCode = intCodePerPoint[endPoint-1];
 
-      fSelectedNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startEnergyPerPoint[whichNeutron] - neutronMass, weight);
-    }
+          //-6 is a special code for plastic scintillator inherited from MnvHadronReweight
+          //int(eraction)Code checks that I'm only plotting inelastic interactions.  Elastic interactions should, and do, dominate over any individual inelastic channel.
+          if(materialPerPoint[endPoint-1] == -6 && (intCode == 1 || intCode == 4))
+          {
+            std::multiset<int> inelasticChildren(allInelChildren.begin() + startInelasticChild, allInelChildren.begin() + endInelasticChild);
+            inelasticChildren.erase(22); //Ignore photons because GEANT tends to emit extra low energy photons to distribute binding energy
+
+            //Break up very short-lived nuclei
+            if(inelasticChildren.count(1000040080))
+            {
+              inelasticChildren.insert(1000020040);
+              inelasticChildren.insert(1000020040);
+              inelasticChildren.erase(1000040080);
+            }
+
+            func(univ, inelasticChildren, startEnergyPerPoint[endPoint - 1] - neutronMass);
+          } //If in plastic scintillator
+        } //If this neutron has at least 1 trajectory point
+      } //For each neutron
+    } //If there are some neutrons saved in this event
+  } //loopAllNeutrons<>()
+
+  void MoNAReweightValidation::mcSignal(const evt::Universe& univ, const events weight)
+  {
+    loopAllNeutrons(univ,
+                    [this, weight](const evt::Universe& univ, const std::multiset<int>& inelasticChildren, const MeV startKE)
+                    {
+                      fSelectedNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startKE, weight);
+                    });
   }
 
   void MoNAReweightValidation::truth(const evt::Universe& univ, const events weight)
   {
-    //TODO: Make this looping code into a function that takes a lamdba as an argument.  I may well have to upgrade it to be more specific.
-    const std::string prefix = "truth_neutronInelasticReweight"; //Beginning of branch names for inelastic reweighting
-    const auto startEnergyPerPoint = univ.GetVec<MeV>((prefix + "InitialE").c_str()); 
-
-    const auto nInelasticChildren = univ.GetVecInt((prefix + "NInelasticChildren").c_str()),
-               allInelChildren = univ.GetVecInt((prefix + "InelasticChildPDGs").c_str());
-
-    int endInelasticChild = 0;
-    for(int whichNeutron = 0; whichNeutron < startEnergyPerPoint.size(); ++whichNeutron)
-    {
-      const int startInelasticChild = endInelasticChild;
-      endInelasticChild += nInelasticChildren[whichNeutron];
-
-      std::multiset<int> inelasticChildren(allInelChildren.begin() + startInelasticChild, allInelChildren.begin() + endInelasticChild);
-      inelasticChildren.erase(22); //Ignore photons because GEANT tends to emit extra low energy photons to distribute binding energy
-      fTruthNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startEnergyPerPoint[whichNeutron] - neutronMass, weight);
-    }
+    loopAllNeutrons(univ,
+                    [this, weight](const evt::Universe& univ, const std::multiset<int>& inelasticChildren, const MeV startKE)
+                    {
+                      fTruthNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startKE, weight);
+                    });
   }
 
   void MoNAReweightValidation::afterAllFiles(const events /*passedSelection*/)

@@ -102,7 +102,7 @@ namespace util
           }
         }
 
-        fOther = dir.make<HIST>((baseName + "_Other").c_str(), ("Other;" + axes).c_str(), args...);
+        fOther = dir.make<HIST>(SafeROOTName(baseName + "_Other").c_str(), ("Other;" + axes).c_str(), args...);
       }
 
       //CATEGORY is a pointer to an object with a name() member variable
@@ -115,7 +115,7 @@ namespace util
           fCatToHist[catPtr] = dir.make<HIST>(SafeROOTName(baseName + "_" + catPtr->name()).c_str(), (catPtr->name() + ";" + axes).c_str(), args...);
         }
 
-        fOther = dir.make<HIST>((baseName + "_Other"), ("Other;" + axes).c_str(), args...);
+        fOther = dir.make<HIST>(SafeROOTName(baseName + "_Other").c_str(), ("Other;" + axes).c_str(), args...);
       }
 
       //CATEGORY is a pointer to an object with a name() member variable
@@ -128,7 +128,7 @@ namespace util
           fCatToHist[catPtr] = dir.make<HIST>(SafeROOTName(baseName + "_" + catPtr->name()).c_str(), (catPtr->name() + ";" + axes).c_str(), args...);
         }
 
-        fOther = dir.make<HIST>((baseName + "_Other"), ("Other;" + axes).c_str(), args...);
+        fOther = dir.make<HIST>(SafeROOTName(baseName + "_Other").c_str(), ("Other;" + axes).c_str(), args...);
       }
 
       //Use a std::map<> instead of CATEGORIES
@@ -142,7 +142,7 @@ namespace util
           fCatToHist[category.first] = hist;
         }
 
-        fOther = dir.make<HIST>((baseName + "_Other").c_str(), ("Other;" + axes).c_str(), args...);
+        fOther = dir.make<HIST>(SafeROOTName(baseName + "_Other").c_str(), ("Other;" + axes).c_str(), args...);
       }
 
       HIST& operator [](const CATEGORY& cat) const
