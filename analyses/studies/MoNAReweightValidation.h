@@ -35,8 +35,10 @@ namespace ana
       virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override {};
 
     private:
-      util::Categorized<units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, MeV, events>, std::multiset<int>> fTruthNeutronKEPerInteractionMode;
-      util::Categorized<units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, MeV, events>, std::multiset<int>> fSelectedNeutronKEPerInteractionMode;
+      using Hist_t = units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, MeV, neutrons>;
+      util::Categorized<Hist_t, std::multiset<int>> fTruthNeutronKEPerInteractionMode;
+      util::Categorized<Hist_t, std::multiset<int>> fSelectedNeutronKEPerInteractionMode;
+      Hist_t* fTruthTotalNumberOfNeutrons;
   };
 }
 

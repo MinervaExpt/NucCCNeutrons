@@ -47,9 +47,10 @@ namespace ana
   MoNAReweightValidation::MoNAReweightValidation(const YAML::Node& config, util::Directory& dir, cuts_t&& mustPass,
                                    std::vector<background_t>& backgrounds, std::map<std::string,
                                    std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
-                                                                         fTruthNeutronKEPerInteractionMode(childrenToChannelName, dir, "Neutron KE", "Among Signal Events", 20, 0, 150, univs),
-                                                                         fSelectedNeutronKEPerInteractionMode(childrenToChannelName, dir, "Neutron KE", "Among Selected Events", 20, 0, 150, univs)
+                                                                         fTruthNeutronKEPerInteractionMode(childrenToChannelName, dir, "NeutronKEByChannel_TruthTree", "Neutron KE;Neutrons", 100, 1, 300, univs),
+                                                                         fSelectedNeutronKEPerInteractionMode(childrenToChannelName, dir, "NeutronKEByChannel_SignalSelected", "Neutron KE;Neutrons", 100, 1, 300, univs)
   {
+    fTruthTotalNumberOfNeutrons = dir.make<Hist_t>("TruthTotalNumberOfNeutrons", "Truth Tree Neutron Inelastic Scatters;Neutron KE;Inelastic Scatters", 100, 1, 300, univs);
   }
 
   template <class FUNC>
@@ -108,7 +109,7 @@ namespace ana
     loopAllNeutrons(univ,
                     [this, weight](const evt::Universe& univ, const std::multiset<int>& inelasticChildren, const MeV startKE)
                     {
-                      fSelectedNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startKE, weight);
+                      fSelectedNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startKE, neutrons(weight.in<events>()));
                     });
   }
 
@@ -117,7 +118,8 @@ namespace ana
     loopAllNeutrons(univ,
                     [this, weight](const evt::Universe& univ, const std::multiset<int>& inelasticChildren, const MeV startKE)
                     {
-                      fTruthNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startKE, weight);
+                      fTruthNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startKE, neutrons(weight.in<events>()));
+                      fTruthTotalNumberOfNeutrons->Fill(&univ, startKE, neutrons(weight.in<events>()));
                     });
   }
 
@@ -125,6 +127,7 @@ namespace ana
   {
     fTruthNeutronKEPerInteractionMode.visit([](auto& hist) { hist.SyncCVHistos(); });
     fSelectedNeutronKEPerInteractionMode.visit([](auto& hist) { hist.SyncCVHistos(); });
+    fTruthTotalNumberOfNeutrons->SyncCVHistos();
   }
 }
 
