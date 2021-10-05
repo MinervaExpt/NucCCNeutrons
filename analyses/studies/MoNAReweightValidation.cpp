@@ -48,16 +48,21 @@ namespace ana
                                    std::vector<background_t>& backgrounds, std::map<std::string,
                                    std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                          fTruthNeutronKEPerInteractionMode(childrenToChannelName, dir, "NeutronKEByChannel_TruthTree", "Neutron KE;Neutrons", 100, 1, 300, univs),
-                                                                         fSelectedNeutronKEPerInteractionMode(childrenToChannelName, dir, "NeutronKEByChannel_SignalSelected", "Neutron KE;Neutrons", 100, 1, 300, univs)
+                                                                         fSelectedNeutronKEPerInteractionMode(childrenToChannelName, dir, "NeutronKEByChannel_SignalSelected", "Neutron KE;Neutrons", 100, 1, 300, univs),
+                                                                         fFiducial()
   {
     fTruthTotalNumberOfNeutrons = dir.make<Hist_t>("TruthTotalNumberOfNeutrons", "Truth Tree Neutron Inelastic Scatters;Neutron KE;Inelastic Scatters", 100, 1, 300, univs);
   }
 
   template <class FUNC>
-  void loopAllNeutrons(const evt::Universe& univ, const FUNC&& func)
+  void MoNAReweightValidation::loopAllNeutrons(const evt::Universe& univ, const FUNC&& func)
   {
     const std::string prefix = "truth_neutronInelasticReweight"; //Beginning of branch names for inelastic reweighting
     const auto startEnergyPerPoint = univ.GetVec<MeV>((prefix + "InitialE").c_str());
+    const auto xPerPoint = univ.GetVecDouble((prefix + "PosX").c_str()),
+               yPerPoint = univ.GetVecDouble((prefix + "PosY").c_str()),
+               zPerPoint = univ.GetVecDouble((prefix + "PosZ").c_str());
+
 
     const int nNeutrons = univ.GetInt((prefix + "NPaths").c_str());
     const auto nInelasticChildren = univ.GetVecInt((prefix + "NInelasticChildren").c_str()),
@@ -84,7 +89,7 @@ namespace ana
 
           //-6 is a special code for plastic scintillator inherited from MnvHadronReweight
           //int(eraction)Code checks that I'm only plotting inelastic interactions.  Elastic interactions should, and do, dominate over any individual inelastic channel.
-          if(materialPerPoint[endPoint-1] == -6 && (intCode == 1 || intCode == 4))
+          if(materialPerPoint[endPoint-1] == -6 && (intCode == 1 || intCode == 4) && fFiducial.InTracker(xPerPoint[endPoint-1], yPerPoint[endPoint-1], zPerPoint[endPoint-1]))
           {
             std::multiset<int> inelasticChildren(allInelChildren.begin() + startInelasticChild, allInelChildren.begin() + endInelasticChild);
             inelasticChildren.erase(22); //Ignore photons because GEANT tends to emit extra low energy photons to distribute binding energy

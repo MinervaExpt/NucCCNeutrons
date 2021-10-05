@@ -16,6 +16,11 @@
 #ifndef ANA_CANDIDATECAUSES_H
 #define ANA_CANDIDATECAUSES_H
 
+namespace PlotUtils
+{
+  class TargetUtils;
+}
+
 namespace ana
 {
   class MoNAReweightValidation: public Study
@@ -39,6 +44,11 @@ namespace ana
       util::Categorized<Hist_t, std::multiset<int>> fTruthNeutronKEPerInteractionMode;
       util::Categorized<Hist_t, std::multiset<int>> fSelectedNeutronKEPerInteractionMode;
       Hist_t* fTruthTotalNumberOfNeutrons;
+
+      PlotUtils::TargetUtils fFiducial;
+
+      template <class FUNC>
+      void loopAllNeutrons(const evt::Universe& univ, const FUNC&& func);
   };
 }
 
