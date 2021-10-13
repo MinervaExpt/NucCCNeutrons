@@ -38,6 +38,7 @@
 //TODO: This eventually replaces models
 //reweighters includes
 #include "reweighters/RegisterReweighters.h"
+#include "systematics/RegisterVerticalSystematics.h"
 #include "PlotUtils/Model.h"
 
 //app includes
