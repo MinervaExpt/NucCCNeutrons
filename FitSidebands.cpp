@@ -203,7 +203,7 @@ int main(const int argc, const char** argv)
   mcBaseName = mcBaseName.substr(0, mcBaseName.find(".yaml")) + ".root";
   if(gSystem->CopyFile(argv[3], mcBaseName.c_str()) != 0)
   {
-    std::cerr << "Failed to copy file with MC histograms named " << argv[2] << "\n";
+    std::cerr << "Failed to copy file with MC histograms named " << argv[3] << "\n";
     return 3;
   }
   std::unique_ptr<TFile> mcFile(TFile::Open(mcBaseName.c_str(), "UPDATE"));
