@@ -299,7 +299,6 @@ namespace evt
       }
 
       //Same for final state particles.
-      //TODO: 
       template <class FS>
       std::vector<FS> dropFS(std::vector<FS>& branch) const
       {

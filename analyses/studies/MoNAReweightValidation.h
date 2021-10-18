@@ -44,11 +44,18 @@ namespace ana
       util::Categorized<Hist_t, std::multiset<int>> fTruthNeutronKEPerInteractionMode;
       util::Categorized<Hist_t, std::multiset<int>> fSelectedNeutronKEPerInteractionMode;
       Hist_t* fTruthTotalNumberOfNeutrons;
+      util::Categorized<Hist_t, int> fFSParticleKEByPDGCode;
 
       PlotUtils::TargetUtils fFiducial;
 
       template <class FUNC>
       void loopAllNeutrons(const evt::Universe& univ, const FUNC&& func);
+
+      struct FSPart
+      {
+        int pdgCode;
+        units::LorentzVector<MeV> momentum;
+      };
   };
 }
 

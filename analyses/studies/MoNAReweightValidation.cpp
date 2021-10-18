@@ -39,6 +39,12 @@ namespace
                                                                                 util::NamedCategory<std::multiset<int>>{{{1000060110, 2112, 2112}}, "Cnn"}
                                                                                };
 
+  std::vector<util::NamedCategory<int>> pdgToName = {util::NamedCategory<int>{{2212}, "Proton"},
+                                                     util::NamedCategory<int>{{2112}, "Neutron"},
+                                                     util::NamedCategory<int>{{211, -211}, "Charged Pion"},
+                                                     util::NamedCategory<int>{{111}, "Neutral Pion"},
+                                                    };
+
   constexpr MeV neutronMass = 939.6;
 }
 
@@ -49,6 +55,7 @@ namespace ana
                                    std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                          fTruthNeutronKEPerInteractionMode(childrenToChannelName, dir, "NeutronKEByChannel_TruthTree", "Neutron KE;Neutrons", 100, 1, 300, univs),
                                                                          fSelectedNeutronKEPerInteractionMode(childrenToChannelName, dir, "NeutronKEByChannel_SignalSelected", "Neutron KE;Neutrons", 100, 1, 300, univs),
+                                                                         fFSParticleKEByPDGCode(pdgToName, dir, "FSParticleKE_Truth", "KE;Particles", 100, 1, 300, univs),
                                                                          fFiducial()
   {
     fTruthTotalNumberOfNeutrons = dir.make<Hist_t>("TruthTotalNumberOfNeutrons", "Truth Tree Neutron Inelastic Scatters;Neutron KE;Inelastic Scatters", 100, 1, 300, univs);
@@ -126,6 +133,9 @@ namespace ana
                       fTruthNeutronKEPerInteractionMode[inelasticChildren].Fill(&univ, startKE, neutrons(weight.in<events>()));
                       fTruthTotalNumberOfNeutrons->Fill(&univ, startKE, neutrons(weight.in<events>()));
                     });
+
+    const auto fs = univ.Get<FSPart>(univ.GetFSPDGCodes(), univ.GetFSMomenta());
+    for(const auto& part: fs) fFSParticleKEByPDGCode[part.pdgCode].Fill(&univ, part.momentum.E() - part.momentum.mass(), neutrons(weight.in<events>())); //TODO: This is an abuse of my units system.  Create a "particles" unit?
   }
 
   void MoNAReweightValidation::afterAllFiles(const events /*passedSelection*/)
@@ -133,6 +143,7 @@ namespace ana
     fTruthNeutronKEPerInteractionMode.visit([](auto& hist) { hist.SyncCVHistos(); });
     fSelectedNeutronKEPerInteractionMode.visit([](auto& hist) { hist.SyncCVHistos(); });
     fTruthTotalNumberOfNeutrons->SyncCVHistos();
+    fFSParticleKEByPDGCode.visit([](auto& hist) { hist.SyncCVHistos(); });
   }
 }
 
