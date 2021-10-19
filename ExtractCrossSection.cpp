@@ -89,6 +89,8 @@ void Plot(PlotUtils::MnvH1D& hist, const std::string& stepName, const std::strin
   //Set up a MnvPlotter
   PlotUtils::MnvPlotter plotter;
   plotter.ApplyStyle(PlotUtils::kCCQENuStyle);
+  plotter.error_summary_group_map["GEANT"] = {"GEANT_Pion", "GEANT_Proton"};
+  plotter.error_color_map["NeutronInelasticExclusives"] = kBlue;
   //plotter.error_summary_group_map = ::errorGroups;
   plotter.axis_maximum = 0.4;
 
