@@ -23,9 +23,9 @@ namespace ana
                                      std::vector<evt::Universe*>>& univs): Study(config, dir, std::move(mustPass), backgrounds, univs),
                                                                            fCuts(config["variable"])
   {
-    fLeadingCandidateEDep = dir.make<Hist_t>("LeadingCandidateEDep", "Energy Deposit of Highest EDep Candidate", 65, 0, 2000, univs);
-    fLeadingNeutronKE     = dir.make<Hist_t>("LeadingNeutronKE", "KE of Highest Energy FS Neutron", 65, 0, 2000, univs);
-    fLeadingCandidateParentKE = dir.make<Hist_t>("LeadingCandidateParentKE", "KE of FS Neutron that Caused Highest EDep Candidate", 65, 0, 2000, univs);
+    fLeadingCandidateEDep = dir.make<Hist_t>("LeadingCandidateEDep", "Energy Deposit of Highest EDep Candidate", 30, 0, 100, univs);
+    fLeadingNeutronKE     = dir.make<Hist_t>("LeadingNeutronKE", "KE of Highest Energy FS Neutron", 100, 0, 10000, univs);
+    fLeadingCandidateParentKE = dir.make<Hist_t>("LeadingCandidateParentKE", "KE of FS Neutron that Caused Highest EDep Candidate", 7, 0, 1000, univs);
   }
 
   void TejinSensitivity::mcSignal(const evt::Universe& event, const events weight)
@@ -33,7 +33,8 @@ namespace ana
     auto cands = event.Get<MCCandidate>(event.Getblob_edep(), event.Getblob_zPos(),
                                         event.Getblob_transverse_dist_from_vertex(),
                                         event.Getblob_FS_index(),
-                                        event.Getblob_geant_dist_to_edep_as_neutron());
+                                        event.Getblob_geant_dist_to_edep_as_neutron(),
+                                        event.Getblob_nViews());
     auto fs = event.Get<FSPart>(event.GetTruthMatchedPDG_code(), event.GetTruthMatchedenergy(), event.GetFSMomenta());
     const auto vertex = event.GetVtx();
 
@@ -45,7 +46,7 @@ namespace ana
                                                 return lhs.edep < rhs.edep;
                                               });
 
-    if(leadingCand != lastAcceptedCand && leadingCand->FS_index > 0 && fCuts.countAsTruth(fs[leadingCand->FS_index]))
+    if(leadingCand != lastAcceptedCand && leadingCand->nViews > 1 && leadingCand->FS_index > 0 && fCuts.countAsTruth(fs[leadingCand->FS_index]))
       fLeadingCandidateParentKE->Fill(&event, fs[leadingCand->FS_index].energy - ::neutronMass, neutrons(weight.in<events>()));
 
     //N.B.: std::remove_if() sorts the fs vector.  It makes the FS_index of each candidate useless in doing so.
@@ -59,7 +60,8 @@ namespace ana
   void TejinSensitivity::data(const evt::Universe& event, const events weight)
   {
     auto cands = event.Get<RecoCandidate>(event.Getblob_edep(), event.Getblob_zPos(),
-                                          event.Getblob_transverse_dist_from_vertex());
+                                          event.Getblob_transverse_dist_from_vertex(),
+                                          event.Getblob_nViews());
     const auto vertex = event.GetVtx();
 
     const auto lastAcceptedCand = std::remove_if(cands.begin(), cands.end(),
@@ -69,7 +71,7 @@ namespace ana
                                               { 
                                                 return lhs.edep < rhs.edep;
                                               });
-    if(leadingCand != lastAcceptedCand) fLeadingCandidateEDep->Fill(&event, leadingCand->edep, neutrons(weight.in<events>()));
+    if(leadingCand != lastAcceptedCand && leadingCand->nViews > 1) fLeadingCandidateEDep->Fill(&event, leadingCand->edep, neutrons(weight.in<events>()));
   }
 
   void TejinSensitivity::afterAllFiles(const events /*passedSelection*/)

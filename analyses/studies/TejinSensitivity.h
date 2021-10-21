@@ -46,6 +46,7 @@ namespace ana
         mm transverse;
         int FS_index;
         mm dist_to_edep_as_neutron;
+        int nViews;
       };
 
       struct RecoCandidate
@@ -53,6 +54,7 @@ namespace ana
         MeV edep;
         mm z;
         mm transverse;
+        int nViews;
       };
 
       /*struct Cause
