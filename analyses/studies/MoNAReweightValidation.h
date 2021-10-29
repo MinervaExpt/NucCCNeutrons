@@ -39,6 +39,8 @@ namespace ana
       virtual void mcBackground(const evt::Universe& /*event*/, const background_t& /*background*/, const events /*weight*/) override {};
       virtual void data(const evt::Universe& /*event*/, const events /*weight*/) override {};
 
+      bool wantsTruthLoop() const override { return true; }
+
     private:
       using Hist_t = units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, MeV, neutrons>;
       util::Categorized<Hist_t, std::multiset<int>> fTruthNeutronKEPerInteractionMode;
