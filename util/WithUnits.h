@@ -11,6 +11,7 @@
 //PlotUtils includes so I can specialize on HistWrapper
 #include "PlotUtils/HistWrapper.h"
 #include "PlotUtils/Hist2DWrapper.h"
+#include "PlotUtils/Model.h"
 
 //unit library includes
 #include "units/units.h"
@@ -182,6 +183,29 @@ namespace units
         return Base_t::univHist(univ)->Fill(value.template in<XUNIT>(), weight.template in<YUNIT>()); 
       }
 
+      //Given many IsVertical() (or otherwise identical) Universes, Fill() them all with only one bin lookup.
+      //For variable-width binning only, this gets faster than calling Fill() in a loop because ROOT has to
+      //do a binary search for each Universe.
+      template <class OTHERX, class EVENT>
+      int Fill(const std::vector<UNIV*>& univs, const OTHERX value, const PlotUtils::Model<UNIV>& model, const EVENT& evt)
+      {
+        assert(!univs.empty());
+        const int whichBin = Base_t::univHist(univs.front())->FindBin(value.template in<XUNIT>());
+
+        for(const auto univ: univs)
+        {
+          auto hist = Base_t::univHist(univ);
+          const YUNIT weight = model.GetWeight(univ, evt);
+          hist.AddBinContent(whichBin, weight);
+
+          const double err = hist.GetBinError(whichBin);
+          const double newErr = err*err + weight*weight;
+          hist.SetBinError(whichBin, newErr);
+        }
+
+        return whichBin;
+      }
+
       void SetDirectory(TDirectory* dir)
       {
         Base_t::hist->SetDirectory(dir);
@@ -219,6 +243,29 @@ namespace units
       int Fill(const UNIV* univ, const OTHERX x, const OTHERY y, const OTHERZ weight)
       { 
         return Base_t::univHist(univ)->Fill(x.template in<XUNIT>(), y.template in<YUNIT>(), weight.template in<ZUNIT>()); 
+      }
+
+      //Given many IsVertical() (or otherwise identical) Universes, Fill() them all with only one bin lookup.
+      //For variable-width binning only, this gets faster than calling Fill() in a loop because ROOT has to
+      //do a binary search for each Universe.
+      template <class OTHERX, class OTHERY, class EVENT>
+      int Fill(const std::vector<UNIV*>& univs, const OTHERX x, const OTHERY y, const PlotUtils::Model<UNIV>& model, const EVENT& evt)
+      {
+        assert(!univs.empty());
+        const int whichBin = Base_t::univHist(univs.front())->FindBin(x.template in<XUNIT>(), y.template in<YUNIT>());
+                                                                                                                           
+        for(const auto univ: univs)
+        {
+          auto hist = Base_t::univHist(univ);
+          const YUNIT weight = model.GetWeight(univ, evt);
+          hist.AddBinContent(whichBin, weight);
+                                                                                                                           
+          const double err = hist.GetBinError(whichBin);
+          const double newErr = err*err + weight*weight;
+          hist.SetBinError(whichBin, newErr);
+        }
+
+        return whichBin;
       }
 
       void SetDirectory(TDirectory* dir)
