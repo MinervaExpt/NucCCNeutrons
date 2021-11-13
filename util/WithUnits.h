@@ -200,7 +200,7 @@ namespace units
 
           const double err = hist->GetBinError(whichBin);
           const double newErr = err*err + weight*weight;
-          hist->SetBinError(whichBin, newErr);
+          hist->SetBinError(whichBin, (0 < newErr)?std::sqrt(newErr):0);
         }
 
         return whichBin;
@@ -262,7 +262,7 @@ namespace units
                                                                                                                            
           const double err = hist->GetBinError(whichBin);
           const double newErr = err*err + weight*weight;
-          hist->SetBinError(whichBin, newErr);
+          hist->SetBinError(whichBin, (0 < newErr)?std::sqrt(newErr):0);
         }
 
         return whichBin;
