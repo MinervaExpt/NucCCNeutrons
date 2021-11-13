@@ -84,18 +84,20 @@ namespace ana
 
       virtual ~CrossSectionSignal() = default;
 
-      virtual void mcSignal(const evt::Universe& event, const events weight) override
+      virtual void mcSignal(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt) override
       {
-        const auto reco = fVar.reco(event), truth = fVar.truth(event);
+        assert(!univs.empty());
+        const auto reco = fVar.reco(*univs.front()), truth = fVar.truth(*univs.front());
 
-        fEfficiencyNum->Fill(&event, truth, weight);
-        fMigration->Fill(&event, reco, truth, weight);
-        fSelectedMCEvents->Fill(&event, reco, weight);
+        fEfficiencyNum->Fill(univs, truth, model, evt);
+        fMigration->Fill(univs, reco, truth, model, evt);
+        fSelectedMCEvents->Fill(univs, reco, model, evt);
       }
 
-      virtual void truth(const evt::Universe& event, const events weight) override
+      virtual void truth(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt) override
       {
-        fEfficiencyDenom->Fill(&event, fVar.truth(event), weight);
+        assert(!univs.empty());
+        fEfficiencyDenom->Fill(univs, fVar.truth(*univs.front()), model, evt);
       }
 
       virtual void data(const evt::Universe& event, const events weight) override
@@ -103,9 +105,10 @@ namespace ana
         fSignalEvents->Fill(&event, fVar.reco(event), weight);
       }
 
-      virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) override
+      virtual void mcBackground(const std::vector<evt::Universe*>& univs, const background_t& background, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt) override
       {
-        fBackgrounds[background].Fill(&event, fVar.reco(event), weight);
+        assert(!univs.empty());
+        fBackgrounds[background].Fill(univs, fVar.reco(*univs.front()), model, evt);
       }
 
       virtual void afterAllFiles(const events /*passedSelection*/) override

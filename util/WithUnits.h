@@ -195,12 +195,12 @@ namespace units
         for(const auto univ: univs)
         {
           auto hist = Base_t::univHist(univ);
-          const YUNIT weight = model.GetWeight(univ, evt);
-          hist.AddBinContent(whichBin, weight);
+          const double weight = model.GetWeight(*univ, evt);
+          hist->AddBinContent(whichBin, weight);
 
-          const double err = hist.GetBinError(whichBin);
+          const double err = hist->GetBinError(whichBin);
           const double newErr = err*err + weight*weight;
-          hist.SetBinError(whichBin, newErr);
+          hist->SetBinError(whichBin, newErr);
         }
 
         return whichBin;
@@ -257,12 +257,12 @@ namespace units
         for(const auto univ: univs)
         {
           auto hist = Base_t::univHist(univ);
-          const YUNIT weight = model.GetWeight(univ, evt);
-          hist.AddBinContent(whichBin, weight);
+          const double weight = model.GetWeight(*univ, evt);
+          hist->AddBinContent(whichBin, weight);
                                                                                                                            
-          const double err = hist.GetBinError(whichBin);
+          const double err = hist->GetBinError(whichBin);
           const double newErr = err*err + weight*weight;
-          hist.SetBinError(whichBin, newErr);
+          hist->SetBinError(whichBin, newErr);
         }
 
         return whichBin;

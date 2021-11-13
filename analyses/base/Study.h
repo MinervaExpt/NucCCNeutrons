@@ -63,10 +63,12 @@ namespace ana
       virtual void mcSignal(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt);
       
       //mcBackground failed the truth signal selection.
-      virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) = 0;
+      virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) {}
+      virtual void mcBackground(const std::vector<evt::Universe*>& univs, const background_t& background, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt);
 
       //Truth tree with truth information.  Passes truth signal definition and phase space.
-      virtual void truth(const evt::Universe& event, const events weight) = 0;
+      virtual void truth(const evt::Universe& event, const events weight) {}
+      virtual void truth(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt);
 
       //Data AnaTuple with only reco information.  These events passed all reco Cuts. 
       //Truth branches may be in an undefined state here, so be very careful not to use them.

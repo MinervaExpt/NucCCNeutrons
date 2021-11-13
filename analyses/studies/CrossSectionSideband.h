@@ -67,20 +67,22 @@ namespace ana
         fData->Fill(&event, fVar.reco(event), weight);
       }
 
-      virtual void mcSignal(const evt::Universe& event, const events weight) override
+      virtual void mcSignal(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt) override
       {
-        fSignal->Fill(&event, fVar.reco(event), weight);
+        assert(!univs.empty());
+        fSignal->Fill(univs, fVar.reco(*univs.front()), model, evt);
       }
 
-      virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) override
+      virtual void mcBackground(const std::vector<evt::Universe*>& univs, const background_t& background, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt) override
       {
-        fBackgrounds[background].Fill(&event, fVar.reco(event), weight);
+        assert(!univs.empty());
+        fBackgrounds[background].Fill(univs, fVar.reco(*univs.front()), model, evt);
       }
 
       //Sidebands aren't defined in the truth tree, so do nothing
-      virtual void truth(const evt::Universe& /*event*/, const events /*weight*/) override
+      /*virtual void truth(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt) override
       {
-      }
+      }*/
 
       virtual void afterAllFiles(const events /*passedSelection*/) override
       {

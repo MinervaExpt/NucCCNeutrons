@@ -47,9 +47,16 @@ namespace ana
   //use cases.
   void Study::mcSignal(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt)
   {
-    for(const auto univ: univs)
-    {
-      mcSignal(*univ, model.GetWeight(*univ, evt));
-    }
+    for(const auto univ: univs) mcSignal(*univ, model.GetWeight(*univ, evt));
+  }
+
+  void Study::mcBackground(const std::vector<evt::Universe*>& univs, const background_t& background, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt)
+  {
+    for(const auto univ: univs) mcBackground(*univ, background, model.GetWeight(*univ, evt));
+  }
+
+  void Study::truth(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt)
+  {
+    for(const auto univ: univs) truth(*univ, model.GetWeight(*univ, evt));
   }
 }

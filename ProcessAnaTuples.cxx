@@ -398,7 +398,7 @@ int main(const int argc, const char** argv)
                                                             [&event](const auto& background)
                                                             { return ::requireAll(background->passes, event); });
 
-                  for(const auto univ: compat) whichStudy->mcBackground(*univ, ::derefOrNull(foundBackground, fid->backgrounds.end()), cvModel.GetWeight(*univ, shared));
+                  whichStudy->mcBackground(compat, ::derefOrNull(foundBackground, fid->backgrounds.end()), cvModel, shared);
                 } //If not truthSignal
               } //If found a Study to fill.  Could be either signal or sideband.  Means that at least some cuts passed.
             } //For each Fiducial
@@ -447,7 +447,7 @@ int main(const int argc, const char** argv)
   
                 if(fid->selection->isEfficiencyDenom(event, truthCVWeightForCuts))
                 {
-                  for(const auto univ: compat) fid->study->truth(*univ, cvModel.GetWeight(*univ, shared));
+                  fid->study->truth(compat, cvModel, shared);
                 } //If event passes all truth cuts
               } //For each error band
             } //For each Fiducial
