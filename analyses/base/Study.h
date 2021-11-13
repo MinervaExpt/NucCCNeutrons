@@ -8,6 +8,9 @@
 #ifndef SIG_SIGNAL_CPP
 #define SIG_SIGNAL_CPP
 
+//MAT includes
+#include "weighters/Model.h"
+
 //utilities includes
 #include "util/Directory.h"
 #include "util/Factory.cpp"
@@ -49,9 +52,15 @@ namespace ana
       //The event loop will call these interfaces with events
       //that pass appropriate cuts.  You need to implement them in a derived class.
 
+      //Each of these interfaces has an overload that takes multiple Universes at
+      //once for very simple Studies.  When you've got a lot of IsVertical() Universes,
+      //like flux Universes for example, you can Fill() them all at once and save a lot
+      //of bin lookups!
+
       //MC AnaTuple with reco and truth information.  Passes reco selection and phase space.
       //mcSignal() passed truth signal selection too.
-      virtual void mcSignal(const evt::Universe& event, const events weight) = 0;
+      virtual void mcSignal(const evt::Universe& event, const events weight) {}
+      virtual void mcSignal(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt);
       
       //mcBackground failed the truth signal selection.
       virtual void mcBackground(const evt::Universe& event, const background_t& background, const events weight) = 0;

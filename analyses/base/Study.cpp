@@ -41,4 +41,15 @@ namespace ana
   {
     return true;
   }
+
+  //Default case: assume that Universes cannot be assumed to have the same behavior.  This Study might make additional cuts for example.
+  //Achieves backwards compatibility for the vast majority of Studies that aren't performance-critical and keeps things simple for simple
+  //use cases.
+  void Study::mcSignal(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt)
+  {
+    for(const auto univ: univs)
+    {
+      mcSignal(*univ, model.GetWeight(*univ, evt));
+    }
+  }
 }

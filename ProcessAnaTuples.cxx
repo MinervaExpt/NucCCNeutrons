@@ -391,7 +391,7 @@ int main(const int argc, const char** argv)
               if(whichStudy)
               {
                 //Categorize by whether this is signal or some background
-                if(fid->selection->isSignal(event)) for(const auto univ: compat) whichStudy->mcSignal(*univ, cvModel.GetWeight(*univ, shared));
+                if(fid->selection->isSignal(event)) whichStudy->mcSignal(compat, cvModel, shared); //for(const auto univ: compat) whichStudy->mcSignal(*univ, cvModel.GetWeight(*univ, shared));
                 else //If not truthSignal
                 {
                   const auto foundBackground = std::find_if(fid->backgrounds.begin(), fid->backgrounds.end(),
