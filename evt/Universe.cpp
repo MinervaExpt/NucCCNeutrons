@@ -34,7 +34,7 @@ namespace evt
   {
   }
 
-  double Universe::GetRecoilEnergy() const
+  double Universe::GetCalRecoilEnergy() const
   {
     return GetDouble((GetAnaToolName() + "_recoilE").c_str());
     //return GetVecElem("recoil_summed_energy", 0); //CCQENu version

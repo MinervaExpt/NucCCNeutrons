@@ -33,7 +33,7 @@
 #include "PlotUtils/MuonResolutionSystematics.h"
 #include "PlotUtils/MuonSystematics.h"
 #include "PlotUtils/GeantHadronSystematics.h"
-//#include "PlotUtils/ResponseSystematics.h"
+#include "PlotUtils/ResponseSystematics.h"
 
 //c++ includes
 #include <algorithm>
@@ -101,7 +101,7 @@ namespace
     ::merge(PlotUtils::GetMinervaMuonSystematicsMap<evt::Universe>(chain), allErrorBands);
     ::merge(PlotUtils::GetMinosMuonSystematicsMap<evt::Universe>(chain), allErrorBands);
     ::merge(PlotUtils::GetGeantHadronSystematicsMap<evt::Universe>(chain), allErrorBands);
-    //::merge(PlotUtils::GetResponseSystematicsMap<evt::Universe>(chain, true), allErrorBands); //TODO: flag to turn off neutron response?
+    ::merge(PlotUtils::GetResponseSystematicsMap<evt::Universe>(chain, false, true, false), allErrorBands);
 
     return allErrorBands;
   }

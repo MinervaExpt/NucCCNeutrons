@@ -96,10 +96,15 @@ namespace evt
       //Shared systematics components
       #include "PlotUtils/MuonFunctions.h"
       #include "PlotUtils/TruthFunctions.h"
+      #include "calculators/RecoilEnergyFunctions.h"
 
     protected:
       //TODO: WeightFunctions.h is deprecated, but some systematics still need it.  Remove it entirely.
       #include "PlotUtils/WeightFunctions.h"
+
+      //Interface for standard recoil systematics
+      virtual double GetCalRecoilEnergy() const;
+      virtual double GetNonCalRecoilEnergy() const { return 0; }
 
     public:
       //Configuration interfaces.  The design of the NSF prevents me from
@@ -110,7 +115,6 @@ namespace evt
       //MinervaUniverse interfaces
       //This is really used as "hypothesis name" for NeutrinoInt-based branches.
       virtual std::string GetAnaToolName() const override { return fHypothesisName; }
-      virtual double GetRecoilEnergy() const; //override; //TODO: override again if I use the standard recoil systematics?
 
       //TODO: This hack seems to be necessary so that I can use the same universe, and thus the same HistWrapper<>, for multiple files.
       //The user is responsible for deleting m_chw as in its normal usage.
