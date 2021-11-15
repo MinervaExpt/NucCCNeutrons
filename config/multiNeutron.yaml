@@ -127,6 +127,67 @@ MultiTrack:
 #       on the command line.
 #Author: Andrew Olivier aolivier@ur.rochester.edu
 
+systematics:
+  #Analysis-specific systematics
+  MoNANeutronInelastic: !MoNANeutronInelastic
+    nGamma: [1000060120, 2112]
+    threeAlpha: [1000020040, 1000020040, 1000020040, 2112]
+    Bnp: [1000050110, 2112, 2212]
+  #Beam angle
+  BeamAngleX:
+  BeamAngleY:
+  #Flux
+  Flux:
+  #Genie knobs
+  GENIE_AGKYxF1pi:
+  GENIE_AhtBY:
+  GENIE_BhtBY:
+  GENIE_CCQEPauliSupViaKF:
+  GENIE_CV1uBY:
+  GENIE_CV2uBY:
+  GENIE_EtaNCEL:
+  GENIE_FrAbs_N:
+  GENIE_FrAbs_pi:
+  GENIE_FrCEx_N:
+  GENIE_FrCEx_pi:
+  GENIE_FrElas_N:
+  GENIE_FrElas_pi:
+  GENIE_FrInel_N:
+  GENIE_FrPiProd_N:
+  GENIE_FrPiProd_pi:
+  GENIE_MFP_N:
+  GENIE_MFP_pi:
+  #- GENIE_MaCCQEshape
+  GENIE_MaNCEL:
+  GENIE_MaRES:
+  GENIE_MvRES:
+  #- GENIE_NormCCQE
+  #- GENIE_NormCCRES
+  GENIE_NormDISCC:
+  GENIE_NormNCRES:
+  GENIE_RDecBR1gamma:
+  GENIE_Rvn1pi:
+  GENIE_Rvp1pi:
+  GENIE_Rvn2pi:
+  GENIE_Rvp2pi:
+  GENIE_Theta_Delta2Npi:
+  GENIE_VecFFCCQEshape:
+  #Minos Reconstruction
+  MINOS_Reconstruction_Efficiency:
+  #MINERvA tune systematics.  You might be able to turn some of these off
+  #depending on your model block.
+  Low_Recoil_2p2h_Tune:
+  RPA_HighQ2:
+  RPA_LowQ2:
+  LowQ2Pi: #TODO: Broken?
+  #Muon reconstruction
+  Muon_Energy_Resolution:
+  Muon_Energy_MINERvA:
+  Muon_Energy_MINOS:
+  GEANT_Proton:
+  GEANT_Neutron:
+  GEANT_Pion:
+
 #MnvGENIEv1
 model:
   Flux: !FluxAndCV
@@ -137,11 +198,13 @@ model:
   RPASuppression: !RPA
   Valencia2p2h: !LowRecoil2p2hWeight
   AbfaltererNeutronInelastic: !GeantNeutronCV
+  FSIBugFix: !FixFSIBugGENIE
+    useElastic: true
+    useAbsorption: false
 
-#nu-e constraint doesn't work in antineutrino data yet as of 6/4/2020.
 #100 flux universes matches the NSF validation suite.
 app:
-  useNuEConstraint: false
+  useNuEConstraint: true
   nFluxUniverses: 100
 
 fiducials:
@@ -155,8 +218,8 @@ cuts:
   truth:
     phaseSpace:
       MuonMomentum: !MuonMomentum
-        min: !GeV 1.5
-        max: !GeV 60
+        min: !GeV 2.0
+        max: !GeV 20
       TrackAngle: !TrackAngle
         max: !degrees 20
     signal:
@@ -180,8 +243,8 @@ cuts:
     TrackAngle: !TrackAngle
       max: !degrees 20
     MuonMomentum: !MuonMomentum
-      min: !GeV 1.5
-      max: !GeV 60
+      min: !GeV 2.0
+      max: !GeV 20
     Antineutrino: !IsAntineutrino
     DeadTime: !DeadDiscriminators
       max: 1
