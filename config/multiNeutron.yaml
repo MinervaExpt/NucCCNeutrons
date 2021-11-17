@@ -184,9 +184,15 @@ systematics:
   Muon_Energy_Resolution:
   Muon_Energy_MINERvA:
   Muon_Energy_MINOS:
+  #GEANT cross sections
   GEANT_Proton:
   GEANT_Neutron:
   GEANT_Pion:
+  #Recoil energy
+  response_proton:
+  response_meson:
+  response_em:
+  response_other:
 
 #MnvGENIEv1
 model:
