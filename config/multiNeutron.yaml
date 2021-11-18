@@ -150,7 +150,7 @@ systematics:
   GENIE_FrAbs_pi:
   GENIE_FrCEx_N:
   GENIE_FrCEx_pi:
-  GENIE_FrElas_N:
+  #GENIE_FrElas_N: #Not relevant and broken when the FSI bug fix weight is used
   GENIE_FrElas_pi:
   GENIE_FrInel_N:
   GENIE_FrPiProd_N:
