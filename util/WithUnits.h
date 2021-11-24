@@ -197,6 +197,7 @@ namespace units
           auto hist = Base_t::univHist(univ);
           const double weight = model.GetWeight(*univ, evt);
           hist->AddBinContent(whichBin, weight);
+          hist->SetEntries(hist->GetEntries()+1);
 
           const double err = hist->GetBinError(whichBin);
           const double newErr = err*err + weight*weight;
@@ -259,6 +260,7 @@ namespace units
           auto hist = Base_t::univHist(univ);
           const double weight = model.GetWeight(*univ, evt);
           hist->AddBinContent(whichBin, weight);
+          hist->SetEntries(hist->GetEntries()+1);
                                                                                                                            
           const double err = hist->GetBinError(whichBin);
           const double newErr = err*err + weight*weight;
