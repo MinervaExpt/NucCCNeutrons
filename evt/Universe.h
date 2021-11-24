@@ -126,7 +126,6 @@ namespace evt
       void SetTreeMC(PlotUtils::TreeWrapper* chw)
       {
         SetTree(chw);
-        weight_hadron<PlotUtils::TreeWrapper*>(m_chw).setDataTree(m_chw->GetTree());
       }
 
       //Information about this event

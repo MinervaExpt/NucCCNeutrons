@@ -349,6 +349,7 @@ int main(const int argc, const char** argv)
       {
         //MC reco loop
         const size_t nMCEntries = anaTuple.GetEntries();
+        weight_hadron<PlotUtils::TreeWrapper*>(&anaTuple).setDataTree(anaTuple.GetTree());
         for(auto& compat: groupedUnivs)
         {
           for(auto& univ: compat) univ->SetTreeMC(&anaTuple);
@@ -419,6 +420,7 @@ int main(const int argc, const char** argv)
           PlotUtils::TreeWrapper truthTuple(truthTree);
 
           const size_t nTruthEntries = truthTuple.GetEntries();
+          weight_hadron<PlotUtils::TreeWrapper*>(&truthTuple).setDataTree(truthTuple.GetTree());
           for(auto& compat: groupedUnivs)
           {
             for(auto univ: compat) univ->SetTreeMC(&truthTuple); //TODO: Is MnvHadronReweight even compatible with the truth tree?
