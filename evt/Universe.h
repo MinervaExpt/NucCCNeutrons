@@ -140,7 +140,7 @@ namespace evt
       //therefore suitable for a calorimetric definition of neutrino energy while
       //GetRecoilE() is not.  Mechanically, this is done by the infamous
       //calorimetric spline which q0 uses and GetRecoilE() does not.
-      virtual MeV Getq0() const { return GetDouble((GetAnaToolName() + "_q0Reco").c_str()); }
+      [[deprecated("Use GetRecoilE() with a spline instead")]] virtual MeV Getq0() const { return GetDouble((GetAnaToolName() + "_q0Reco").c_str()); }
       virtual units::LorentzVector<mm> GetVtx() const { return units::LorentzVector<mm>(GetVec<double>("vtx")); }
       virtual ns GetMINOSTrackDeltaT() const { return GetDouble("minos_minerva_track_deltaT"); }
       virtual int GetNTracks() const { return GetInt("n_tracks"); }
