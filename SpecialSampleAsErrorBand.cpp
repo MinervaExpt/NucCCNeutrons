@@ -138,8 +138,8 @@ int main(const int argc, const char** argv)
     specialSamples.emplace_back(file);
   }
 
-  const auto all1D = find<PlotUtils::MnvH1D>(*inFile);
-  const auto all2D = find<PlotUtils::MnvH2D>(*inFile);
+  auto all1D = find<PlotUtils::MnvH1D>(*inFile);
+  auto all2D = find<PlotUtils::MnvH2D>(*inFile);
 
   const auto allParameters = find<TParameter<double>>(*inFile);
   //const auto allStrings = find<TNamed>(*inFile);
@@ -159,12 +159,30 @@ int main(const int argc, const char** argv)
     return 4;
   }
 
+  auto isFlux = [](const auto hist) { return std::string(hist->GetName()).find("reweightedflux") != std::string::npos; };
+
   //Make the swap
   try
   {
     outFile->cd();
-    for(const auto hist: all1D) cloneWithNewBand(hist, newBandName, cvPOT->GetVal(), specialSamples)->Write();
-    for(const auto hist: all2D) cloneWithNewBand(hist, newBandName, cvPOT->GetVal(), specialSamples)->Write();
+    for(const auto hist: all1D)
+    {
+      if(!isFlux(hist)) cloneWithNewBand(hist, newBandName, cvPOT->GetVal(), specialSamples)->Write();
+      else
+      {
+        hist->AddVertErrorBandAndFillWithCV(newBandName, std::max(specialSamples.size(), 2ul));
+        hist->Write(); //Don't modify the flux because the special sample might have different flux from the CV sample
+      }
+    }
+    for(const auto hist: all2D)
+    {
+      if(!isFlux(hist)) cloneWithNewBand(hist, newBandName, cvPOT->GetVal(), specialSamples)->Write();
+      else
+      {
+        hist->AddVertErrorBandAndFillWithCV(newBandName, std::max(specialSamples.size(), 2ul));
+        hist->Write(); //Don't modify the flux because the special sample might have different flux from the CV sample
+      }
+    }
   }
   catch(const std::runtime_error& e)
   {
