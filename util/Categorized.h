@@ -24,16 +24,20 @@
 
 namespace
 {
+  //Old std::void_t<> implementation courtesy of https://en.cppreference.com/w/cpp/types/void_t
+  template<typename... Ts> struct make_void { typedef void type;};
+  template<typename... Ts> using void_t = typename make_void<Ts...>::type;
+
   //Check whether a CATegory is std::hash<>able.  Soft of a missing piece of the STL because
   //it wasn't guaranteed to work pre-c++17.  As long as you're using a c++17-era STL, this should work
   //regardless of compiler standard.
   //Solution inspired by https://stackoverflow.com/questions/12753997/check-if-type-is-hashable
 
-  template <class CAT, class VALUE, typename = std::void_t<>>
+  template <class CAT, class VALUE, typename = void_t<>>
   struct map_t { using type = std::map<CAT, VALUE>; };
 
   template <class CAT, class VALUE>
-  struct map_t<CAT, VALUE, std::void_t<decltype(std::declval<std::hash<CAT>>()(std::declval<CAT>()))>>
+  struct map_t<CAT, VALUE, void_t<decltype(std::declval<std::hash<CAT>>()(std::declval<CAT>()))>>
   {
     using type = std::unordered_map<CAT, VALUE>;
   };

@@ -13,6 +13,7 @@
 //c++ includes
 #include <cassert>
 #include <algorithm>
+#include <numeric> //std::accumulate used to be here in older c++11 versions.  It's more readable if I just include both.
 
 namespace fit
 {

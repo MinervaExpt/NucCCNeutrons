@@ -18,6 +18,7 @@
 //c++ includes
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
 
 #ifndef ANA_EVENTDISPLAY_H
 #define ANA_EVENTDISPLAY_H

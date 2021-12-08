@@ -42,6 +42,7 @@
 #include "TH1.h"
 #include "TSystem.h"
 #include "TTree.h"
+#include "TKey.h"
 
 //Feature needed with pre-ROOT6 PlotUtils.
 #ifndef NCINTEX
