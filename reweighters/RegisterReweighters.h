@@ -25,7 +25,7 @@
 namespace
 {
   //First, a Registrar for Reweighters that don't need any constructor parameters.
-  template <template <class> class REWEIGHT>
+  template <template <class, class> class REWEIGHT>
   class DefaultRegistrar: public plgn::RegistrarBase<PlotUtils::Reweighter<evt::Universe>>
   {
     public:
@@ -39,7 +39,7 @@ namespace
 
       virtual std::unique_ptr<PlotUtils::Reweighter<evt::Universe>> NewPlugin(const YAML::Node& /*config*/)
       {
-        return std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>(new REWEIGHT<evt::Universe>());
+        return std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>(new REWEIGHT<evt::Universe, PlotUtils::detail::empty>());
       }
   };
 
