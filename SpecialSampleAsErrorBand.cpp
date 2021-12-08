@@ -75,9 +75,9 @@ MNVH* cloneWithNewBand(const MNVH* hist, const bool isFluxDifferent, const std::
   std::vector<hist_t*> univs;
   for(auto& sample: specialSamples)
   {
-    auto found = sample->Get<MNVH>(hist->GetName());
+    auto found = dynamic_cast<MNVH*>(sample->Get(hist->GetName()));
     if(!found) throw std::runtime_error(std::string("Failed to find a histogram named ") + hist->GetName() + " in " + sample->GetName());
-    const auto specialPOT = sample->Get<TParameter<double>>("POTUsed");
+    const auto specialPOT = dynamic_cast<TParameter<double>*>(sample->Get("POTUsed"));
     if(!specialPOT) throw std::runtime_error(std::string("Found histogram but failed to find POT in ") + sample->GetName());
 
     found->Scale(cvPOT / specialPOT->GetVal());
@@ -88,7 +88,7 @@ MNVH* cloneWithNewBand(const MNVH* hist, const bool isFluxDifferent, const std::
   if(!isFluxDifferent) originalCVHist = hist;
   else
   {
-    originalCVHist = originalCV->Get<MNVH>(hist->GetName());
+    originalCVHist = dynamic_cast<MNVH*>(originalCV->Get(hist->GetName()));
     if(!originalCVHist) throw std::runtime_error(std::string("Failed to find a histogram named ") + hist->GetName() + " in the CV with matching flux (file named " + originalCV->GetName() + ")");
   }
 
@@ -173,7 +173,7 @@ int main(const int argc, const char** argv)
 
   const auto allParameters = find<TParameter<double>>(*inFile);
   //const auto allStrings = find<TNamed>(*inFile);
-  const auto cvPOT = inFile->Get<TParameter<double>>("POTUsed");
+  const auto cvPOT = dynamic_cast<TParameter<double>*>(inFile->Get("POTUsed"));
   if(!cvPOT)
   {
     std::cerr << "Failed to find POT information in CV file named " << inFile->GetName() << ".\n";
