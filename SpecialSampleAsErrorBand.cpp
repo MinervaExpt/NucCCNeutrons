@@ -3,7 +3,7 @@
 //       the same histograms produced with a special (Gaudi) sample.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#define USAGE "SpecialSampleAsErrorBand <standardFile> <nameOfBand> <specialSampleFile> [additionalSpecialSampleUniverses]"
+#define USAGE "SpecialSampleAsErrorBand <standardFile> <CVWithSpecialSampleFlux> <nameOfBand> <specialSampleFile> [additionalSpecialSampleUniverses]"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
@@ -67,7 +67,7 @@ std::vector<OBJ*> find(TDirectory& dir)
 }
 
 template <class MNVH>
-MNVH* cloneWithNewBand(const MNVH* hist, const std::string& bandName, const double cvPOT, const std::vector<std::unique_ptr<TFile>>& specialSamples)
+MNVH* cloneWithNewBand(const MNVH* hist, const bool isFluxDifferent, const std::string& bandName, const double cvPOT, const std::unique_ptr<TFile>& originalCV, const std::vector<std::unique_ptr<TFile>>& specialSamples)
 {
   MNVH* withNewBand = new MNVH(*hist);
 
@@ -84,6 +84,14 @@ MNVH* cloneWithNewBand(const MNVH* hist, const std::string& bandName, const doub
     univs.push_back(found); //Peel off just the CV by storing a pointer to the base class.
   }
 
+  const MNVH* originalCVHist = nullptr;
+  if(!isFluxDifferent) originalCVHist = hist;
+  else
+  {
+    originalCVHist = originalCV->Get<MNVH>(hist->GetName());
+    if(!originalCVHist) throw std::runtime_error(std::string("Failed to find a histogram named ") + hist->GetName() + " in the CV with matching flux (file named " + originalCV->GetName() + ")");
+  }
+
   //Because we don't have a good procedure for 1-universe error bands,
   //create a second symmetric universe from the special sample universe
   //and the difference with the CV.
@@ -92,9 +100,21 @@ MNVH* cloneWithNewBand(const MNVH* hist, const std::string& bandName, const doub
     const auto origUniv = univs.front();
     auto otherUniv = static_cast<hist_t*>(origUniv->Clone());
     otherUniv->SetDirectory(nullptr);
-    otherUniv->Add(hist, -1.);
-    otherUniv->Add(hist, otherUniv, 1., -1.);
+    otherUniv->Add(originalCVHist, -1.);
+    otherUniv->Add(originalCVHist, otherUniv, 1., -1.);
     univs.push_back(otherUniv);
+  }
+
+  //If applying a special sample as a systematic to
+  //a histogram that isn't from the matching flux conditions,
+  //multiply by the ratio of CVs.
+  if(isFluxDifferent)
+  {
+    for(auto band: univs)
+    {
+      band->Multiply(band, hist);
+      band->Divide(band, originalCVHist);
+    }
   }
 
   withNewBand->AddVertErrorBand(bandName, univs);
@@ -111,7 +131,7 @@ int main(const int argc, const char** argv)
   TH1::AddDirectory(false);
 
   //Check arguments
-  if(argc < 2 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help") || argc < 4)
+  if(argc < 2 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help") || argc < 5)
   {
     std::cout << USAGE << "\n";
     return 0;
@@ -125,9 +145,19 @@ int main(const int argc, const char** argv)
     return 2;
   }
 
-  const std::string newBandName = argv[2];
+  const std::string originalFileName = argv[2];
+  std::unique_ptr<TFile> originalFile(TFile::Open(fileName.c_str(), "READ"));
+  if(!originalFile)
+  {
+    std::cerr << originalFileName << ": no such file or directory.\n\n" << USAGE << "\n";
+    return 2;
+  }
+
+  const bool isFluxDifferent = (originalFileName == fileName);
+
+  const std::string newBandName = argv[3];
   std::vector<std::unique_ptr<TFile>> specialSamples;
-  for(int whichSample = 3; whichSample < argc; ++whichSample)
+  for(int whichSample = 4; whichSample < argc; ++whichSample)
   {
     auto file = TFile::Open(argv[whichSample], "READ");
     if(!file)
@@ -167,7 +197,7 @@ int main(const int argc, const char** argv)
     outFile->cd();
     for(const auto hist: all1D)
     {
-      if(!isFlux(hist)) cloneWithNewBand(hist, newBandName, cvPOT->GetVal(), specialSamples)->Write();
+      if(!isFlux(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples)->Write();
       else
       {
         hist->AddVertErrorBandAndFillWithCV(newBandName, std::max(specialSamples.size(), 2ul));
@@ -176,7 +206,7 @@ int main(const int argc, const char** argv)
     }
     for(const auto hist: all2D)
     {
-      if(!isFlux(hist)) cloneWithNewBand(hist, newBandName, cvPOT->GetVal(), specialSamples)->Write();
+      if(!isFlux(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples)->Write();
       else
       {
         hist->AddVertErrorBandAndFillWithCV(newBandName, std::max(specialSamples.size(), 2ul));
