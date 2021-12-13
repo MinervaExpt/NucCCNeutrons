@@ -66,7 +66,7 @@ namespace evt
       else if(fs.pdgCode == 2212) E_avail += fs.momentum.E() - 938.28_MeV; //Proton
       else if(fs.pdgCode == 111) E_avail += fs.momentum.E(); //Neutral pion
       else if(fs.pdgCode == 22) E_avail += fs.momentum.E(); //Photon
-      else if(abs(fs.pdgCode) == 321) E_avail +== fs.momentum.E(); //Charged kaon
+      else if(abs(fs.pdgCode) == 321) E_avail += fs.momentum.E(); //Charged kaon
       //Implicitly exclude neutrons, nuclei, and heavy baryons
     }
 
