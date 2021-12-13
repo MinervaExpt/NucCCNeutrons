@@ -62,11 +62,12 @@ namespace evt
     GeV E_avail = 0;
     for(const auto& fs: allFS)
     {
-      if(abs(fs.pdgCode) == 211) E_avail += fs.momentum.E() - 139.57_MeV;
-      else if(fs.pdgCode == 2212) E_avail += fs.momentum.E() - 938.28_MeV;
-      else if(fs.pdgCode == 111) E_avail += fs.momentum.E();
-      else if(fs.pdgCode == 22) E_avail += fs.momentum.E();
-      //Implicitly exclude neutrons, nuclei, kaons, and heavy baryons
+      if(abs(fs.pdgCode) == 211) E_avail += fs.momentum.E() - 139.57_MeV; //Charged pion
+      else if(fs.pdgCode == 2212) E_avail += fs.momentum.E() - 938.28_MeV; //Proton
+      else if(fs.pdgCode == 111) E_avail += fs.momentum.E(); //Neutral pion
+      else if(fs.pdgCode == 22) E_avail += fs.momentum.E(); //Photon
+      else if(abs(fs.pdgCode) == 321) E_avail +== fs.momentum.E(); //Charged kaon
+      //Implicitly exclude neutrons, nuclei, and heavy baryons
     }
 
     return std::max(0_GeV, E_avail);
