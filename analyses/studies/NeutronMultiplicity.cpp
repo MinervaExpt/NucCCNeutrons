@@ -32,8 +32,6 @@ namespace ana
                                                    fRecoEDepBoxMin(config["reco"]["EDepBoxMin"].as<MeV>()),
                                                    fRecoDistBoxMax(config["reco"]["DistBoxMax"].as<mm>()),
                                                    fMinZCosine(config["MinZCosine"].as<double>(0.)),
-                                                   fPi0RemovalCosineMin(config["reco"]["Pi0RemovalCosineMin"].as<double>(0.)),
-                                                   fPi0RemovalCosineMax(config["reco"]["Pi0RemovalCosineMax"].as<double>(0.)),
                                                    fVertexBoxDist(config["reco"]["VertexBoxDist"].as<mm>(0_mm))
     {
     }
@@ -59,7 +57,7 @@ namespace ana
     template <class CAND>
     bool countAsReco(const CAND& cand, const units::LorentzVector<mm>& vertex) const
     {
-      return (cand.z - vertex.z() < this->fRecoMaxZDist) && (cand.edep > this->fRecoMinEDep) && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtZAxis(vertex, cand)) > fMinZCosine) && (DistFromVertex(vertex, cand) > fVertexBoxDist) && (fabs(CosineWrtZAxis(vertex, cand)) > fPi0RemovalCosineMin) && (fabs(CosineWrtZAxis(vertex, cand)) < fPi0RemovalCosineMax);
+      return (cand.z - vertex.z() < this->fRecoMaxZDist) && (cand.edep > this->fRecoMinEDep) && (DistFromVertex(vertex, cand) < fRecoDistBoxMax || cand.edep > fRecoEDepBoxMin) && (fabs(CosineWrtZAxis(vertex, cand)) > fMinZCosine) && (DistFromVertex(vertex, cand) > fVertexBoxDist);
     }
 
     template <class FS>
@@ -97,10 +95,6 @@ namespace ana
       mm fRecoDistBoxMax;
 
       double fMinZCosine; //Minimum angle w.r.t. the muon
-
-      //pi0 removal
-      double fPi0RemovalCosineMin;
-      double fPi0RemovalCosineMax;
 
       //Vertex box: no candidates allowed inside
       mm fVertexBoxDist;
