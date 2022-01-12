@@ -15,8 +15,6 @@ neutronCounter: &neutronCounter
     MaxZDist: !mm 1500 #roughly tuned for tracker
     EDepBoxMin: !MeV 0
     DistBoxMax: !mm 10000
-    Pi0RemovalCosineMin: 0
-    Pi0RemovalCosineMax: 0.97
     #VertexBoxDist: !mm 50
 
 OneTrack:
