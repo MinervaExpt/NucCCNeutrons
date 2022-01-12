@@ -1,0 +1,74 @@
+#!/usr/bin/env ProcessAnaTuples
+#File: InclusivePzPT.yaml
+#Brief: Reproduces Dan's Medium Energy port of Amy's Low Energy 2D
+#       inclusive cross section in muon momentum components.  If I get
+#       roughly the same answers, my event loop can't be too bad, right?
+#Author: Andrew Olivier aolivier@ur.rochester.edu
+
+model:
+  Flux: !FluxAndCV
+  GENIE: !GENIEPionTunes
+    useNonResPi: true
+    useDeuteriumPionTune: false
+  MINOSEfficiency: !MINOSEfficiency
+  RPASuppression: !RPA
+  Valencia2p2h: !LowRecoil2p2hWeight
+  AbfaltererNeutronInelastic: !GeantNeutronCV
+  FSIBugFix: !FixFSIBugGENIE
+    useElastic: true
+    useAbsorption: false
+
+app:
+  AnaTupleName: &TupleName "CCQENu"
+  HypothesisName: *TupleName
+  useNuEConstraint: true
+  nFluxUniverses: 2
+
+systematics:
+
+signal: !MuonPTSignal
+  name: "MuonPT"
+  variable:
+  binning: [ 0, 0.075, 0.15, 0.25, 0.325, 0.4, 0.475, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 2.5, 4.5]
+
+fiducials:
+  Tracker: !Tracker
+    zRange:
+      truth: &TruthFiducial
+        min: !mm 5980
+        max: !mm 8422
+      reco: *TruthFiducial #TODO: This cut is made before the CCQENu tuples are produced.  Is it even possible to skip it anymore?
+    apothem:
+      apothem: !mm 850
+
+cuts:
+  truth:
+    phaseSpace:
+      TrackAngle: !TrackAngle
+        max: !degrees 20
+      PZMu: !MuonZMomentum
+        min: !GeV 1.5
+    signal:
+      Neutrino: !IsNeutrino
+      CC: !IsCC
+  reco:
+    TrackAngle: !TrackAngle
+      max: !degrees 19.996227
+    Neutrino: !IsNeutrino
+    DeadTime: !DeadDiscriminators
+      max: 1
+    HasMuon: !HasInteractionVertex
+
+#Names in sidebands' "fails" blocks refer to truth cuts by block name.
+#Backgrounds are well-constrained in the original (LE) inclusive 2D
+#analysis.
+sidebands:
+
+#Backgrounds are defined by the truth::Cuts they pass in addition to
+#failing some regular truth cut.  So, these cuts had better be mutually
+#exclusive with regular truth::Cuts.
+backgrounds:
+#  NeutralCurrent:
+#    NC: !IsNC
+#  WrongSignMuon:
+#    Antineutrino: !IsAntineutrino
