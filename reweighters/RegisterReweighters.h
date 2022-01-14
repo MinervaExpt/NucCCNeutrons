@@ -18,6 +18,7 @@
 #include "PlotUtils/MINOSEfficiencyReweighter.h"
 #include "PlotUtils/SuSAFromValencia2p2hReweighter.h"
 #include "weighters/NeutronInelasticReweighter.h"
+#include "weighters/BodekRitchieReweighter.h"
 
 //util includes
 #include "util/Factory.cpp"
@@ -123,6 +124,23 @@ namespace
       std::unique_ptr<PlotUtils::Reweighter<evt::Universe>> NewPlugin(const YAML::Node& config)
       {
         return std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>(new NeutronInelasticReweighter<evt::Universe>(config.as<std::map<std::string, std::vector<int>>>())); //TODO: YAML arguments here
+      }
+  };
+
+  class BodekRitchieRegistrar: public plgn::RegistrarBase<PlotUtils::Reweighter<evt::Universe>>
+  {
+    public:
+      BodekRitchieRegistrar(const std::string& name)
+      {
+        auto& reg = plgn::Factory<PlotUtils::Reweighter<evt::Universe>>::instance();
+        reg.Add(name, this);
+      }
+
+      virtual ~BodekRitchieRegistrar() = default;
+
+      std::unique_ptr<PlotUtils::Reweighter<evt::Universe>> NewPlugin(const YAML::Node& config)
+      {
+        return std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>(new BodekRitchieReweighter<evt::Universe>(config["mode"].as<int>(1)));
       }
   };
 
