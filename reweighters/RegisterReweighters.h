@@ -127,6 +127,8 @@ namespace
       }
   };
 
+  static NeutronInelasticRegistrar regNeutronInelastic("NeutronInelastic");
+
   class BodekRitchieRegistrar: public plgn::RegistrarBase<PlotUtils::Reweighter<evt::Universe>>
   {
     public:
@@ -144,5 +146,5 @@ namespace
       }
   };
 
-  static NeutronInelasticRegistrar regNeutronInelastic("NeutronInelastic");
+  static BodekRitchieRegistrar regBodekRitchie("BodekRitchieTail");
 }
