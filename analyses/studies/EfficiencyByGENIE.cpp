@@ -20,7 +20,7 @@ namespace ana
                                                                                                                          config["binning"]["Pz"].as<std::vector<double>>(),
                                                                                                                          config["binning"]["PT"].as<std::vector<double>>(),
                                                                                                                          univs),
-                                                                                                   fGENIEToEfficiencyDenom("Denominator", "Truth #P_z;Truth #P_z",
+                                                                                                   fGENIEToEfficiencyDenom("Denominator", "Truth #P_z;Truth #P_T",
                                                                                                                            GENIECategories, dir,
                                                                                                                            config["binning"]["Pz"].as<std::vector<double>>(),
                                                                                                                            config["binning"]["PT"].as<std::vector<double>>(),
