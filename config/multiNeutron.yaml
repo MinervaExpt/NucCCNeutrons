@@ -297,7 +297,7 @@ sidebands:
       UpToOneCandidate: !NeutronMultiplicity
         max: !neutrons 1
         variable: *neutronCounter
-      NoHadronTracks: !nTracks
-        max: 1
+    #  NoHadronTracks: !nTracks #This hardly affects the analysis at all as of Feb. 4, 2022, so make things faster.
+    #    max: 1
     variable:
     binning: *pTBins
