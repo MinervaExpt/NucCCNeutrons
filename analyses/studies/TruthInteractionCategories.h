@@ -59,8 +59,9 @@ namespace ana
   };
 
   const std::vector<FSCategory*> pionFSCategories = { new FSCategory("QE-like", {211, 111, 321, 311}),
-                                                      new FSCategory("Charged Pions", {111, 321, 311}, {211}),
-                                                      new FSCategory("Neutral Pions", {321, 311}, {111})
+                                                      new FSCategory("Charged Pions Only", {111, 321, 311}, {211}),
+                                                      new FSCategory("Neutral Pions Only", {321, 311, 211}, {111}),
+                                                      new FSCategory("Both Pion Types", {321, 311}, {111, 211})
                                                     };
 }
 

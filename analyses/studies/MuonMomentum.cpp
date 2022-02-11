@@ -7,6 +7,7 @@
 #include "analyses/studies/CrossSectionSideband.h"
 #include "analyses/studies/CrossSection2DSignal.h"
 #include "analyses/studies/SidebandGENIEBreakdown.h"
+#include "analyses/studies/BackgroundsByPionContent.h"
 
 //c++ includes
 #include <string>
@@ -87,6 +88,7 @@ namespace
   static ana::CrossSectionSignal<ana::MuonPT>::Registrar MuonPTSignal_reg("MuonPTSignal");
   static ana::CrossSectionSideband<ana::MuonPT>::Registrar MuonPTSideband_reg("MuonPTSideband");
   static ana::SidebandGENIEBreakdown<ana::MuonPT>::Registrar MuonPTSidebandGENIEBreakdown_reg("MuonPTSidebandGENIEBreakdown");
+  static ana::BackgroundsByPionContent<ana::MuonPT>::Registrar MuonPTPionBreadkdown_reg("MuonPTPionBreakdown");
 
   static ana::CrossSectionSignal<ana::MuonPz>::Registrar MuonPzSignal_reg("MuonPzSignal");
   static ana::CrossSectionSideband<ana::MuonPz>::Registrar MuonPzSideband_reg("MuonPzSideband");
