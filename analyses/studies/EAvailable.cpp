@@ -44,16 +44,12 @@ namespace ana
                                             [&event, this](const MeV sum, const auto& cand)
                                             {
                                               if(this->fMultiplicity.countAsReco(cand, event.GetVtx())) //&& cand.nClusters <= fCandMaxClusters)
-                                                return sum + cand.caloEdep;
+                                                return sum + cand.edep;
 
                                               return sum;
                                             });
 
-      return event.GetRecoilE() - event.GetODEnergy() - neutronE;
-
-      //return event.GetRecoilE();
-
-      //return event.GetEAvailable() + event.GetMuonFuzzEnergy();
+      return event.GetRecoilE() - neutronE;
     }
 
     private:
