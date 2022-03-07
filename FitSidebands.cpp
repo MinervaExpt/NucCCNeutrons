@@ -253,7 +253,7 @@ int main(const int argc, const char** argv)
   const auto allBackgrounds = findBackgroundNames(*mcFile);
 
   //Figure out sum of bin widths in fit region in case I want to use a linearly scaled background
-  const double sumBinWidths = exampleHist->GetBinLowEdge(lastBin + 1) - exampleHist->GetBinLowEdge(firstBin);
+  const double sumBinWidths = exampleHist->GetBinLowEdge(lastBin) - exampleHist->GetBinLowEdge(firstBin);
 
   //TODO: YAML-ify this with Factory.  Perhaps hold all backgrounds not listed constant?
   std::vector<fit::Background*> backgrounds;
@@ -396,7 +396,6 @@ int main(const int argc, const char** argv)
           objectiveFunction.scale(selection, *minimizer);
         }
 
-        //TODO: Propagate errors from TMinuit
         //TODO: Print fit diagnostics.  Throw out bad fits if I can come up with a robust scheme to detect some of them.
       } //Loop over universes
 
