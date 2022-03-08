@@ -1,0 +1,9 @@
+fitToSelection: false #true
+range:
+  lastBin: 10
+fits:
+  #signal: !ScaleFactor
+  #  min: 0.5
+  1_Neutron: !ScaleFactor
+  0_Neutrons: !ScaleFactor
+  HighEAvail: !LinearFit

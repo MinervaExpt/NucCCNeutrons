@@ -93,6 +93,7 @@ add_subdirectory(units)
 add_subdirectory(evt)
 add_subdirectory(config)
 add_subdirectory(app)
+add_subdirectory(scripts)
 
 add_dependencies(ProcessAnaTuples generateGitVersion)
 target_link_libraries(ProcessAnaTuples ${ROOT_LIBRARIES} util evt analysesBase support yaml-cpp app MAT MAT-MINERvA)
