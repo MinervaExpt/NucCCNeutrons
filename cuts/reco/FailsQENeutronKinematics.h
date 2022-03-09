@@ -32,7 +32,6 @@ namespace reco
       ana::NeutronMultiplicity fCandSelector;
 
       double fBlobCosineDiffMin; //Minimum blob angle where neutron-rich candidates begin
-      double fHighestEDepBlobCosineMin;
 
       MeV calcENuQE(const evt::Universe& univ) const;
   };

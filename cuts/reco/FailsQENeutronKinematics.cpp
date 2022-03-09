@@ -14,8 +14,7 @@ namespace reco
 {
   FailsQENeutronKinematics::FailsQENeutronKinematics(const YAML::Node& config, const std::string& name): Cut(config, name),
                                                                                        fCandSelector(config["neutronCounter"]),
-                                                                                       fBlobCosineDiffMin(config["blobCosineDiffMin"].as<double>()),
-                                                                                       fHighestEDepBlobCosineMin(config["highestEDepBlobCosineMin"].as<double>())
+                                                                                       fBlobCosineDiffMin(config["blobCosineDiffMin"].as<double>())
   {
   }
 
@@ -33,22 +32,15 @@ namespace reco
                                                                       event.Getblob_transverse_dist_from_vertex());
 
     double worstCosineDiff = 0;
-    MeV highestEDep = 0;
-    double highestEDepCosine = 1;
     for(const auto& cand: cands)
     {
       if(fCandSelector.countAsReco(cand, vertex))
       {
         worstCosineDiff = std::max(fabs(CosineWrtZAxis(vertex, cand) - QECosine), worstCosineDiff);
-        if(cand.edep > highestEDep)
-        {
-          highestEDep = cand.edep;
-          highestEDepCosine = fabs(CosineWrtZAxis(vertex, cand) - QECosine);
-        }
       }
     }
 
-    return (worstCosineDiff > fBlobCosineDiffMin) && (highestEDepCosine > fHighestEDepBlobCosineMin);
+    return worstCosineDiff < fBlobCosineDiffMin;
   }
 
   MeV FailsQENeutronKinematics::calcENuQE(const evt::Universe& univ) const
