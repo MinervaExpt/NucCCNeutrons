@@ -9,6 +9,8 @@
 
 //ROOT includes
 #include "TFile.h"
+#include "TKey.h"
+#include "TTree.h"
 
 //c++ includes
 #include <stdexcept>
@@ -25,6 +27,8 @@ namespace app
                                + " to check whether it's from data or MC.");
     }
 
-    return (file->FindKey("Truth") != nullptr);
+    const auto truthKey = file->FindKey("Truth");
+    if(truthKey == nullptr) return false;
+    return (truthKey->ReadObject<TTree>()->GetEntries() > 0);
   }
 }
