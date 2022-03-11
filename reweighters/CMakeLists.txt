@@ -1,1 +1,1 @@
-add_library(reweighters OBJECT CorrelatedNucleonPairsReweighter.cpp NuwroSFReweighter.cpp)
+add_library(reweighters OBJECT CorrelatedNucleonPairsReweighter.cpp NuwroSFReweighter.cpp Turn2p2hOffReweighter.cpp)

@@ -29,41 +29,19 @@ dataDistribution.SetLineColor(ROOT.kBlack)
 dataPOT = 9.2950465e+20 #dataFile.Get("POTUsed").GetVal() #TODO: Write out POT in ExtractCrossSection?
 
 otherModels = []
-#mcColors = ROOT.PlotUtils.MnvColors.GetColors(MnvColors.kOkabeItoDarkPalette)
-nextColor = 2 #0
+mcColors = ROOT.MnvColors.GetColors(ROOT.MnvColors.kOkabeItoDarkPalette)
+nextColor = 0
 for fileName in sys.argv[1:]:
   otherFile = ROOT.TFile.Open(fileName, "READ")
   otherPOT = 4.7994378e+21 #otherFile.Get("POTUsed").GetVal() #TODO: Write out POT in ExtractCrossSection?
   otherDistribution = otherFile.Get("backgroundSubtracted")
   print "Setting title for file " + fileName + " to " + fileName[fileName.rfind("_")+1:fileName.find(".root")]
   otherDistribution.SetTitle(fileName[fileName.rfind("_")+1:fileName.find(".root")])
-  otherDistribution.SetLineColor(nextColor) #mcColors[nextColor])
+  otherDistribution.SetLineColor(mcColors[nextColor])
   otherDistribution.Scale(dataPOT / otherPOT)
   otherModels.append(otherDistribution)
 
   nextColor = nextColor + 1
-
-#mnvTuneFile = TFile.Open("crossSection_MnvTunev1.root")
-#SuSAFile = TFile.Open("crossSection_SuSA.root")
-#valenciaFile = TFile.Open("crossSection_Valencia.root")
-#
-#dataDistribution = dataFile.Get("backgroundSubtracted")
-#dataDistribution.SetTitle("Data")
-#dataDistribution.SetLineColor(kBlack)
-#
-#mnvTuneCrossSection = mnvTuneFile.Get("backgroundSubtracted")
-#mnvTuneCrossSection.SetTitle("MnvTunev1")
-#mnvTuneCrossSection.SetLineColor(kRed)
-#
-#SuSACrossSection = SuSAFile.Get("backgroundSubtracted")
-#SuSACrossSection.SetTitle("SuSA")
-#SuSACrossSection.SetLineColor(kBlue)
-#
-#ValenciaCrossSection = valenciaFile.Get("backgroundSubtracted")
-#ValenciaCrossSection.SetTitle("Valencia 2p2h")
-#ValenciaCrossSection.SetLineColor(kGreen+2)
-#
-#otherModels = [mnvTuneCrossSection, SuSACrossSection, ValenciaCrossSection]
 
 removeLowRecoilQEErrorBand(dataDistribution)
 formatHist(dataDistribution)
