@@ -67,7 +67,9 @@ enum errors
 
 std::string dirName(const std::string& fileName)
 {
-  return fileName.substr(0, fileName.rfind('/'));
+  const size_t lastSlash = fileName.rfind('/');
+  if(lastSlash == std::string::npos) return ".";
+  return fileName.substr(0, lastSlash);
 }
 
 std::string baseName(const std::string& fileName)
@@ -190,6 +192,7 @@ int main(const int argc, const char** argv)
   std::map<std::string, TObject*> mergedSamples;
   std::map<std::string, TParameter<double>*> mergedNucleons, mergedPOT;
   std::map<std::string, TH1*> mergedFlux;
+  std::map<std::string, TNamed*> mergedMetadata;
   std::unique_ptr<TFile> firstFile(TFile::Open(firstFileName.c_str(), "READ"));
 
   for(auto entry: *firstFile->GetListOfKeys())
@@ -217,10 +220,14 @@ int main(const int argc, const char** argv)
       hist->SetDirectory(nullptr);
       mergedFlux[keyName] = hist;
     }
-    else if(strcmp(obj->ClassName(), "TNamed"))
+    else
     {
-      if(dynamic_cast<TH1*>(obj)) static_cast<TH1*>(obj)->SetDirectory(nullptr);
-      mergedSamples[keyName] = obj;
+      if(strcmp(obj->ClassName(), "TNamed"))
+      {
+        if(dynamic_cast<TH1*>(obj)) static_cast<TH1*>(obj)->SetDirectory(nullptr);
+        mergedSamples[keyName] = obj;
+      }
+      else mergedMetadata[keyName] = static_cast<TNamed*>(obj);
     }
   }
 
@@ -430,6 +437,7 @@ int main(const int argc, const char** argv)
   }
   for(auto entry: mergedPOT) entry.second->Write();
   for(auto entry: mergedNucleons) entry.second->Write();
+  for(auto entry: mergedMetadata) entry.second->Write();
   for(auto entry: mergedFlux)
   {
     if(dynamic_cast<PlotUtils::MnvH1D*>(entry.second))
