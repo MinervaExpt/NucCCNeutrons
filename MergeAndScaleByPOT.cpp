@@ -54,6 +54,7 @@
 #include <string>
 #include <memory>
 #include <stdexcept>
+#include <numeric>
 
 enum errors
 {
@@ -235,8 +236,8 @@ int main(const int argc, const char** argv)
   //Otherwise, checkMetadata() comparisons later might crash!
   if(!checkMetadata(*firstFile, *firstFile, mergedNucleons)) return badMetadata;
 
-  double totalDataPOT = 0,
-         totalMCPOT = 0;
+  std::map<std::string, double> playlistToDataPOT;
+  double totalMCPOT = 0;
 
   //Scale the copied input file to the data POT
   if(scaleToDataPOT)
@@ -244,6 +245,7 @@ int main(const int argc, const char** argv)
     try
     {
       const double dataPOT = getDataPOT(*firstFile);
+      playlistToDataPOT[firstFile->Get<TNamed>("playlist")->GetTitle()] = dataPOT;
       const double mcPOT = getMyPOT(*firstFile);
       const double scale = dataPOT / mcPOT;
 
@@ -262,7 +264,6 @@ int main(const int argc, const char** argv)
         }
       }
 
-      totalDataPOT = dataPOT;
       totalMCPOT = mcPOT;
     }
     catch(const std::exception& e)
@@ -271,21 +272,20 @@ int main(const int argc, const char** argv)
       return badMetadata;
     }
   }
-  else
-  {
-    totalDataPOT = getMyPOT(*firstFile);
-  }
+
+  //Get just the first file's POT
+  const double firstPlaylistPOT = std::accumulate(playlistToDataPOT.begin(), playlistToDataPOT.end(), 0., [](double sum, const auto& pair) { return sum + pair.second; });
 
   for(auto flux: mergedFlux)
   {
     if(dynamic_cast<PlotUtils::MnvH1D*>(flux.second))
     {
-      static_cast<PlotUtils::MnvH1D*>(flux.second)->Scale(totalDataPOT);
+      static_cast<PlotUtils::MnvH1D*>(flux.second)->Scale(firstPlaylistPOT);
     }
     else
     {
       assert(dynamic_cast<PlotUtils::MnvH2D*>(flux.second));
-      static_cast<PlotUtils::MnvH2D*>(flux.second)->Scale(totalDataPOT);
+      static_cast<PlotUtils::MnvH2D*>(flux.second)->Scale(firstPlaylistPOT);
     }
   }
 
@@ -304,11 +304,14 @@ int main(const int argc, const char** argv)
     }
 
     double scale = 1., dataPOT = 0., mcPOT = 0.;
+    const std::string playlistName = inFile->Get<TNamed>("playlist")->GetTitle();
+    const auto foundPOT = playlistToDataPOT.find(playlistName);
     if(scaleToDataPOT)
     {
       try
       {
-        dataPOT = getDataPOT(*inFile);
+        if(foundPOT == playlistToDataPOT.end()) playlistToDataPOT[playlistName] = getDataPOT(*inFile);
+        dataPOT = playlistToDataPOT[playlistName];
         mcPOT = getMyPOT(*inFile);
         scale = dataPOT / mcPOT;
       }
@@ -318,11 +321,14 @@ int main(const int argc, const char** argv)
         return inputFileFailed;
       }
     }
-    else dataPOT = getMyPOT(*inFile);
+    else
+    {
+      if(foundPOT == playlistToDataPOT.end()) playlistToDataPOT[playlistName] = getMyPOT(*inFile);
+      dataPOT = playlistToDataPOT[playlistName];
+    }
 
     std::cout << "Scaling by " << dataPOT << " / " << mcPOT << " = " << scale << " for file " << inFile->GetName() << "\n";
 
-    totalDataPOT += dataPOT;
     totalMCPOT += mcPOT;
 
     if(!checkMetadata(*firstFile, *inFile, mergedNucleons)) return badMetadata;
@@ -416,6 +422,9 @@ int main(const int argc, const char** argv)
               << ".  If the file already exists, I refuse to overwrite it.\n\n" << USAGE;
     return badOutputFile;
   }
+
+  //Only count each data file once even if I have multiple files from the same playlist.  This is critical to merging signal-only samples into a full MC sample.
+  const double totalDataPOT = std::accumulate(playlistToDataPOT.begin(), playlistToDataPOT.end(), 0., [](double sum, const auto& pair) { return sum + pair.second; });
 
   outFile->cd();
   for(auto entry: mergedSamples)
