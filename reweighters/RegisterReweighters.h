@@ -46,7 +46,7 @@ namespace
 
   static DefaultRegistrar<FluxAndCVReweighter> fluxReg("FluxAndCV");
   static DefaultRegistrar<GeantNeutronCVReweighter> geantReg("GeantNeutronCV");
-  static DefaultRegistrar<LowRecoil2p2hReweighter> tune2p2hReg("LowRecoil2p2hWeight");
+  //static DefaultRegistrar<LowRecoil2p2hReweighter> tune2p2hReg("LowRecoil2p2hWeight");
   static DefaultRegistrar<MKReweighter> mkReg("MKModel");
   static DefaultRegistrar<RPAReweighter> rpaReg("RPA");
   static DefaultRegistrar<MINOSEfficiencyReweighter> minosReg("MINOSEfficiency");
@@ -147,4 +147,23 @@ namespace
   };
 
   static BodekRitchieRegistrar regBodekRitchie("BodekRitchieTail");
+
+  class LowRecoil2p2hRegistrar: public plgn::RegistrarBase<PlotUtils::Reweighter<evt::Universe>>
+  {
+    public:
+      LowRecoil2p2hRegistrar(const std::string& name)
+      {
+        auto& reg = plgn::Factory<PlotUtils::Reweighter<evt::Universe>>::instance();
+        reg.Add(name, this);
+      }
+
+      virtual ~LowRecoil2p2hRegistrar() = default;
+
+      std::unique_ptr<PlotUtils::Reweighter<evt::Universe>> NewPlugin(const YAML::Node& config)
+      {
+        return std::unique_ptr<PlotUtils::Reweighter<evt::Universe>>(new LowRecoil2p2hReweighter<evt::Universe>(config["mode"].as<int>(1)));
+      }
+  };
+
+  static LowRecoil2p2hRegistrar regLowRecoil2p2hWeight("LowRecoil2p2hWeight");
 }
