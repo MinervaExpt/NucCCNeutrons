@@ -1,9 +1,9 @@
-fitToSelection: false #true
+fitToSelection: true
 range:
   firstBin: 10
 fits:
-  #signal: !ScaleFactor
-  #  min: 0.5
-  1_Neutron: !LinearFit
+  signal: !ScaleFactor
+    min: 0.3
+  1_Neutron: !ScaleFactor #!LinearFit
   #0_Neutrons: !ScaleFactor
   HighEAvail: !ScaleFactor #!LinearFit
