@@ -11,9 +11,9 @@ gROOT.SetBatch() #Don't render histograms to a window.  Also gets filled areas c
 
 var = "MuonPT"
 fiducialName = "Tracker"
-ratioMin = 0.6
+ratioMin = 0.5
 ratioMax = 1.5
-maxY = 6e4 #TODO: Base this on the selection region.  Maybe the max of selection region and all sidebands if I'm fancy.
+maxY = 8e4 #TODO: Base this on the selection region.  Maybe the max of selection region and all sidebands if I'm fancy.
 
 bottomFraction = 0.2
 marginBetweenPads = 0.117175 #Tuned by hand
@@ -101,6 +101,12 @@ def drawStack(sidebandName, isSelected = False):
   
   mcStack.SetMinimum(1)
   mcStack.Draw("HIST")
+  mcStack.GetHistogram().GetYaxis().SetTitleOffset(0.6)
+  mcStack.GetHistogram().GetYaxis().SetTitle("entries")
+  #mcStack.GetHistogram().GetYaxis().SetTitleSize(0.05) #Works, but still bold
+  #mcStack.GetHistogram().GetYaxis().SetTitleFont(142) #Works, but still bold
+  mcStack.GetHistogram().GetYaxis().SetTitleFont(42)
+  mcStack.Draw("HIST")
   
   dataWithStatErrors.SetLineColor(kBlack)
   dataWithStatErrors.SetLineWidth(lineSize)
@@ -146,6 +152,7 @@ def drawStack(sidebandName, isSelected = False):
   
   ratio.SetMinimum(ratioMin)
   ratio.SetMaximum(ratioMax)
+  ratio.GetXaxis().SetTitle("Reconstructed Muon Transverse Momentum [GeV/c]")
   ratio.Draw()
   
   #Error envelope for the MC
@@ -165,9 +172,12 @@ def drawStack(sidebandName, isSelected = False):
   title.SetFillStyle(0)
   title.SetLineColor(kWhite)
   if isSelected:
-    title.AddText(fiducialName + " Selected")
+    title.AddText("Selected") #fiducialName + " Selected")
   else:
-    title.AddText(fiducialName + " " + sidebandName)
+    if sidebandName == "QELike":
+      title.AddText("0-1 Neutrons")
+    else:
+      title.AddText(sidebandName) #fiducialName + " " + sidebandName)
   title.Draw()
   
   plotter.WritePreliminary(0.4, 0.82, 7e-2, True)
