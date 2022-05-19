@@ -430,8 +430,5 @@ int main(const int argc, const char** argv)
     if(!fitToSelection) for(const auto cvHist: cvSelection.floatingHists) cvHist->Write("", TObject::kOverwrite);
   //} //Loop over fiducial volumes
 
-  //TODO: Can I make sure I preserve the order of keys in the file somehow?  Keys that didn't get updated are ending up at the end of the directory list.
-  //      The consequence is that my automatic color scheme changes.  I could probably just reorder the Backgrounds during the event loop if it comes to that.
-
   return programStatus;
 }
