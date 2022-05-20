@@ -3,7 +3,8 @@
 //       the same histograms produced with a special (Gaudi) sample.
 //Author: Andrew Olivier aolivier@ur.rochester.edu
 
-#define USAGE "SpecialSampleAsErrorBand <standardFile> <CVWithSpecialSampleFlux> <nameOfBand> <specialSampleFile> [additionalSpecialSampleUniverses]"
+#define USAGE "SpecialSampleAsErrorBand <standardFile> <CVWithSpecialSampleFlux> <nameOfBand> <specialSampleFile> [additionalSpecialSampleUniverses]\n"\
+              "SpecialSampleAsErrorBand <standardFile> <CVWithSpecialSampleFlux> <nameOfBand> <specialSampleFile> [scaleFactor=1.0]"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
@@ -67,7 +68,7 @@ std::vector<OBJ*> find(TDirectory& dir)
 }
 
 template <class MNVH>
-MNVH* cloneWithNewBand(const MNVH* hist, const bool isFluxDifferent, const std::string& bandName, const double cvPOT, const std::unique_ptr<TFile>& originalCV, const std::vector<std::unique_ptr<TFile>>& specialSamples)
+MNVH* cloneWithNewBand(const MNVH* hist, const bool isFluxDifferent, const std::string& bandName, const double cvPOT, const std::unique_ptr<TFile>& originalCV, const std::vector<std::unique_ptr<TFile>>& specialSamples, const float scaleFactor)
 {
   MNVH* withNewBand = new MNVH(*hist);
 
@@ -101,8 +102,12 @@ MNVH* cloneWithNewBand(const MNVH* hist, const bool isFluxDifferent, const std::
     auto otherUniv = static_cast<hist_t*>(origUniv->Clone());
     otherUniv->SetDirectory(nullptr);
     otherUniv->Add(originalCVHist, -1.);
-    otherUniv->Add(originalCVHist, otherUniv, 1., -1.);
+    otherUniv->Add(originalCVHist, otherUniv, 1., -scaleFactor); //TODO: turn these back on after debugging
     univs.push_back(otherUniv);
+
+    //Now, apply any scale factor to the "up shift" universe
+    origUniv->Add(originalCVHist, -1);
+    origUniv->Add(originalCVHist, origUniv, 1., scaleFactor);
   }
 
   //If applying a special sample as a systematic to
@@ -156,8 +161,26 @@ int main(const int argc, const char** argv)
   const bool isFluxDifferent = (originalFileName == fileName);
 
   const std::string newBandName = argv[3];
+
+  //There are 2 uses cases that could trigger if there are exactly 6 arguments: 2 universes or 1 universe and a scale factor.
+  //Decide by trying to interpret argument 5 as a scale factor.  If it's not a scale factor, then assume that
+  //all arguments after 3 are universe file names.
+  //TODO: Check whether 5th argument is another universe file or a scale factor here
+  float scaleFactor = 1.;
+  bool foundScaleFactor = false;
+  if(argc == 6) //The only valid use case with a scale factor
+  {
+    try
+    {
+      scaleFactor = std::stof(argv[5]);
+      foundScaleFactor = true;
+    }
+    catch(const std::invalid_argument& /*e*/) {}
+  }
+
   std::vector<std::unique_ptr<TFile>> specialSamples;
-  for(int whichSample = 4; whichSample < argc; ++whichSample)
+  const int lastFile = foundScaleFactor?5:argc; //If I found a scale factor in argument 5, then don't process it as a file name
+  for(int whichSample = 4; whichSample < lastFile; ++whichSample)
   {
     auto file = TFile::Open(argv[whichSample], "READ");
     if(!file)
@@ -197,7 +220,7 @@ int main(const int argc, const char** argv)
     outFile->cd();
     for(const auto hist: all1D)
     {
-      if(!isFlux(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples)->Write();
+      if(!isFlux(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples, scaleFactor)->Write();
       else
       {
         hist->AddVertErrorBandAndFillWithCV(newBandName, std::max(specialSamples.size(), 2ul));
@@ -206,7 +229,7 @@ int main(const int argc, const char** argv)
     }
     for(const auto hist: all2D)
     {
-      if(!isFlux(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples)->Write();
+      if(!isFlux(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples, scaleFactor)->Write();
       else
       {
         hist->AddVertErrorBandAndFillWithCV(newBandName, std::max(specialSamples.size(), 2ul));
