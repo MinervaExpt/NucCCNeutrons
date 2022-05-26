@@ -82,15 +82,16 @@ MNVH* cloneWithNewBand(const MNVH* hist, const bool isFluxDifferent, const std::
     if(!specialPOT) throw std::runtime_error(std::string("Found histogram but failed to find POT in ") + sample->GetName());
 
     found->Scale(cvPOT / specialPOT->GetVal());
-    univs.push_back(found); //Peel off just the CV by storing a pointer to the base class.
+    univs.push_back(static_cast<hist_t*>(found->GetCVHistoWithStatError().Clone())); //Store just the CV
   }
 
-  const MNVH* originalCVHist = nullptr;
-  if(!isFluxDifferent) originalCVHist = hist;
+  const hist_t* originalCVHist = nullptr;
+  if(!isFluxDifferent) originalCVHist = static_cast<hist_t*>(hist->GetCVHistoWithStatError().Clone());
   else
   {
-    originalCVHist = dynamic_cast<MNVH*>(originalCV->Get(hist->GetName()));
-    if(!originalCVHist) throw std::runtime_error(std::string("Failed to find a histogram named ") + hist->GetName() + " in the CV with matching flux (file named " + originalCV->GetName() + ")");
+    const MNVH* originalHist = dynamic_cast<MNVH*>(originalCV->Get(hist->GetName()));
+    if(!originalHist) throw std::runtime_error(std::string("Failed to find a histogram named ") + hist->GetName() + " in the CV with matching flux (file named " + originalCV->GetName() + ")");
+    originalCVHist = static_cast<hist_t*>(originalHist->GetCVHistoWithStatError().Clone());
   }
 
   //Because we don't have a good procedure for 1-universe error bands,
