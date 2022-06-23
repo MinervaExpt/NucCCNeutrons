@@ -161,6 +161,45 @@ PlotUtils::MnvH1D* normalize(PlotUtils::MnvH1D* efficiencyCorrected, PlotUtils::
   return efficiencyCorrected;
 }
 
+//Print a list of bins that are less than 0 for every universe
+bool checkForNegativeBins(const PlotUtils::MnvH1D& hist)
+{
+  int nNegativeBins = 0;
+  constexpr double threshold = 0; //Make it easy to check for nearly 0 bins if I choose
+
+  //First, check the CV
+  for(int whichBin = 0; whichBin < hist.GetXaxis()->GetNbins(); ++whichBin)
+  {
+    const double content = hist.GetBinContent(whichBin);
+    if(content < threshold)
+    {
+      ++nNegativeBins;
+      std::cout << "Bin " << whichBin << " in the CV is < 0: " << content << "\n";
+    }
+  }
+
+  //Now, check each universe too.  These can get messed up by weird sideband fits.
+  for(const auto& bandName: hist.GetVertErrorBandNames())
+  {
+    const auto& band = hist.GetVertErrorBand(bandName);
+    for(unsigned int whichUniv = 0; whichUniv < band->GetNHists(); ++whichUniv)
+    {
+      const auto& univ = band->GetHist(whichUniv);
+      for(int whichBin = 0; whichBin < hist.GetXaxis()->GetNbins(); ++whichBin)
+      {
+        const double content = univ->GetBinContent(whichBin);
+        if(content < threshold)
+        {
+          ++nNegativeBins;
+          std::cout << "Bin " << whichBin << " in error band " << bandName << " universe " << whichUniv << " is < 0: " << content << "\n";
+        }
+      }
+    }
+  }
+
+  return nNegativeBins;
+}
+
 int main(const int argc, const char** argv)
 {
   #ifndef NCINTEX
@@ -264,6 +303,9 @@ int main(const int argc, const char** argv)
         std::cerr << "Could not create a file called " << prefix + "_crossSection.root" << ".  Does it already exist?\n";
         return 5;
       }
+
+      std::cout << "Checking background-subtracted histogram for negative bins...\n";
+      if(!checkForNegativeBins(*bkgSubtracted)) std::cout << "...and found none!\n";
 
       bkgSubtracted->Write("backgroundSubtracted");
 
