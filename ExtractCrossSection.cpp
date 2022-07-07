@@ -111,7 +111,9 @@ PlotUtils::MnvH1D* UnfoldHist( PlotUtils::MnvH1D* h_folded, PlotUtils::MnvH2D* h
   //bool bUnfolded = false;
 
   TMatrixD dummyCovMatrix;
-  if(!unfold.UnfoldHisto( h_unfolded, dummyCovMatrix, h_migration, h_folded, RooUnfold::kBayes, num_iter, true, false ))
+  const RooUnfold::Algorithm unfoldingAlg = (num_iter < 0)?RooUnfold::kInvert:RooUnfold::kBayes; //If number of iterations was given on the command line, use MINERvA standard d'Agostini unfolding.  Otherwise, try to invert the migration matrix.
+  std::cout << "Using unfolding algorithm " << unfoldingAlg << "\n";
+  if(!unfold.UnfoldHisto( h_unfolded, dummyCovMatrix, h_migration, h_folded, unfoldingAlg, num_iter, true, false ))
     return nullptr;
 
   /////////////////////////////////////////////////////////////////////////////////////////  
@@ -125,7 +127,7 @@ PlotUtils::MnvH1D* UnfoldHist( PlotUtils::MnvH1D* h_folded, PlotUtils::MnvH2D* h
   TH1D* hTruthDummy     = new TH1D(h_migration->ProjectionY()->GetCVHistoWithStatError());
   TH1D* hBGSubDataDummy = new TH1D(h_folded->GetCVHistoWithStatError());
   TH2D* hMigrationDummy = new TH2D(h_migration->GetCVHistoWithStatError());
-  unfold.UnfoldHisto(hUnfoldedDummy, unfoldingCovMatrixOrig, hMigrationDummy, hRecoDummy, hTruthDummy, hBGSubDataDummy,RooUnfold::kBayes, num_iter);//Stupid RooUnfold.  This is dummy, we don't need iterations
+  unfold.UnfoldHisto(hUnfoldedDummy, unfoldingCovMatrixOrig, hMigrationDummy, hRecoDummy, hTruthDummy, hBGSubDataDummy, unfoldingAlg, num_iter);//Stupid RooUnfold.  This is dummy, we don't need iterations
 
   correctNbins=hUnfoldedDummy->fN;
   matrixRows=unfoldingCovMatrixOrig.GetNrows();
@@ -208,25 +210,30 @@ int main(const int argc, const char** argv)
 
   TH1::AddDirectory(kFALSE); //Needed so that MnvH1D gets to clean up its own MnvLatErrorBands (which are TH1Ds).
 
-  if(argc != 4)
+  if(argc < 3 || argc > 4)
   {
-    std::cerr << "Expected 3 arguments, but I got " << argc-1 << ".\n"
-              << "USAGE: ExtractCrossSection <unfolding iterations> <data.root> <mc.root>\n";
+    std::cerr << "Expected 2 or 3 arguments, but I got " << argc-1 << ".\n"
+              << "USAGE: ExtractCrossSection <unfolding iterations> <data.root> <mc.root>\n"
+              << "       ExtractCrossSection <data.root> <mc.root>\n";
     return 1;
   }
 
-  const int nIterations = std::stoi(argv[1]);
-  std::unique_ptr<TFile> dataFile(TFile::Open(argv[2], "READ"));
+  int firstFileArg = 2,
+      nIterations = -1;
+  if(argc == 4) nIterations = std::stoi(argv[1]);
+  else firstFileArg = 1;
+
+  std::unique_ptr<TFile> dataFile(TFile::Open(argv[firstFileArg], "READ"));
   if(!dataFile)
   {
-    std::cerr << "Failed to open data file " << argv[2] << ".\n";
+    std::cerr << "Failed to open data file " << argv[firstFileArg] << ".\n";
     return 2;
   }
 
-  std::unique_ptr<TFile> mcFile(TFile::Open(argv[3], "READ"));
+  std::unique_ptr<TFile> mcFile(TFile::Open(argv[firstFileArg+1], "READ"));
   if(!mcFile)
   {
-    std::cerr << "Failed to open MC file " << argv[3] << ".\n";
+    std::cerr << "Failed to open MC file " << argv[firstFileArg+1] << ".\n";
     return 3;
   }
 
