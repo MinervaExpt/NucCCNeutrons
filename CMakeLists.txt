@@ -87,6 +87,7 @@ add_executable(SwapSysUnivWithCV SwapSysUnivWithCV.cpp)
 add_executable(FitSidebands FitSidebands.cpp $<TARGET_OBJECTS:backgroundFits>)
 add_executable(MergeAndScaleByPOT MergeAndScaleByPOT.cpp)
 add_executable(SpecialSampleAsErrorBand SpecialSampleAsErrorBand.cpp)
+add_executable(InversionWarpingStudy InversionWarpingStudy.cpp)
 
 #Build libraries that main executables depend on
 add_subdirectory(units)
@@ -102,6 +103,7 @@ target_link_libraries(SwapSysUnivWithCV ${ROOT_LIBRARIES} MAT)
 target_link_libraries(FitSidebands ${ROOT_LIBRARIES} MAT fits util yaml-cpp)
 target_link_libraries(MergeAndScaleByPOT ${ROOT_LIBRARIES} MAT)
 target_link_libraries(SpecialSampleAsErrorBand ${ROOT_LIBRARIES} MAT)
+target_link_libraries(InversionWarpingStudy ${ROOT_LIBRARIES} MAT UnfoldUtils)
 
 install(TARGETS ProcessAnaTuples DESTINATION bin)
 install(TARGETS ExtractCrossSection DESTINATION bin)
@@ -109,6 +111,7 @@ install(TARGETS SwapSysUnivWithCV DESTINATION bin)
 install(TARGETS FitSidebands DESTINATION bin)
 install(TARGETS MergeAndScaleByPOT DESTINATION bin)
 install(TARGETS SpecialSampleAsErrorBand DESTINATION bin)
+install(TARGETS InversionWarpingStudy DESTINATION bin)
 
 configure_file(setup.sh.in setup_${PROJECT_NAME}.sh @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/setup_${PROJECT_NAME}.sh DESTINATION bin)
