@@ -64,7 +64,7 @@ namespace evt
     GeV E_avail = 0;
     const GeV protonMass = 938.27201_MeV;
     //const GeV neutronMass = 939.56536_MeV;
-    const GeV pionMass = 139.57_MeV;
+    const GeV pionMass = 139.5701_MeV;
     for(const auto& fs: allFS)
     {
       if(abs(fs.pdgCode) == 11 || abs(fs.pdgCode) == 13) {} //Ignore leptons
