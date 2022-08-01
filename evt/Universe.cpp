@@ -62,19 +62,24 @@ namespace evt
     //Updated to match https://minerva-docdb.fnal.gov/cgi-bin/sso/RetrieveFile?docid=30875&filename=low_recoil_20220719.pdf&version=1
     //This is different from what people told me a few years ago, but I guess that's just too bad :(
     GeV E_avail = 0;
-    constexpr auto protonMass = 938.28_MeV;
-    constexpr auto pionMass = 139.57_MeV;
+    const GeV protonMass = 938.27201_MeV;
+    //const GeV neutronMass = 939.56536_MeV;
+    const GeV pionMass = 139.57_MeV;
     for(const auto& fs: allFS)
     {
-      if(abs(fs.pdgCode) == 211) E_avail += fs.momentum.E() - pionMass; //Charged pion
+      if(abs(fs.pdgCode) == 11 || abs(fs.pdgCode) == 13) {} //Ignore leptons
+      else if(abs(fs.pdgCode) > 1e9) {} //Ignore nuclear fragments
       else if(fs.pdgCode == 2212) E_avail += fs.momentum.E() - protonMass; //Proton
+      else if(fs.pdgCode == 2112) {} //Ignore neutrons
+      else if(abs(fs.pdgCode) == 211) E_avail += fs.momentum.E() - pionMass; //Charged pion
       else if(fs.pdgCode == 111) E_avail += fs.momentum.E(); //Neutral pion
       else if(fs.pdgCode == 22) E_avail += fs.momentum.E(); //Photon
       else if(abs(fs.pdgCode) == 321) E_avail += fs.momentum.E(); //Charged kaon
-      else if(fs.pdgCode > 3000 && fs.pdgCode < 4000) E_avail += fs.momentum.E() - protonMass; //TODO: strange baryons
-      else if(fs.pdgCode < -3000 && fs.pdgCode > -4000) E_avail += fs.momentum.E() + protonMass; //TODO: strange anti-baryons
-      else E_avail += E_avail += fs.momentum.E(); //Anything else gets its total energy
-      //Implicitly exclude neutrons, nuclei, and heavy baryons
+      else if(fs.pdgCode > 3000) E_avail += fs.momentum.E() - protonMass; //Strange baryons
+      else if(fs.pdgCode < -3000) E_avail += fs.momentum.E() + protonMass; //Strange anti-baryons
+      else if(fs.pdgCode == -2212) E_avail += fs.momentum.E() + protonMass; //Per Abbey, assume anti-protons annihilate
+      else if(fs.pdgCode == -2112) E_avail += fs.momentum.E() + protonMass; //Per Abbey, assume anti-neutrons annihilate.  Use the proton mass to be consistent with Abbey's assertion that they could annihilate on either a proton or a neutron.
+      else E_avail += fs.momentum.E(); //Anything else gets its total energy.  Abbey notes that this includes strange mesons.
     }
 
     return std::max(0_GeV, E_avail);
