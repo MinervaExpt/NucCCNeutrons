@@ -60,15 +60,17 @@ namespace ana
                                                                                                   config["binning"].as<std::vector<double>>(), universes)
       {
         const auto binning = config["binning"].as<std::vector<double>>(); //TODO: Upgrade WithUnits<> to check UNIT on bins?
+        std::vector<double> truthBinning = binning;
+        if(config["truthBinning"]) truthBinning = config["truthBinning"].as<std::vector<double>>(); //Expert interface for Hang's warping studies with non-square migration matrices
 
         fMigration = dir.make<MIGRATION>("Migration", ("Migration;Reco " + fVar.name() + ";Truth " + fVar.name() + ";entries").c_str(),
-                                         binning, binning, universes);
+                                         binning, truthBinning, universes);
         fSignalEvents = dir.make<HIST>("Signal", ("Signal;Reco " + fVar.name() + ";entries").c_str(),
                                        binning, universes);
         fEfficiencyNum = dir.make<HIST>("EfficiencyNumerator", ("Efficiency Numerator;Truth " + fVar.name() + ";entries").c_str(),
-                                        binning, universes);
+                                        truthBinning, universes);
         fEfficiencyDenom = dir.make<HIST>("EfficiencyDenominator", ("Efficiency Denominator;Truth " + fVar.name() + ";entries").c_str(),
-                                          binning, universes);
+                                          truthBinning, universes);
         fSelectedMCEvents = dir.make<HIST>("SelectedMCEvents", ("Selected Signal Events;Reco " + fVar.name() + ";entries").c_str(),
                                            binning, universes);
 
@@ -77,7 +79,7 @@ namespace ana
         auto cv = universes["cv"].front();
         if(cv) //Only case I can think of where this fails is debugging a specific error band.
         {
-          auto fluxIntegral = universes["cv"].front()->GetFluxIntegral(*fSelectedMCEvents);
+          auto fluxIntegral = universes["cv"].front()->GetFluxIntegral(*fEfficiencyNum); //*fSelectedMCEvents);
           dir.mv(fluxIntegral);
         }
       }
