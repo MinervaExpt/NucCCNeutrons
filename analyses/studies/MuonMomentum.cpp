@@ -8,6 +8,7 @@
 #include "analyses/studies/CrossSection2DSignal.h"
 #include "analyses/studies/SidebandGENIEBreakdown.h"
 #include "analyses/studies/BackgroundsByPionContent.h"
+#include "analyses/studies/BackgroundsByGENIECategory.h"
 
 //c++ includes
 #include <string>
@@ -30,12 +31,12 @@ namespace ana
 
     inline std::string name() const { return "Muon Momentum"; }
 
-    GeV truth(const evt::Universe& event)
+    GeV truth(const evt::Universe& event) const
     {
       return event.GetTruthPmu().p().mag();
     }
 
-    GeV reco(const evt::Universe& event)
+    GeV reco(const evt::Universe& event) const
     {
       return event.GetMuonP().p().mag();
     }
@@ -48,12 +49,12 @@ namespace ana
 
     inline std::string name() const { return "Muon p_z"; }
 
-    GeV truth(const evt::Universe& event)
+    GeV truth(const evt::Universe& event) const
     {
       return event.GetTruthPmu().z();
     }
 
-    GeV reco(const evt::Universe& event)
+    GeV reco(const evt::Universe& event) const
     {
       return event.GetMuonP().z();
     }
@@ -66,13 +67,13 @@ namespace ana
 
     inline std::string name() const { return "Muon p_T"; }
 
-    GeV truth(const evt::Universe& event)
+    GeV truth(const evt::Universe& event) const
     {
       const units::XYZVector<double> zHat{0, 0, 1};
       return event.GetTruthPmu().p().cross(zHat).mag();
     }
     
-    GeV reco(const evt::Universe& event)
+    GeV reco(const evt::Universe& event) const
     {
       const units::XYZVector<double> zHat{0, 0, 1};
       return event.GetMuonP().p().cross(zHat).mag();
@@ -89,6 +90,7 @@ namespace
   static ana::CrossSectionSideband<ana::MuonPT>::Registrar MuonPTSideband_reg("MuonPTSideband");
   static ana::SidebandGENIEBreakdown<ana::MuonPT>::Registrar MuonPTSidebandGENIEBreakdown_reg("MuonPTSidebandGENIEBreakdown");
   static ana::BackgroundsByPionContent<ana::MuonPT>::Registrar MuonPTPionBreadkdown_reg("MuonPTPionBreakdown");
+  static ana::BackgroundsByGENIECategory<ana::MuonPT>::Registrar MuonPTGENIEBreakdown_reg("MuonPTGENIEBreakdown");
 
   static ana::CrossSectionSignal<ana::MuonPz>::Registrar MuonPzSignal_reg("MuonPzSignal");
   static ana::CrossSectionSideband<ana::MuonPz>::Registrar MuonPzSideband_reg("MuonPzSideband");
