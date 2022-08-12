@@ -140,6 +140,11 @@ namespace ana
       util::Categorized<HIST, int> fThreeDCandCosineResiduals;
       util::Categorized<HIST, int> fTwoDCandCosineResiduals;
       util::Categorized<HIST, int> fAllCandCosineResiduals;
+
+      PlotUtils::HistWrapper<evt::Universe>* fNMCEntries; //Number of entries that make it into mcSignal for each universe
+                                                         //This lets me cancel uncertainties when I divide by number of
+                                                         //entries as well as merge playlists!
+      PlotUtils::HistWrapper<evt::Universe>* fNDataEntries;
   };
 }
 

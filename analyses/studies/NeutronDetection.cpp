@@ -66,10 +66,15 @@ namespace ana
                                        config["binning"]["beta"].as<std::vector<double>>());
 
     fCandsPerFSNeutron = dir.make<units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, neutrons, events>>("CandsPerFSNeutron", "Candidates per FS Neutron;N Candidates;Events", 4, 0, 4, univs);
+
+    fNMCEntries = dir.make<PlotUtils::HistWrapper<evt::Universe>>("NMCEntries", "Number of Signal Selected Entries", 1, 0, 1, univs);
+    fNDataEntries = dir.make<PlotUtils::HistWrapper<evt::Universe>>("NDataEntries", "Number of Selected Entries", 1, 0, 1, univs);
   }
 
   void NeutronDetection::data(const evt::Universe& event, const events weight)
   {
+    fNDataEntries->FillUniverse(event, 0.5, weight.in<events>());
+
     const auto cands = event.Get<NeutronCandidate>(event.Getblob_edep(), event.Getblob_zPos(), event.Getblob_transverse_dist_from_vertex(), event.Getblob_earliest_time(), event.Getblob_nViews());
     const auto vertex = event.GetVtx();
 
@@ -81,6 +86,8 @@ namespace ana
 
   void NeutronDetection::mcSignal(const evt::Universe& event, const events weight)
   {
+    fNMCEntries->FillUniverse(event, 0.5, weight.in<events>());
+
     //Cache weight for each universe
     const neutrons weightPerNeutron = weight.in<events>();
 
@@ -138,11 +145,11 @@ namespace ana
   {
     fPDGToObservables.visit([passedSelection](auto& hist)
                             {
-                              hist.Scale(1./passedSelection.in<events>());
+                              //hist.Scale(1./passedSelection.in<events>()); //TODO: Save this number per universe instead
                               hist.SyncCVHistos();
                             });
 
-    fDataCands->Scale(1./passedSelection.in<events>());
+    //fDataCands->Scale(1./passedSelection.in<events>());
     fDataCands->SyncCVHistos();
 
     fEffNumerator->SyncCVHistos();
