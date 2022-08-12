@@ -53,6 +53,7 @@ class DataMCRatioReweighter: public PlotUtils::Reweighter<UNIVERSE, EVENT>
 
     double GetWeight(const UNIVERSE& univ, const EVENT& /*event*/) const override
     {
+      if(univ.IsTruth()) return 1; //Just like the MINOS reweighter, I can't run this reweighter on the Truth tree because it uses a reco variable.
       return fWeightHist->GetBinContent(fWeightHist->FindBin(fVar.reco(univ).template in<GeV>()));
     }
 
