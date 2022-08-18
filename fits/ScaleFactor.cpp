@@ -51,20 +51,22 @@ namespace fit
     assert(largestSideband != sidebands.end());
                                                                                                                                                            
     auto mcRatio = makeDataMCRatio(*largestSideband, POTRatio);
-    const double scaleGuess = (mcRatio->GetMaximum() - mcRatio->GetMinimum())/2. + mcRatio->GetMinimum();
+    double scaleGuess = (mcRatio->GetMaximum() - mcRatio->GetMinimum())/2. + mcRatio->GetMinimum();
     #ifndef NDEBUG
     std::cout << "Setting guess for scaled background " << name << " (index = " << nextPar << ") to " << scaleGuess << "\n"
               << "Ratio max is " << mcRatio->GetMaximum() << "\nRatio min is " << mcRatio->GetMinimum() << "\n";
     #endif //NDEBUG
                                                                                                                                                            
-    //min.SetLimitedVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20., mcRatio->GetMinimum(), mcRatio->GetMaximum());
+    if(fHasScaleMax) scaleGuess = std::min(fScaleMax, scaleGuess); //scaleGuess can't be larger than fScaleMax
+    if(fHasScaleMin) scaleGuess = std::max(fScaleMin, scaleGuess); //scaleGuess can't be smaller than fScaleMin
+
     min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
     if(fHasScaleMin)
     {
-      if(fHasScaleMax) min.SetVariableLimits(nextPar, std::min(fScaleMin, scaleGuess), std::max(fScaleMax, scaleGuess));
-      else min.SetVariableLowerLimit(nextPar, std::min(fScaleMin, scaleGuess));
+      if(fHasScaleMax) min.SetVariableLimits(nextPar, fScaleMin, fScaleMax);
+      else min.SetVariableLowerLimit(nextPar, fScaleMin);
     }
-    else if(fHasScaleMax) min.SetVariableUpperLimit(nextPar, std::max(fScaleMax, scaleGuess));
+    else if(fHasScaleMax) min.SetVariableUpperLimit(nextPar, fScaleMax);
   }
 }
 
