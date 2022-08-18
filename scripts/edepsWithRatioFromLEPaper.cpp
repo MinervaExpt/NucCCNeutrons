@@ -44,9 +44,6 @@ PlotUtils::MnvH1D expandEntriesToMatchBinning(const PlotUtils::MnvH1D& templateH
     const auto nEntriesBand = nEntries.GetVertErrorBand(bandName);
     const auto expandedBand = expanded.GetVertErrorBand(bandName);
 
-    //TODO: Remove this kludge when I rerun NeutronDetectionStudy with afterAllFiles() fixed!
-    for(int whichBin = 0; whichBin < nBins; ++whichBin) expandedBand->SetBinContent(whichBin, nEntries.GetBinContent(1));
-
     for(size_t whichUniv = 0; whichUniv < nEntriesBand->GetNHists(); ++whichUniv) //For each universe
     {
       const auto expandedHist = expandedBand->GetHist(whichUniv);
@@ -59,7 +56,7 @@ PlotUtils::MnvH1D expandEntriesToMatchBinning(const PlotUtils::MnvH1D& templateH
 
 THStack select(TFile& file, const std::regex& match)
 {
-  const auto rawEntries = file.Get<PlotUtils::MnvH1D>("Target3Lead_Neutron_Detection_NMCEntries");
+  const auto rawEntries = file.Get<PlotUtils::MnvH1D>("Tracker_Neutron_Detection_NMCEntries");
   THStack found;
 
   for(auto key: *file.GetListOfKeys())
@@ -110,7 +107,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
        mcFile   = giveMeFileOrGiveMeDeath(mcFileName);
   //std::vector<TFile*> otherMCFiles = {giveMeFileOrGiveMeDeath(otherMCFileName)...};
 
-  const std::string var = "EDeps", anaName = "Target3Lead_Neutron_Detection",
+  const std::string var = "EDeps", anaName = "Tracker_Neutron_Detection",
                     dataName = anaName + "_Data" + var;
   const std::regex find(anaName + R"(__(.*))" + var);
 
@@ -270,7 +267,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   TPaveText title(0.3, 0.91, 0.7, 1.0, "nbNDC"); //no border
   title.SetFillStyle(0);
   title.SetLineColor(0);
-  title.AddText("Target 3 Lead"); //TODO: Get this from the file name?
+  title.AddText("Tracker"); //TODO: Get this from the file name?
   title.Draw();
 
   //MINERvA Preliminary
