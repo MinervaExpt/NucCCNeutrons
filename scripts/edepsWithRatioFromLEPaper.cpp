@@ -28,8 +28,38 @@ const int lineSize = 2;
 const double maxMC = 2; //Maximum across all plots I want to compare
 const double minRatio = 0.5, maxRatio = 1.9;
 
+PlotUtils::MnvH1D expandEntriesToMatchBinning(const PlotUtils::MnvH1D& templateHist, const PlotUtils::MnvH1D& nEntries)
+{
+  PlotUtils::MnvH1D expanded(templateHist);
+  expanded.Reset("ICEM");
+
+  const int nBins = expanded.GetXaxis()->GetNbins()+1; //+1 for the overflow bin
+
+  //Set the CV to be the same number of entries in each bin
+  for(int whichBin = 0; whichBin < nBins; ++whichBin) expanded.SetBinContent(whichBin, nEntries.GetBinContent(1)); //There's only 1 bin in nEntries, plus under/overflow
+
+  //Do the same for systematics...
+  for(const auto& bandName: nEntries.GetVertErrorBandNames()) //For each error band
+  {
+    const auto nEntriesBand = nEntries.GetVertErrorBand(bandName);
+    const auto expandedBand = expanded.GetVertErrorBand(bandName);
+
+    //TODO: Remove this kludge when I rerun NeutronDetectionStudy with afterAllFiles() fixed!
+    for(int whichBin = 0; whichBin < nBins; ++whichBin) expandedBand->SetBinContent(whichBin, nEntries.GetBinContent(1));
+
+    for(size_t whichUniv = 0; whichUniv < nEntriesBand->GetNHists(); ++whichUniv) //For each universe
+    {
+      const auto expandedHist = expandedBand->GetHist(whichUniv);
+      for(int whichBin = 0; whichBin < nBins; ++whichBin) expandedHist->SetBinContent(whichBin, nEntriesBand->GetHist(whichUniv)->GetBinContent(1));
+    }
+  }
+
+  return expanded;
+}
+
 THStack select(TFile& file, const std::regex& match)
 {
+  const auto rawEntries = file.Get<PlotUtils::MnvH1D>("Target3Lead_Neutron_Detection_NMCEntries");
   THStack found;
 
   for(auto key: *file.GetListOfKeys())
@@ -39,6 +69,8 @@ THStack select(TFile& file, const std::regex& match)
       auto hist = dynamic_cast<PlotUtils::MnvH1D*>(static_cast<TKey*>(key)->ReadObj());
       if(hist)
       {
+        const auto nEntries = expandEntriesToMatchBinning(*hist, *rawEntries); //TODO: I could do this only once for the whole file, but then I'd have to choose a template histogram.  It's a script, so it shouldn't run for long enough to matter anyway, right?
+        hist->Divide(hist, &nEntries);
         found.Add(static_cast<TH1D*>(hist->GetCVHistoWithError().Clone()));
       }
     }
@@ -78,17 +110,22 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
        mcFile   = giveMeFileOrGiveMeDeath(mcFileName);
   //std::vector<TFile*> otherMCFiles = {giveMeFileOrGiveMeDeath(otherMCFileName)...};
 
-  const std::string var = "EDeps", anaName = "Tracker_Neutron_Detection",
+  const std::string var = "EDeps", anaName = "Target3Lead_Neutron_Detection",
                     dataName = anaName + "_Data" + var;
   const std::regex find(anaName + R"(__(.*))" + var);
 
   auto mcStack = select(*mcFile, find);
-  auto dataHist = dynamic_cast<TH1D*>(dataFile->Get(dataName.c_str()));
-  if(!dataHist)
+  auto dataHistRaw = dynamic_cast<PlotUtils::MnvH1D*>(dataFile->Get(dataName.c_str()));
+  if(!dataHistRaw)
   {
     std::cerr << "Failed to find a histogram named " << dataName << "\n";
     return 1;
   }
+
+  auto dataHist = dataHistRaw->GetCVHistoWithStatError();
+  const auto rawEntries = dataFile->Get<PlotUtils::MnvH1D>((anaName + "_NDataEntries").c_str());
+  const auto nEntries = expandEntriesToMatchBinning(dataHist, *rawEntries);
+  dataHist.Divide(&dataHist, &nEntries);
 
   std::vector<TFile*> otherMCFiles = {giveMeFileOrGiveMeDeath(otherMCFileNames)...};
   std::vector<THStack> otherMCStacks;
@@ -136,13 +173,13 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   mcStack.Draw("HISTnostackSAME");
   auto axes = mcStack.GetHistogram(); //N.B.: GetHistogram() would have returned nullptr had I called it before Draw()!
 
-  dataHist->SetLineColor(1);
-  dataHist->SetLineWidth(lineSize);
-  dataHist->SetMarkerStyle(20); //Resizeable closed circle
-  dataHist->SetMarkerColor(1);
-  dataHist->SetMarkerSize(0.7);
-  dataHist->SetTitle("Data");
-  dataHist->Draw("X0SAME");
+  dataHist.SetLineColor(1);
+  dataHist.SetLineWidth(lineSize);
+  dataHist.SetMarkerStyle(20); //Resizeable closed circle
+  dataHist.SetMarkerColor(1);
+  dataHist.SetMarkerSize(0.7);
+  dataHist.SetTitle("Data");
+  dataHist.Draw("X0SAME");
 
   auto topLegend = top.BuildLegend(0.5, 0.4, 0.9, 0.9);
 
@@ -156,9 +193,16 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   bottom.cd();
   bottom.SetTopMargin(0);
   bottom.SetBottomMargin(0.3);
-  auto ratio = static_cast<PlotUtils::MnvH1D*>(dataHist->Clone()),
-       mcRatio = static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone());
-  ratio->Divide(ratio, mcRatio);
+  auto ratio = static_cast<TH1D*>(dataHist.Clone());
+  auto mcRatio = static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone());
+
+  //I want a ratio histogram for the data that has only the data stat. errors.
+  //I can't let the MC systematics get into the ratio because I'm not subtracting backgrounds (which would put systematics on the data too).
+  //I can't let the MC statistical uncertainty get into the ratio because it too is already in the MC error envelope.
+  auto mcDenom = mcRatio->GetCVHistoWithStatError();
+  const int nDenomBins = mcDenom.GetXaxis()->GetNbins()+2; //1 extra for underflow and 1 extra for overflow
+  for(int whichBin = 0; whichBin < nDenomBins; ++whichBin) mcDenom.SetBinError(whichBin, 0);
+  ratio->Divide(ratio, &mcDenom);
 
   ratio->SetTitle("data");
   ratio->SetLineWidth(lineSize);
@@ -194,7 +238,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
     modelRatio->SetLineColor(kBlack);
     modelRatio->SetLineWidth(lineSize);
 
-    modelRatio->Divide(modelRatio, mcRatio);
+    modelRatio->Divide(modelRatio, &mcDenom); //TODO: I updated this to respect the MC's error envelope, but I haven't tested it with alternative models yet!
 
     modelRatio->SetMinimum(minRatio);
     modelRatio->SetMaximum(maxRatio);
@@ -226,7 +270,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   TPaveText title(0.3, 0.91, 0.7, 1.0, "nbNDC"); //no border
   title.SetFillStyle(0);
   title.SetLineColor(0);
-  title.AddText("Tracker"); //TODO: Get this from the file name?
+  title.AddText("Target 3 Lead"); //TODO: Get this from the file name?
   title.Draw();
 
   //MINERvA Preliminary

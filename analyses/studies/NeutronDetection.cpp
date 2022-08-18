@@ -154,6 +154,9 @@ namespace ana
 
     fEffNumerator->SyncCVHistos();
     fEffDenominator->SyncCVHistos();
+
+    fNMCEntries->SyncCVHistos();
+    fNDataEntries->SyncCVHistos();
   }
 
   NeutronDetection::Observables::Observables(const std::string& name, const std::string& title, std::map<std::string, std::vector<evt::Universe*>>& univs,
