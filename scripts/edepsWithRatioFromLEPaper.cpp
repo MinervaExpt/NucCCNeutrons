@@ -44,6 +44,9 @@ PlotUtils::MnvH1D expandEntriesToMatchBinning(const PlotUtils::MnvH1D& templateH
     const auto nEntriesBand = nEntries.GetVertErrorBand(bandName);
     const auto expandedBand = expanded.GetVertErrorBand(bandName);
 
+    //TODO: Remove this kludge when I rerun NeutronDetectionStudy with afterAllFiles() fixed!
+    for(int whichBin = 0; whichBin < nBins; ++whichBin) expandedBand->SetBinContent(whichBin, nEntries.GetBinContent(1));
+
     for(size_t whichUniv = 0; whichUniv < nEntriesBand->GetNHists(); ++whichUniv) //For each universe
     {
       const auto expandedHist = expandedBand->GetHist(whichUniv);
@@ -56,7 +59,7 @@ PlotUtils::MnvH1D expandEntriesToMatchBinning(const PlotUtils::MnvH1D& templateH
 
 THStack select(TFile& file, const std::regex& match)
 {
-  const auto rawEntries = file.Get<PlotUtils::MnvH1D>("Tracker_Neutron_Detection_NMCEntries");
+  const auto rawEntries = file.Get<PlotUtils::MnvH1D>("Target3Lead_Neutron_Detection_NMCEntries");
   THStack found;
 
   for(auto key: *file.GetListOfKeys())
@@ -68,7 +71,7 @@ THStack select(TFile& file, const std::regex& match)
       {
         const auto nEntries = expandEntriesToMatchBinning(*hist, *rawEntries); //TODO: I could do this only once for the whole file, but then I'd have to choose a template histogram.  It's a script, so it shouldn't run for long enough to matter anyway, right?
         hist->Divide(hist, &nEntries);
-        found.Add(static_cast<TH1D*>(hist->GetCVHistoWithError().Clone()));
+        found.Add(static_cast<PlotUtils::MnvH1D*>(hist->Clone())); //static_cast<TH1D*>(hist->GetCVHistoWithError().Clone()));
       }
     }
   }
@@ -107,7 +110,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
        mcFile   = giveMeFileOrGiveMeDeath(mcFileName);
   //std::vector<TFile*> otherMCFiles = {giveMeFileOrGiveMeDeath(otherMCFileName)...};
 
-  const std::string var = "EDeps", anaName = "Tracker_Neutron_Detection",
+  const std::string var = "EDeps", anaName = "Target3Lead_Neutron_Detection",
                     dataName = anaName + "_Data" + var;
   const std::regex find(anaName + R"(__(.*))" + var);
 
@@ -154,18 +157,18 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   //Data with stacked MC
   top.cd();
 
-  auto mcTotal = static_cast<TH1*>(mcStack.GetStack()->Last());
-  mcTotal->SetTitle("MnvGENIEv1");
+  auto mcTotal = static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last())->GetCVHistoWithError();
+  mcTotal.SetTitle("MnvGENIEv1");
 
-  mcTotal->GetYaxis()->SetTitle("candidates / event"); //dataHist->GetYaxis()->GetTitle()); //TODO: I had the axes backwards in the original plo
-  mcTotal->GetYaxis()->SetLabelSize(labelSize * (bottomFraction + margin));
-  mcTotal->GetYaxis()->SetTitleSize(0.06); //TODO: How to guess what these are?
-  mcTotal->GetYaxis()->SetTitleOffset(0.6);
+  mcTotal.GetYaxis()->SetTitle("candidates / event"); //dataHist->GetYaxis()->GetTitle()); //TODO: I had the axes backwards in the original plo
+  mcTotal.GetYaxis()->SetLabelSize(labelSize * (bottomFraction + margin));
+  mcTotal.GetYaxis()->SetTitleSize(0.06); //TODO: How to guess what these are?
+  mcTotal.GetYaxis()->SetTitleOffset(0.6);
 
-  mcTotal->SetLineColor(kRed);
-  mcTotal->SetFillColorAlpha(kPink + 1, 0.4);
-  mcTotal->SetMaximum(maxMC);
-  mcTotal->Draw("E2"); //Draw the error bars
+  mcTotal.SetLineColor(kRed);
+  mcTotal.SetFillColorAlpha(kPink + 1, 0.4);
+  mcTotal.SetMaximum(maxMC);
+  mcTotal.Draw("E2"); //Draw the error bars
 
   mcStack.Draw("HISTnostackSAME");
   auto axes = mcStack.GetHistogram(); //N.B.: GetHistogram() would have returned nullptr had I called it before Draw()!
@@ -182,7 +185,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
 
   //Drawing the thing that I don't want in the legend AFTER
   //building the legend.  What a dirty hack!
-  auto lineOnly = static_cast<TH1*>(mcTotal->Clone());
+  auto lineOnly = static_cast<TH1*>(mcTotal.Clone());
   lineOnly->SetFillStyle(0);
   lineOnly->Draw("HISTSAME"); //Draw the line
 
@@ -192,6 +195,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   bottom.SetBottomMargin(0.3);
   auto ratio = static_cast<TH1D*>(dataHist.Clone());
   auto mcRatio = static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone());
+  auto mcRatioWithErrors = mcRatio->GetCVHistoWithError();
 
   //I want a ratio histogram for the data that has only the data stat. errors.
   //I can't let the MC systematics get into the ratio because I'm not subtracting backgrounds (which would put systematics on the data too).
@@ -245,19 +249,19 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   auto bottomLegend = bottom.BuildLegend(0.1, 0.6, 0.4, 0.95);
 
   //Now fill mcRatio with 1 for bin content and fractional error
-  for(int whichBin = 0; whichBin <= mcRatio->GetXaxis()->GetNbins(); ++whichBin)
+  for(int whichBin = 0; whichBin <= mcRatioWithErrors.GetXaxis()->GetNbins(); ++whichBin)
   {
-    mcRatio->SetBinError(whichBin, mcRatio->GetBinError(whichBin)/mcRatio->GetBinContent(whichBin));
-    mcRatio->SetBinContent(whichBin, 1);
+    mcRatioWithErrors.SetBinError(whichBin, mcRatioWithErrors.GetBinError(whichBin)/mcRatioWithErrors.GetBinContent(whichBin));
+    mcRatioWithErrors.SetBinContent(whichBin, 1);
   }
 
-  mcRatio->SetLineColor(kRed);
-  mcRatio->SetLineWidth(lineSize);
-  mcRatio->SetFillColorAlpha(kPink + 1, 0.4);
-  mcRatio->Draw("E2SAME");
+  mcRatioWithErrors.SetLineColor(kRed);
+  mcRatioWithErrors.SetLineWidth(lineSize);
+  mcRatioWithErrors.SetFillColorAlpha(kPink + 1, 0.4);
+  mcRatioWithErrors.Draw("E2SAME");
 
   //Draw a flat line through the center of the MC
-  auto straightLine = static_cast<TH1*>(mcRatio->Clone());
+  auto straightLine = static_cast<TH1*>(mcRatioWithErrors.Clone());
   straightLine->SetFillStyle(0);
   straightLine->Draw("HISTSAME");
   //TODO: Do uncertainty propagation correctly.  Looks like I'm assuming data and MC are uncorrelated for now which is roughly true.
@@ -267,7 +271,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   TPaveText title(0.3, 0.91, 0.7, 1.0, "nbNDC"); //no border
   title.SetFillStyle(0);
   title.SetLineColor(0);
-  title.AddText("Tracker"); //TODO: Get this from the file name?
+  title.AddText("Target 3 Lead"); //TODO: Get this from the file name?
   title.Draw();
 
   //MINERvA Preliminary
@@ -280,6 +284,14 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   prelim.Draw();
 
   overall.Print((var + "DataMCRatio.png").c_str()); //TODO: Include file name here
+
+  //Plot uncertainty summary for sum on a new canvas
+  TCanvas uncSummary("uncertaintySummary");
+  PlotUtils::MnvPlotter plotter;
+  plotter.ApplyStyle(PlotUtils::kCCQENuStyle);
+  plotter.axis_maximum = 1;
+  plotter.DrawErrorSummary(static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone()));
+  uncSummary.Print("edepsUncertaintySummary.png");
 
   return 0;
 }
