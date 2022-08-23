@@ -17,7 +17,7 @@
 
 namespace fit
 {
-  ScaleFactor::ScaleFactor(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths), fHasScaleMin(false), fHasScaleMax(false)
+  ScaleFactor::ScaleFactor(const YAML::Node& config, const std::string& name, const double sumBinWidths): Background(config, name, sumBinWidths), fHasScaleMin(false), fHasScaleMax(false), fHasInitialGuess(false)
   {
     if(config.IsMap())
     {
@@ -30,6 +30,11 @@ namespace fit
       {
         fHasScaleMax = true;
         fScaleMax = config["max"].as<double>();
+      }
+      if(config["guess"])
+      {
+        fHasInitialGuess = true;
+        fInitialGuess = config["guess"].as<double>();
       }
     }
   }
@@ -52,6 +57,7 @@ namespace fit
                                                                                                                                                            
     auto mcRatio = makeDataMCRatio(*largestSideband, POTRatio);
     double scaleGuess = (mcRatio->GetMaximum() - mcRatio->GetMinimum())/2. + mcRatio->GetMinimum();
+    if(fHasInitialGuess) scaleGuess = fInitialGuess; //User guess of parameter
     #ifndef NDEBUG
     std::cout << "Setting guess for scaled background " << name << " (index = " << nextPar << ") to " << scaleGuess << "\n"
               << "Ratio max is " << mcRatio->GetMaximum() << "\nRatio min is " << mcRatio->GetMinimum() << "\n";

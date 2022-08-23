@@ -26,6 +26,8 @@ namespace fit
       double fScaleMin;
       bool fHasScaleMax;
       double fScaleMax;
+      bool fHasInitialGuess;
+      double fInitialGuess;
   };
 }
 
