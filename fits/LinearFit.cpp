@@ -50,7 +50,7 @@ namespace fit
          fLastBinMax = config["lastBin"]["max"].as<double>();
        }
      }
-  }
+   }
  }
 
   double LinearFit::functionToFit(const double binCenter, const double* pars) const
