@@ -334,7 +334,15 @@ int main(const int argc, const char** argv)
 
     //Get the list of error bands to loop over
     auto referenceHist = util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, selectionName + "_Signal");
-    const auto errorBandNames = referenceHist->GetErrorBandNames();
+    auto errorBandNames = referenceHist->GetErrorBandNames();
+
+    //Sometimes, it's useful to not fit one or more error bands
+    if(config["bandsToIgnore"])
+    {
+      auto newEnd = errorBandNames.end();
+      for(const auto& bandToRemove: config["bandsToIgnore"].as<std::vector<std::string>>()) newEnd = std::remove(errorBandNames.begin(), newEnd, bandToRemove);
+      errorBandNames.erase(newEnd, errorBandNames.end());
+    }
 
     //Fit each error band to the data.  This really constrains the uncertainty on the simulated backgrounds.
     for(const auto& bandName: errorBandNames)
