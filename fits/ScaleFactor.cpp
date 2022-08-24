@@ -66,7 +66,10 @@ namespace fit
     if(fHasScaleMax) scaleGuess = std::min(fScaleMax, scaleGuess); //scaleGuess can't be larger than fScaleMax
     if(fHasScaleMin) scaleGuess = std::max(fScaleMin, scaleGuess); //scaleGuess can't be smaller than fScaleMin
 
-    min.SetVariable(nextPar, name.c_str(), scaleGuess, scaleGuess/20.);
+    std::string varName = name + " scale factor";
+    while(min.VariableIndex(varName) > -1) varName += " next fit";
+
+    min.SetVariable(nextPar, varName, scaleGuess, scaleGuess/20.);
     if(fHasScaleMin)
     {
       if(fHasScaleMax) min.SetVariableLimits(nextPar, fScaleMin, fScaleMax);

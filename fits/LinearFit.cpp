@@ -76,7 +76,9 @@ namespace fit
     const double lastBinGuess = mcRatio->GetMaximum();
     //const double slopeGuess = (mcRatio->GetMaximum() - interceptGuess) / (mcRatio->GetXaxis()->GetBinCenter(mcRatio->GetMaximumBin()) - mcRatio->GetXaxis()->GetBinCenter(1));
 
-    min.SetVariable(nextPar, (name + " first bin").c_str(), firstBinGuess, firstBinGuess/20.);
+    std::string firstVarName = name + " first bin";
+    while(min.VariableIndex(firstVarName) > -1) firstVarName += " next fit";  //firstVarName might already be in use if this is used in a Piecewise Background
+    min.SetVariable(nextPar, firstVarName, firstBinGuess, firstBinGuess/20.);
 
     if(fHasFirstBinMin)
     {
@@ -85,7 +87,9 @@ namespace fit
     }
     else if(fHasFirstBinMax) min.SetVariableUpperLimit(nextPar, std::max(firstBinGuess, fFirstBinMax));
 
-    min.SetVariable(nextPar + 1, (name + " last bin").c_str(), lastBinGuess, lastBinGuess/20.);
+    std::string lastVarName = name + " last bin";
+    while(min.VariableIndex(lastVarName) > -1) lastVarName += " next fit"; //lastVarName might already be in use if this is used in a Piecewise Background
+    min.SetVariable(nextPar + 1, lastVarName, lastBinGuess, lastBinGuess/20.);
 
     if(fHasLastBinMin)
     {

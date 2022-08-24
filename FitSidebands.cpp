@@ -357,6 +357,9 @@ int main(const int argc, const char** argv)
         std::vector<fit::Sideband> sidebands;
         for(const auto& cvSideband: cvSidebands) sidebands.emplace_back(cvSideband, bandName, whichUniv);
 
+        delete minimizer;
+        auto* minimizer = new ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kMigrad);
+
         int nextPar = 0;
         for(auto bkg: backgrounds)
         {
