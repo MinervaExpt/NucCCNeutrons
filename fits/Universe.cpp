@@ -6,6 +6,7 @@
 //fits includes
 #include "fits/Universe.h"
 #include "fits/Background.h"
+#include "fits/RegularizationTerm.h"
 
 //util includes
 #include "util/units.h" //Kludge to fix problem with radians which comes up in vector.h
@@ -22,7 +23,7 @@
 namespace fit
 {
   Universe::Universe(const std::vector<Sideband>& sidebands, std::vector<Background*> backgrounds, const double POTRatio,
-                     const int firstBin, const int lastBin): IBaseFunctionMultiDimTempl<double>(), fSidebands(sidebands), fBackgrounds(backgrounds), fPOTScale(POTRatio), fFirstBin(firstBin), fLastBin(lastBin)
+                     RegularizationTerm* regTerm, const int firstBin, const int lastBin): IBaseFunctionMultiDimTempl<double>(), fSidebands(sidebands), fBackgrounds(backgrounds), fRegTerm(regTerm), fPOTScale(POTRatio), fFirstBin(firstBin), fLastBin(lastBin)
   {
     //TODO: assert() that all sidebands have same binning
     assert(!fSidebands.empty() && "Requested sideband fit with no sidebands!");
@@ -78,7 +79,7 @@ namespace fit
       }
     } //For each bin
  
-    return chi2;
+    return fRegTerm?chi2 + fRegTerm->DoEval(parameters):chi2;
   } //Function call operator
  
   //Once the fit is complete, scale every histogram that was optimized based on the fit results
@@ -120,6 +121,6 @@ namespace fit
   //Required for ROOT fittable function base class :(
   ROOT::Math::IBaseFunctionMultiDimTempl<double>* Universe::Clone() const 
   {
-    return new Universe(fSidebands, fBackgrounds, fPOTScale, fFirstBin);
+    return new Universe(fSidebands, fBackgrounds, fPOTScale, fRegTerm, fFirstBin, fLastBin);
   }
 }

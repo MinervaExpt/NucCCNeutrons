@@ -9,6 +9,7 @@
 #include "fits/Sideband.h"
 #include "fits/Universe.h"
 #include "fits/Background.h"
+#include "fits/RegularizeToCV.h"
 
 //util includes
 #include "util/mathWithUnits.h"
@@ -303,7 +304,7 @@ int main(const int argc, const char** argv)
     std::vector<fit::Sideband> cvSidebands;
     for(const auto& name: sidebandNames) cvSidebands.emplace_back(name, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
     if(fitToSelection) cvSidebands.emplace_back(selectionName, *dataFile, *mcFile, backgroundsToFit, fixedBackgroundNames, floatSignal);
-    fit::Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT, firstBin, lastBin);
+    fit::Universe objectiveFunction(cvSidebands, backgrounds, dataPOT/mcPOT, nullptr, firstBin, lastBin);
 
     auto* minimizer = new ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kMigrad); //TMinuitMinimizer(ROOT::Minuit::kMigrad, objectiveFunction.NDim()); //ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kSimplex);
 
@@ -344,6 +345,15 @@ int main(const int argc, const char** argv)
       errorBandNames.erase(newEnd, errorBandNames.end());
     }
 
+    //Use regularization?
+    //TODO: If there are ever multiple options, integrate RegularizationTerm with Factory
+    std::unique_ptr<fit::RegularizationTerm> regTerm;
+    if(config["regularization"])
+    {
+      std::cout << "Using RegularizeToCV as part of chi2.\n";
+      regTerm.reset(new fit::RegularizeToCV(config["regularization"], *minimizer));
+    }
+
     //Fit each error band to the data.  This really constrains the uncertainty on the simulated backgrounds.
     for(const auto& bandName: errorBandNames)
     {
@@ -367,7 +377,7 @@ int main(const int argc, const char** argv)
           nextPar += bkg->nPars();
         }
 
-        fit::Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT, firstBin, lastBin);
+        fit::Universe objectiveFunction(sidebands, backgrounds, dataPOT/mcPOT, regTerm.get(), firstBin, lastBin);
         assert(nextPar == objectiveFunction.NDim());
         minimizer->SetFunction(objectiveFunction);
 

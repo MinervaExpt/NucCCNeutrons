@@ -26,13 +26,14 @@ namespace ROOT
 namespace fit
 {
   class Background;
+  class RegularizationTerm;
 
   //Based heavily on code by Aaron Bercellie at Ana/NukeCCPion/ana/ChainWrapper/src/SidebandFitter.cxx.  It's not on CVS though as of March 27, 2021.
   class Universe: public ROOT::Math::IBaseFunctionMultiDimTempl<double>
   {
     public:
       Universe(const std::vector<Sideband>& sidebands, std::vector<Background*> backgrounds, const double POTRatio,
-               const int firstBin = 1, const int lastBin = -1);
+               RegularizationTerm* regTerm = nullptr, const int firstBin = 1, const int lastBin = -1);
 
       unsigned int NDim() const override;
 
@@ -48,6 +49,8 @@ namespace fit
     private:
       std::vector<Sideband> fSidebands;
       std::vector<Background*> fBackgrounds; //Observer pointers
+
+      RegularizationTerm* fRegTerm; //Observer pointer
 
       double fPOTScale;
       int fFirstBin; //Bin to start sideband fit
