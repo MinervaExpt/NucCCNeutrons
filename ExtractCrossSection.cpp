@@ -151,12 +151,42 @@ PlotUtils::MnvH1D* UnfoldHist( PlotUtils::MnvH1D* h_folded, PlotUtils::MnvH2D* h
   return h_unfolded;
 }
 
+//Inflate a histogram with only 1 bin to a histogram that matches the binning of another histogram but has the same value in each bin.
+//Useful for storing a constant per systematic universe.
+//TODO: This doesn't do anything about propagating statistical uncertainties
+PlotUtils::MnvH1D* expandBinning(const PlotUtils::MnvH1D* toExpand, const PlotUtils::MnvH1D* toMatch)
+{
+  assert(toExpand->GetXaxis()->GetNbins() == 1 && "expandBinning() only works with histograms that have exactly 1 bin");
+  auto result = toMatch->Clone((std::string(toExpand->GetName()) + "_expanded").c_str());
+  result->Clear("ICEM"); //Keep only the binning
+
+  //Put the same content of toExpand's single bin in each bin of the CV...
+  const int nBins = result->GetXaxis()->GetNbins();
+  for(int whichBin = 0; whichBin <= nBins; ++whichBin) result->SetBinContent(whichBin, toExpand->GetBinContent(1));
+
+  //...and in each bin of each universe
+  const auto bandNames = result->GetVertErrorBandNames();
+  for(const auto& bandName: bandNames)
+  {
+    auto band = result->GetVertErrorBand(bandName);
+    for(size_t whichUniv = 0; whichUniv < band->GetNHists(); ++whichUniv)
+    {
+      auto hist = band->GetHist(whichUniv);
+      const double expandedContent = toExpand->GetVertErrorBand(bandName)->GetHist(whichUniv)->GetBinContent(1);
+      for(int whichBin = 0; whichBin <= nBins; ++whichBin) hist->SetBinContent(whichBin, expandedContent);
+    }
+  }
+
+  return result;
+}
+
 //The final step of cross section extraction: normalize by flux, bin width, POT, and number of targets
-PlotUtils::MnvH1D* normalize(PlotUtils::MnvH1D* efficiencyCorrected, PlotUtils::MnvH1D* fluxIntegral, const double nNucleons, const double POT)
+PlotUtils::MnvH1D* normalize(PlotUtils::MnvH1D* efficiencyCorrected, PlotUtils::MnvH1D* fluxIntegral, const PlotUtils::MnvH1D* nNucleons, const double POT)
 {
   efficiencyCorrected->Divide(efficiencyCorrected, fluxIntegral);
+  efficiencyCorrected->Divide(efficiencyCorrected, nNucleons);
 
-  efficiencyCorrected->Scale(1./nNucleons/POT);
+  efficiencyCorrected->Scale(1./POT);
   efficiencyCorrected->Scale(1.e4); //Flux histogram is in m^-2, but convention is to report cm^2
   efficiencyCorrected->Scale(1., "width");
 
@@ -269,7 +299,7 @@ int main(const int argc, const char** argv)
                                               });
       if(fiducialFound == mcFile->GetListOfKeys()->end()) throw std::runtime_error("Failed to find a number of nucleons that matches prefix " + prefix);
 
-      auto nNucleons = util::GetIngredient<TParameter<double>>(*mcFile, (*fiducialFound)->GetName()); //Dan: Use the same truth fiducial volume for all extractions.  The acceptance correction corrects data back to this fiducial even if the reco fiducial cut is different.
+      const auto nNucleons = expandBinning(util::GetIngredient<PlotUtils::MnvH1D>(*mcFile, (*fiducialFound)->GetName()), effNum); //Dan: Use the same truth fiducial volume for all extractions.  The acceptance correction corrects data back to this fiducial even if the reco fiducial cut is different.
 
       //Look for backgrounds with <prefix>_<analysis>_Background_<name>
       std::vector<PlotUtils::MnvH1D*> backgrounds;
@@ -286,7 +316,6 @@ int main(const int argc, const char** argv)
 
       //Basing my unfolding procedure for a differential cross section on Alex's MINERvA 101 talk at https://minerva-docdb.fnal.gov/cgi-bin/private/RetrieveFile?docid=27438&filename=whatsACrossSection.pdf&version=1
 
-      //TODO: Remove these debugging plots when done
       auto toSubtract = std::accumulate(std::next(backgrounds.begin()), backgrounds.end(), (*backgrounds.begin())->Clone(),
                                         [](auto sum, const auto hist)
                                         {
@@ -329,14 +358,14 @@ int main(const int argc, const char** argv)
       unfolded->Divide(unfolded, effNum);
       Plot(*unfolded, "efficiencyCorrected", prefix);
 
-      auto crossSection = normalize(unfolded, flux, nNucleons->GetVal(), dataPOT);
+      auto crossSection = normalize(unfolded, flux, nNucleons, dataPOT);
       Plot(*crossSection, "crossSection", prefix);
       crossSection->Clone()->Write("crossSection");
 
       //Write a "simulated cross section" to compare to the data I just extracted.
       //If this analysis passed its closure test, this should be the same cross section as
       //what GENIEXSecExtract would produce.
-      normalize(simEventRate, flux, nNucleons->GetVal(), mcPOT);
+      normalize(simEventRate, flux, nNucleons, mcPOT);
       
       Plot(*simEventRate, "simulatedCrossSection", prefix);
       simEventRate->Write("simulatedCrossSection");

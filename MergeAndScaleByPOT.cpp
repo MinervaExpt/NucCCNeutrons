@@ -101,7 +101,7 @@ double getMyPOT(TFile& mcFile)
   return myPOT->GetVal();
 }
 
-bool checkMetadata(TFile& lhs, TFile& rhs, const std::map<std::string, TParameter<double>*>& fiducials)
+bool checkMetadata(TFile& lhs, TFile& rhs, const std::map<std::string, PlotUtils::MnvH1D*>& fiducials)
 {
   //Check NucCCNeutrons commit hash
   const auto lhsCommitHash = dynamic_cast<const TNamed*>(lhs.Get("NucCCNeutronsGitCommitHash")),
@@ -137,14 +137,14 @@ bool checkMetadata(TFile& lhs, TFile& rhs, const std::map<std::string, TParamete
   //Check number of target nucleons ~= fiducial volume
   for(auto fiducial: fiducials)
   {
-    const auto rhsFiducial = dynamic_cast<const TParameter<double>*>(rhs.Get(fiducial.first.c_str()));
+    const auto rhsFiducial = dynamic_cast<const PlotUtils::MnvH1D*>(rhs.Get(fiducial.first.c_str()));
     if(!rhsFiducial)
     {
       std::cerr << rhs.GetName() << " doesn't have a number of nucleons for " << fiducial.first << "\n";
       return false;
     }
 
-    if(rhsFiducial->GetVal() != fiducial.second->GetVal())
+    if(rhsFiducial->GetBinContent(1) != fiducial.second->GetBinContent(1))
     {
       std::cerr << rhs.GetName() << " has a different number of target nucleons from " << lhs.GetName() << ".  They probably came from processing different fiducial volumes!\n";
       return false;
@@ -191,7 +191,8 @@ int main(const int argc, const char** argv)
   //in between uses.
   //Keep number of nucleons, POT, and flux separate because they need to be merged differently.
   std::map<std::string, TObject*> mergedSamples;
-  std::map<std::string, TParameter<double>*> mergedNucleons, mergedPOT;
+  std::map<std::string, PlotUtils::MnvH1D*> mergedNucleons;
+  std::map<std::string, TParameter<double>*> mergedPOT;
   std::map<std::string, TH1*> mergedFlux;
   std::map<std::string, TNamed*> mergedMetadata;
   std::unique_ptr<TFile> firstFile(TFile::Open(firstFileName.c_str(), "READ"));
@@ -204,9 +205,9 @@ int main(const int argc, const char** argv)
 
     if(keyName.find("_FiducialNucleons") != std::string::npos)
     {
-      auto param = dynamic_cast<TParameter<double>*>(obj);
-      assert(param && "Number of nucleons is not a TParameter<double>!");
-      mergedNucleons[keyName] = param;
+      auto hist = dynamic_cast<PlotUtils::MnvH1D*>(obj);
+      assert(hist && "Number of nucleons is not an MnvH1D!");
+      mergedNucleons[keyName] = hist;
     }
     else if(!strcmp(key->GetName(), "POTUsed"))
     {

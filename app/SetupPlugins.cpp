@@ -34,6 +34,7 @@
 #include "PlotUtils/MuonSystematics.h"
 #include "PlotUtils/GeantHadronSystematics.h"
 #include "PlotUtils/ResponseSystematics.h"
+#include "PlotUtils/TargetMassSystematics.h"
 
 //c++ includes
 #include <algorithm>
@@ -103,6 +104,7 @@ namespace
     ::merge(PlotUtils::GetGeantHadronSystematicsMap<evt::Universe>(chain), allErrorBands);
     ::merge(PlotUtils::GetResponseSystematicsMap<evt::Universe>(chain, false, true, false), allErrorBands);
     ::merge(PlotUtils::GetMuonAngleResolutionSystematicsMap<evt::Universe>(chain), allErrorBands);
+    ::merge(PlotUtils::GetTargetMassSystematicsMap<evt::Universe>(chain), allErrorBands);
 
     return allErrorBands;
   }

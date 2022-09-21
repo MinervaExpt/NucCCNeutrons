@@ -12,6 +12,7 @@
 
 //PlotUtils includes
 #include "PlotUtils/TargetUtils.h"
+#include "PlotUtils/TargetMassSystematics.h"
 
 namespace fid
 {
@@ -31,10 +32,12 @@ namespace fid
         phaseSpace.push_back(new truth::IsInTarget(config["zRange"], "Tracker"));
       }
 
-      virtual double NNucleons(const bool isMC) const override
+      virtual PlotUtils::MnvH1D* NNucleons(const bool isMC) const override
       {
         PlotUtils::TargetUtils targetInfo;
-        return targetInfo.GetTrackerNNucleons((isMC?fTruthZMin:fRecoZMin).in<mm>(), (isMC?fTruthZMax:fRecoZMax).in<mm>(), isMC, fApothem.in<mm>());
+        const double nNucleons = targetInfo.GetTrackerNNucleons((isMC?fTruthZMin:fRecoZMin).in<mm>(), (isMC?fTruthZMax:fRecoZMax).in<mm>(), isMC, fApothem.in<mm>());
+        auto dummyHist = new PlotUtils::MnvH1D("dummy", "dummy", 1, 0., 1.);
+        return PlotUtils::GetNTargetsScintillatorHist(nNucleons, dummyHist);
       }
 
     private:
