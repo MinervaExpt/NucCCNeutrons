@@ -9,6 +9,7 @@
 #include "analyses/studies/SidebandGENIEBreakdown.h"
 #include "analyses/studies/BackgroundsByPionContent.h"
 #include "analyses/studies/BackgroundsByGENIECategory.h"
+#include "analyses/studies/Resolution.h"
 
 //c++ includes
 #include <string>
@@ -98,6 +99,8 @@ namespace
 
   static ana::CrossSection2DSignal<ana::MuonPz, ana::MuonPT>::Registrar MuonPzPTSignal_reg("MuonPzPTSignal");
   //TODO: CrossSection2DSideband<>
+
+  static ana::Resolution<ana::MuonPT>::Registrar MuonPTResolution_reg("MuonPTResolution");
 }
 
 #endif //ANA_MUONMOMENTUM_CPP
