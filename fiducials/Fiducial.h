@@ -37,7 +37,7 @@ namespace fid
       virtual ~Fiducial() = default;
 
       //virtual double NNucleons(const bool isMC) const = 0;
-      virtual PlotUtils::MnvH1D* NNucleons(const bool isMC) const = 0;
+      virtual PlotUtils::MnvH1D* NNucleons(const bool isMC, std::map<std::string, std::vector<evt::Universe*>>& universes) const = 0;
 
       std::string name;
       std::vector<PlotUtils::Cut<evt::Universe>*> recoCuts;

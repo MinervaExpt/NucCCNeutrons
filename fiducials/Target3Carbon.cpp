@@ -16,6 +16,7 @@
 //PlotUtils includes
 #include "PlotUtils/TargetUtils.h"
 #include "PlotUtils/TargetMassSystematics.h"
+#include "PlotUtils/HistWrapper.h"
 
 namespace fid
 {
@@ -35,12 +36,13 @@ namespace fid
         phaseSpace.push_back(new truth::ThreeSectionTarget<targetZ>(config["zRange"], "Carbon"));
       }
 
-      virtual PlotUtils::MnvH1D* NNucleons(const bool isMC) const override
+      virtual PlotUtils::MnvH1D* NNucleons(const bool isMC, std::map<std::string, std::vector<evt::Universe*>>& universes) const override
       {
         PlotUtils::TargetUtils targetInfo;
         const double nNucleons = targetInfo.GetPassiveTargetNNucleons(3, targetZ, isMC, fApothem.in<mm>());
-        auto dummyHist = new PlotUtils::MnvH1D("dummy", "dummy", 1, 0., 1.);
-        return PlotUtils::GetNTargetsCarbonHist(nNucleons, dummyHist);
+        //auto dummyHist = new PlotUtils::MnvH1D("dummy", "dummy", 1, 0., 1.);
+        PlotUtils::HistWrapper<evt::Universe> dummyHist("dummy", "dummy", 1, 0., 1.);
+        return PlotUtils::GetNTargetsCarbonHist(nNucleons, dummyHist.hist);
       }
 
     private:

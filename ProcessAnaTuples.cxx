@@ -204,9 +204,8 @@ int main(const int argc, const char** argv)
       fid->backgrounds = app::setupBackgrounds(options->ConfigFile()["backgrounds"]);
 
       //N.B.: There's a technical reason why it's really hard to use util::Directory for a TParameter.
-      auto nNucleons = fid->NNucleons(options->isMC()); //new TParameter<double>((config.first.as<std::string>() + "_FiducialNucleons").c_str(), fid->NNucleons(options->isMC()));
+      auto nNucleons = fid->NNucleons(options->isMC(), universes);
       nNucleons->SetName((config.first.as<std::string>() + "_FiducialNucleons").c_str());
-      //nNucleons->SetMergeMode('f'); //Use the first value -> don't add them
       nNucleons->Write();
 
       try
