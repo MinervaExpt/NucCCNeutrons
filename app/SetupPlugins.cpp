@@ -102,6 +102,7 @@ namespace
     ::merge(PlotUtils::GetMinosMuonSystematicsMap<evt::Universe>(chain), allErrorBands);
     ::merge(PlotUtils::GetGeantHadronSystematicsMap<evt::Universe>(chain), allErrorBands);
     ::merge(PlotUtils::GetResponseSystematicsMap<evt::Universe>(chain, false, true, false), allErrorBands);
+    ::merge(PlotUtils::GetMuonAngleResolutionSystematics<evt::Universe>(chain), allErrorBands);
 
     return allErrorBands;
   }
