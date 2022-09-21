@@ -69,29 +69,52 @@ plotter = PlotUtils.MnvPlotter()
 plotter.ApplyStyle(PlotUtils.kCCQENuStyle)
 
 #plotter.error_color_map["NeutronInelasticExclusives"] = ROOT.kBlue
-plotter.error_color_map["UnifiedCrossTalk"] = ROOT.kBlue
+#plotter.error_color_map["UnifiedCrossTalk"] = ROOT.kBlue-2
+plotter.error_color_map["Initial State Models"] = ROOT.TColor.GetColor("#b87f00")
+plotter.error_color_map["Detector Response"]    = ROOT.TColor.GetColor("#4590ba")
+plotter.error_color_map["FSI Models"]           = ROOT.TColor.GetColor("#007e5c")
+plotter.error_color_map["Flux"]                 = ROOT.TColor.GetColor("#c0b635")
+plotter.error_color_map["GEANT"]                = ROOT.TColor.GetColor("#005b8e")
+plotter.error_color_map["Muon Reconstruction"]  = ROOT.TColor.GetColor("#aa4b00")
+plotter.error_color_map["Unfolding Model"]      = ROOT.TColor.GetColor("#a36186")
+plotter.error_color_map["Others"]               = ROOT.kBlue
 
-plotter.error_summary_group_map["response"].push_back("response_proton") #= ["response_proton", "reponse_em", "respone_other"]
-plotter.error_summary_group_map["response"].push_back("response_em")
-plotter.error_summary_group_map["response"].push_back("response_meson")
-plotter.error_summary_group_map["response"].push_back("response_other")
-plotter.error_color_map["response"] = ROOT.kMagenta+2
+#Rename the "SignalModel" band so its name is more distinct from "Cross Section Models" and "FSI Models"
+plotter.error_summary_group_map["Unfolding Model"].push_back("SignalModel")
 
-#plotter.error_summary_group_map["more GEANT"] = ["GEANT_Neutron", "GEANT_Pion", "GEANT_Proton"]
+plotter.error_summary_group_map["Detector Response"].push_back("response_proton") #= ["response_proton", "reponse_em", "respone_other"]
+plotter.error_summary_group_map["Detector Response"].push_back("response_em")
+plotter.error_summary_group_map["Detector Response"].push_back("response_meson")
+plotter.error_summary_group_map["Detector Response"].push_back("response_other")
+plotter.error_summary_group_map["Detector Response"].push_back("UnifiedCrossTalk")
+
 plotter.error_summary_group_map["GEANT"].push_back("NeutronInelasticExclusives")
 plotter.error_summary_group_map["GEANT"].push_back("GEANT_Neutron")
 plotter.error_summary_group_map["GEANT"].push_back("GEANT_Pion")
 plotter.error_summary_group_map["GEANT"].push_back("GEANT_Proton")
 
+#Rename "Cross Section Models" to "Initial State Interactions" to try to satisfy Kevin
+plotter.error_summary_group_map["Initial State Models"].push_back("Low_Recoil_2p2h_Tune")
+#plotter.error_summary_group_map["Cross Section Models"].push_back("Low_Recoil_2p2h_Tune")
+plotter.error_summary_group_map.erase(plotter.error_summary_group_map.find("Low Recoil Fits"))
+oldGroupNames = plotter.error_summary_group_map["Cross Section Models"]
+plotter.error_summary_group_map["Initial State Models"].insert(plotter.error_summary_group_map["Initial State Models"].end(), oldGroupNames.begin(), oldGroupNames.end())
+plotter.error_summary_group_map.erase(plotter.error_summary_group_map.find("Cross Section Models"))
+
 plotter.axis_maximum = 0.5
-plotter.DrawErrorSummary(dataCrossSection)
+plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "", True, "", False, "L")
 can.Print("uncertaintySummary.png")
 
-plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "Cross Section Models")
-can.Print("uncertaintySummary_models.png")
+#plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "Initial State Models", True, "", False, "L")
+#can.Print("uncertaintySummary_models.png")
 
-plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "FSI Models")
-can.Print("uncertaintySummary_FSI.png")
+#plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "FSI Models", True, "", False, "L")
+#can.Print("uncertaintySummary_FSI.png")
+
+for group in plotter.error_summary_group_map:
+  plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, group.first, True, "", False, "L")
+  can.Print("uncertaintySummary_" + group.first.replace(" ", "_") + ".png")
+
 
 #TODO: Ratio
 denom = mnvTuneCrossSection.Clone()
