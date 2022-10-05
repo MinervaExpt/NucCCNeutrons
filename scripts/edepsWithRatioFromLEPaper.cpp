@@ -59,7 +59,7 @@ PlotUtils::MnvH1D expandEntriesToMatchBinning(const PlotUtils::MnvH1D& templateH
 
 THStack select(TFile& file, const std::regex& match)
 {
-  const auto rawEntries = file.Get<PlotUtils::MnvH1D>("Target3Lead_Neutron_Detection_NMCEntries");
+  const auto rawEntries = file.Get<PlotUtils::MnvH1D>("Tracker_Neutron_Detection_NMCEntries");
   THStack found;
 
   for(auto key: *file.GetListOfKeys())
@@ -110,7 +110,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
        mcFile   = giveMeFileOrGiveMeDeath(mcFileName);
   //std::vector<TFile*> otherMCFiles = {giveMeFileOrGiveMeDeath(otherMCFileName)...};
 
-  const std::string var = "EDeps", anaName = "Target3Lead_Neutron_Detection",
+  const std::string var = "EDeps", anaName = "Tracker_Neutron_Detection",
                     dataName = anaName + "_Data" + var;
   const std::regex find(anaName + R"(__(.*))" + var);
 
@@ -232,6 +232,8 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
     auto modelRatio = static_cast</*PlotUtils::MnvH1D**/TH1D*>(otherModel.GetStack()->Last()->Clone());
 
     std::string legendName = otherModel.GetName();
+    //TODO: Next line isn't working.
+    std::cout << "legendName is " << legendName << ".  baseFileName is " << baseFileName << "\n";
     legendName = legendName.substr(legendName.find(baseFileName) + baseFileName.length() + 1, std::string::npos); //+1 for the "_"
     legendName = legendName.substr(0, legendName.find(".root"));
     modelRatio->SetTitle(legendName.c_str());
@@ -271,7 +273,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   TPaveText title(0.3, 0.91, 0.7, 1.0, "nbNDC"); //no border
   title.SetFillStyle(0);
   title.SetLineColor(0);
-  title.AddText("Target 3 Lead"); //TODO: Get this from the file name?
+  title.AddText("Tracker"); //TODO: Get this from the file name?
   title.Draw();
 
   //MINERvA Preliminary
@@ -280,7 +282,9 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   prelim.SetLineColor(0);
   prelim.SetTextColor(kBlue);
   prelim.AddText("MINERvA Work in Progress"); //Preliminary");
-  prelim.AddText("Stat. Errors Only");
+  //prelim.AddText("Stat. Errors Only");
+  if(baseFileName.find("low") != std::string::npos) prelim.AddText("q_{3} < 0.4 GeV/c");
+  else prelim.AddText("0.4 GeV/c < q_{3} < 0.8 GeV/c");
   prelim.Draw();
 
   overall.Print((var + "DataMCRatio.png").c_str()); //TODO: Include file name here
@@ -289,7 +293,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   TCanvas uncSummary("uncertaintySummary");
   PlotUtils::MnvPlotter plotter;
   plotter.ApplyStyle(PlotUtils::kCCQENuStyle);
-  plotter.axis_maximum = 1;
+  plotter.axis_maximum = 0.5;
   plotter.DrawErrorSummary(static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone()));
   uncSummary.Print("edepsUncertaintySummary.png");
 
