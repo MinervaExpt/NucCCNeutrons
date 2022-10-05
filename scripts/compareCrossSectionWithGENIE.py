@@ -4,6 +4,8 @@ import ROOT
 from ROOT import PlotUtils
 
 ROOT.gStyle.SetOptStat(0)
+ROOT.gStyle.SetEndErrorSize(4)
+ROOT.gStyle.SetOptTitle(0)
 
 """Removes the low recoil fit as QE tail enhancement systematic universe from an MnvH1D"""
 def removeLowRecoilQEErrorBand(hist):
@@ -21,7 +23,7 @@ def formatHist(hist):
 
 GENIEDir = "/media/anaTuples/multiNeutronPredictions/GENIEv3/"
 
-dataFile = ROOT.TFile.Open("crossSection_constrained.root")
+dataFile = ROOT.TFile.Open("crossSection_constrained.root") #"crossSection_constrained.root")
 mnvTuneFile = ROOT.TFile.Open("crossSection_MnvTunev1.root")
 genieHANievesFile = ROOT.TFile.Open(GENIEDir + "G18_10a_02_11a_set_0_.root")
 genieHNNievesFile = ROOT.TFile.Open(GENIEDir + "G18_10b_02_11a_set_0_.root")
@@ -75,43 +77,109 @@ for model in otherModels:
   model.Draw("HIST SAME")
 
 dataHist = dataCrossSection.GetCVHistoWithError()
-dataHist.Draw("SAME")
+dataHist.Draw("SAME E1")
 
 can.BuildLegend(0.6, 0.6, 0.9, 0.9)
-can.Print("crossSectionComp.png")
 
-#Draw uncertainty summary on the cross section extracted from data
-plotter = PlotUtils.MnvPlotter()
-plotter.ApplyStyle(PlotUtils.kCCQENuStyle)
-plotter.error_color_map["NeutronInelasticExclusives"] = ROOT.kBlue
-plotter.axis_maximum = 0.5
-plotter.DrawErrorSummary(dataCrossSection)
-can.Print("uncertaintySummary.png")
+dataStatBars = dataCrossSection.GetCVHistoWithStatError()
+dataStatBars.Draw("SAME E1")
 
-plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "Cross Section Models")
-can.Print("uncertaintySummary_models.png")
+title = ROOT.TLatex(0.2, 0.93, "#bar{#nu}_{#mu} + C^{12} -> #mu^{+} + n + n + X at E_{avail} < 100 MeV")
+title.SetTextFont(43)
+title.SetTextSize(22)
+title.SetNDC()
+title.Draw()
 
-plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "FSI Models")
-can.Print("uncertaintySummary_FSI.png")
+can.Print("crossSectionCompGENIE.png")
 
-#TODO: Ratio
-denom = mnvTuneCrossSection.Clone()
+#Ratio
+ROOT.gStyle.SetEndErrorSize(4) #MnvPlotter undoes this somehow :(
+denom = mnvTuneCrossSection.GetCVHistoWithStatError()
 
-dataCrossSection.Divide(dataCrossSection, denom)
+#Divide by just the CV of MnvTunev1 and leave the errors on the data alone
+nBins = denom.GetXaxis().GetNbins()
+for whichBin in range(0, nBins+1):
+  denom.SetBinError(whichBin, 0)
+
 dataRatio = dataCrossSection.GetCVHistoWithError()
+dataRatio.Divide(dataRatio, denom)
 dataRatio.SetMinimum(0)
 dataRatio.GetYaxis().SetTitle("Ratio to MnvTunev1")
-dataRatio.Draw()
+dataRatio.Draw("E1")
 
+dontDeleteUs = [] #modelRatio 2 lines later is a temporary object.  Python will delete it, but ROOT will keep a pointer for THistPainter to use when Print() is called.  Putting it in a list prevent python from deleting it.
 for model in otherModels:
-  model.Divide(model, denom)
-  model.Draw("HIST SAME")
+  #Only one of the model ratios is an MnvH1D.  So, I have to treat the others differently.
+  try:
+    modelRatio = model.GetCVHistoWithStatError()
+  except:
+    modelRatio = model.Clone()
+
+  dontDeleteUs.append(modelRatio)
+  modelRatio.Divide(modelRatio, denom)
+  modelRatio.Draw("HIST SAME")
 
 can.BuildLegend(0.6, 0.6, 0.9, 0.9)
-can.Print("crossSectionRatio.png")
+dataRatioStatBars = dataCrossSection.GetCVHistoWithStatError()
+dataRatioStatBars.Divide(dataRatioStatBars, denom)
+dataRatioStatBars.Draw("SAME E1")
+
+title.Draw()
+can.Print("crossSectionRatioGENIE.png")
 
 #Check whether any bins are < 0
 dataRatio.SetMaximum(0.005)
 dataRatio.SetMinimum(-0.005)
+title.Draw()
 dataRatio.Draw()
-can.Print("ZoomedDataRatio.png")
+can.Print("ZoomedDataRatioGENIE.png")
+
+#Draw uncertainty summary on the cross section extracted from data
+plotter = PlotUtils.MnvPlotter()
+plotter.ApplyStyle(PlotUtils.kCCQENuStyle)
+plotter.axis_title_offset_x = 1.25
+plotter.axis_title_size_x = 0.037
+plotter.axis_title_offset_y = 1.25
+plotter.axis_title_size_y = 0.04
+
+plotter.error_color_map["Initial State Models"] = ROOT.TColor.GetColor("#b87f00")
+plotter.error_color_map["Detector Response"]    = ROOT.TColor.GetColor("#4590ba")
+plotter.error_color_map["FSI Models"]           = ROOT.TColor.GetColor("#007e5c")
+plotter.error_color_map["Flux"]                 = ROOT.TColor.GetColor("#c0b635")
+plotter.error_color_map["GEANT"]                = ROOT.TColor.GetColor("#005b8e")
+plotter.error_color_map["Muon Reconstruction"]  = ROOT.TColor.GetColor("#aa4b00")
+plotter.error_color_map["Others"]               = ROOT.kBlue
+
+plotter.error_summary_group_map["Detector Response"].push_back("response_proton")
+plotter.error_summary_group_map["Detector Response"].push_back("response_em")
+plotter.error_summary_group_map["Detector Response"].push_back("response_meson")
+plotter.error_summary_group_map["Detector Response"].push_back("response_other")
+plotter.error_summary_group_map["Detector Response"].push_back("UnifiedCrossTalk")
+
+plotter.error_summary_group_map["GEANT"].push_back("NeutronInelasticExclusives")
+plotter.error_summary_group_map["GEANT"].push_back("GEANT_Neutron")
+plotter.error_summary_group_map["GEANT"].push_back("GEANT_Pion")
+plotter.error_summary_group_map["GEANT"].push_back("GEANT_Proton")
+
+plotter.error_summary_group_map["Muon Reconstruction"].push_back("MuonAngleXResolution")
+plotter.error_summary_group_map["Muon Reconstruction"].push_back("MuonAngleYResolution")
+
+plotter.error_summary_group_map["Others"].push_back("Target_Mass_CH")
+
+#Rename "Cross Section Models" to "Initial State Interactions" to try to satisfy Kevin
+plotter.error_summary_group_map["Initial State Models"].push_back("Low_Recoil_2p2h_Tune")
+plotter.error_summary_group_map.erase(plotter.error_summary_group_map.find("Low Recoil Fits"))
+oldGroupNames = plotter.error_summary_group_map["Cross Section Models"]
+plotter.error_summary_group_map["Initial State Models"].insert(plotter.error_summary_group_map["Initial State Models"].end(), oldGroupNames.begin(), oldGroupNames.end())
+plotter.error_summary_group_map["Initial State Models"].push_back("SignalModel")
+plotter.error_summary_group_map.erase(plotter.error_summary_group_map.find("Cross Section Models"))
+
+plotter.axis_maximum = 0.5
+plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "", True, "", False, "L")
+title.Draw()
+can.Print("uncertaintySummaryGENIE.png")
+
+for group in plotter.error_summary_group_map:
+  plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, group.first, True, "", False, "L")
+  title.DrawText(0.2, 0.93, group.first)
+  can.Print("uncertaintySummaryGENIE_" + group.first.replace(" ", "_") + ".png")
