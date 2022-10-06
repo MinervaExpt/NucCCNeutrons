@@ -41,7 +41,7 @@ namespace fid
         PlotUtils::TargetUtils targetInfo;
         const double nNucleons = targetInfo.GetPassiveTargetNNucleons(3, targetZ, isMC, fApothem.in<mm>());
         //auto dummyHist = new PlotUtils::MnvH1D("dummy", "dummy", 1, 0., 1.);
-        PlotUtils::HistWrapper<evt::Universe> dummyHist("dummy", "dummy", 1, 0., 1.);
+        PlotUtils::HistWrapper<evt::Universe> dummyHist("dummy", "dummy", 1, 0., 1., universes);
         return PlotUtils::GetNTargetsCarbonHist(nNucleons, dummyHist.hist);
       }
 

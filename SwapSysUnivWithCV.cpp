@@ -76,10 +76,10 @@ MNVH* shiftCV(const MNVH* hist, const std::string& bandName, const int whichUniv
 
   //Find the universe histogram that will become the CV.
   auto band = hist->GetVertErrorBand(bandName.c_str());
-  if(!band) throw std::runtime_error("Could not find an error band named " + bandName + " to become the new CV.\n");
+  if(!band) throw std::runtime_error("Could not find an error band named " + bandName + " in histogram " + hist->GetName() + " to become the new CV.\n");
 
   auto oldCVHist = band->GetHist(whichUniv);
-  if(!oldCVHist) throw std::runtime_error("Found error band " + bandName + ", but it doesn't have a " + std::to_string(whichUniv) + "th universe.\n");
+  if(!oldCVHist) throw std::runtime_error("Found error band " + bandName + " in histogram " + oldCVHist->GetName() + ", but it doesn't have a " + std::to_string(whichUniv) + "th universe.\n");
 
   using BASE = typename std::remove_const<typename std::remove_reference<decltype(*oldCVHist)>::type>::type;
 
