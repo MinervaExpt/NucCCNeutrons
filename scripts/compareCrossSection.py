@@ -2,10 +2,18 @@
 
 import ROOT
 from ROOT import PlotUtils
+import ctypes
 
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetEndErrorSize(4)
 ROOT.gStyle.SetOptTitle(0)
+ROOT.gStyle.SetPadBottomMargin(0.15)
+ROOT.gStyle.SetPadLeftMargin(0.15)
+ROOT.gStyle.SetPadTopMargin(0.12)
+ROOT.gStyle.SetTitleSize(0.055, "xyz")
+ROOT.gStyle.SetTitleOffset(1.15, "xyz")
+ROOT.gStyle.SetLabelSize(0.05, "xyz")
+ROOT.gROOT.ForceStyle()
 
 """Removes the low recoil fit as QE tail enhancement systematic universe from an MnvH1D"""
 def removeLowRecoilQEErrorBand(hist):
@@ -48,31 +56,48 @@ otherModels = [mnvTuneCrossSection, SuSACrossSection, ValenciaCrossSection]
 removeLowRecoilQEErrorBand(dataCrossSection)
 formatHist(dataCrossSection)
 
+markerStyle = 20 #Make lines different to be more colorblind-friendly
 for model in otherModels:
   removeLowRecoilQEErrorBand(model)
   formatHist(model)
+  model.SetMarkerStyle(markerStyle)
+  model.SetMarkerColor(model.GetLineColor())
+  model.SetMarkerSize(1)
+  markerStyle += 1
 
 #Draw histograms
 can = ROOT.TCanvas("crossSection")
+
+legend = ROOT.TLegend(0.6, 0.58, 0.9, 0.88)
 
 yMax = max([model.GetMaximum() for model in otherModels])
 for model in otherModels:
   model.SetMaximum(yMax * 1.1)
   model.Draw("HIST SAME")
+  model.Draw("P HIST SAME")
+  legend.AddEntry(model)
 
 dataHist = dataCrossSection.GetCVHistoWithError()
 dataHist.Draw("SAME E1")
-
-can.BuildLegend(0.6, 0.6, 0.9, 0.9)
+legend.AddEntry(dataHist)
 
 dataStatBars = dataCrossSection.GetCVHistoWithStatError()
 dataStatBars.Draw("SAME E1")
 
-title = ROOT.TLatex(0.2, 0.93, "#bar{#nu}_{#mu} + C^{12} -> #mu^{+} + n + n + X at E_{avail} < 100 MeV")
+legend.Draw()
+
+title = ROOT.TLatex(0.17, 0.95, "#bar{#nu}_{#mu} + CH -> #mu^{+} + Nn + X at N > 1 and E_{avail} < 100 MeV")
 title.SetTextFont(43)
 title.SetTextSize(22)
 title.SetNDC()
 title.Draw()
+
+preliminary = ROOT.TText(0.2, 0.83, "MINERvA Preliminary")
+preliminary.SetTextFont(43)
+preliminary.SetTextSize(22)
+preliminary.SetNDC()
+preliminary.SetTextColor(ROOT.kBlue)
+preliminary.Draw()
 
 can.Print("crossSectionComp.png")
 
@@ -85,24 +110,34 @@ nBins = denom.GetXaxis().GetNbins()
 for whichBin in range(0, nBins+1):
   denom.SetBinError(whichBin, 0)
 
+legend = ROOT.TLegend(0.6, 0.58, 0.9, 0.88)
+
 dataRatio = dataCrossSection.GetCVHistoWithError()
 dataRatio.Divide(dataRatio, denom)
 dataRatio.SetMinimum(0)
 dataRatio.GetYaxis().SetTitle("Ratio to MnvTunev1")
 dataRatio.Draw("E1")
+legend.AddEntry(dataRatio)
 
-dontDeleteUs = [] #modelRatio 2 lines later is a temporary object.  Python will delete it, but ROOT will keep a pointer for THistPainter to use when Print() is called.  Putting it in a list prevent python from deleting it.
+ratios = [] #modelRatio 2 lines later is a temporary object.  Python will delete it, but ROOT will keep a pointer for THistPainter to use when Print() is called.  Putting it in a list prevent python from deleting it.
 for model in otherModels:
   modelRatio = model.GetCVHistoWithStatError()
-  dontDeleteUs.append(modelRatio)
+  ratios.append(modelRatio)
   modelRatio.Divide(modelRatio, denom)
   modelRatio.Draw("HIST SAME")
+  modelRatio.Draw("P HIST SAME")
+  legend.AddEntry(modelRatio)
 
-can.BuildLegend(0.6, 0.6, 0.9, 0.9)
+#Draw markers on each model's lines so they can be distinguished without relying on colors
+#TODO: symbols appear on top of the legend even though lines don't.  They also appear on top of the data.
+#for ratio in ratios:
+#  ratio.Draw("P HIST SAME")
+
 dataRatioStatBars = dataCrossSection.GetCVHistoWithStatError()
 dataRatioStatBars.Divide(dataRatioStatBars, denom)
 dataRatioStatBars.Draw("SAME E1")
 
+legend.Draw()
 title.Draw()
 can.Print("crossSectionRatio.png")
 
@@ -153,8 +188,17 @@ plotter.error_summary_group_map["Initial State Models"].insert(plotter.error_sum
 plotter.error_summary_group_map["Initial State Models"].push_back("SignalModel")
 plotter.error_summary_group_map.erase(plotter.error_summary_group_map.find("Cross Section Models"))
 
-plotter.axis_maximum = 0.5
+plotter.axis_maximum = 1
+#plotter.legend_n_columns = 2
+plotter.legend_offset_x = -0.2
+plotter.legend_offset_y = -0.07
+plotter.axis_title_offset_x = 1.1
+plotter.axis_title_offset_y = 1.1
+plotter.axis_title_size_x = 0.06
+plotter.axis_title_size_y = 0.06
+
 plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "", True, "", False, "L")
+preliminary.Draw()
 title.Draw()
 can.Print("uncertaintySummary.png")
 
@@ -162,3 +206,11 @@ for group in plotter.error_summary_group_map:
   plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, group.first, True, "", False, "L")
   title.DrawText(0.2, 0.93, group.first)
   can.Print("uncertaintySummary_" + group.first.replace(" ", "_") + ".png")
+
+#Chi2 table in Markdown
+with open("chi2Table.md", "w") as textFile:
+  textFile.write("| Model Name | Chi2 / NDF |\n")
+  textFile.write("| ---------- | ---------- |\n")
+  for model in otherModels:
+    ndf = ctypes.c_int(0)
+    textFile.write("| " + model.GetTitle() + " | " + str(round(plotter.Chi2DataMC(dataCrossSection, model, ndf, 1.0, True, False, True), 2)) + " / " + str(ndf.value) + " |\n")
