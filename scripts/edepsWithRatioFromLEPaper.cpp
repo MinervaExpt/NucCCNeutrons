@@ -24,7 +24,7 @@
 #include <regex>
 
 //I hate global variables, but it's after 10PM...
-const int lineSize = 2;
+const int lineSize = 3;
 const double maxMC = 2; //Maximum across all plots I want to compare
 const double minRatio = 0.5, maxRatio = 1.9;
 
@@ -193,6 +193,10 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   bottom.cd();
   bottom.SetTopMargin(0);
   bottom.SetBottomMargin(0.3);
+
+  auto bottomLegend = new TLegend(0.12, 0.6, 0.42, 0.95);
+  bottomLegend->SetBorderSize(0);
+
   auto ratio = static_cast<TH1D*>(dataHist.Clone());
   auto mcRatio = static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone());
   auto mcRatioWithErrors = mcRatio->GetCVHistoWithError();
@@ -246,9 +250,11 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
     modelRatio->SetMinimum(minRatio);
     modelRatio->SetMaximum(maxRatio);
     modelRatio->Draw("HIST SAME");
+    bottomLegend->AddEntry(modelRatio);
   }
 
-  auto bottomLegend = bottom.BuildLegend(0.1, 0.6, 0.4, 0.95);
+  //auto bottomLegend = bottom.BuildLegend(0.1, 0.6, 0.4, 0.95);
+  bottomLegend->Draw();
 
   //Now fill mcRatio with 1 for bin content and fractional error
   for(int whichBin = 0; whichBin <= mcRatioWithErrors.GetXaxis()->GetNbins(); ++whichBin)
@@ -283,11 +289,21 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   prelim.SetTextColor(kBlue);
   prelim.AddText("MINERvA Work in Progress"); //Preliminary");
   //prelim.AddText("Stat. Errors Only");
-  if(baseFileName.find("low") != std::string::npos) prelim.AddText("q_{3} < 0.4 GeV/c");
-  else prelim.AddText("0.4 GeV/c < q_{3} < 0.8 GeV/c");
+  std::string q3Tag;
+  if(baseFileName.find("low") != std::string::npos)
+  {
+    prelim.AddText("q_{3} < 0.4 GeV/c");
+    q3Tag = "lowq3";
+  }
+  else
+  {
+    prelim.AddText("0.4 GeV/c < q_{3} < 0.8 GeV/c");
+    q3Tag = "highq3";
+  }
   prelim.Draw();
 
-  overall.Print((var + "DataMCRatio.png").c_str()); //TODO: Include file name here
+  overall.Print((var + "_" + q3Tag + "_DataMCRatio.png").c_str()); //TODO: Include file name here
+  overall.Print((var + "_" + q3Tag + "_DataMCRatio.eps").c_str());
 
   //Plot uncertainty summary for sum on a new canvas
   TCanvas uncSummary("uncertaintySummary");
@@ -296,6 +312,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   plotter.axis_maximum = 0.5;
   plotter.DrawErrorSummary(static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone()));
   uncSummary.Print("edepsUncertaintySummary.png");
+  uncSummary.Print("edepsUncertaintySummary.eps");
 
   return 0;
 }

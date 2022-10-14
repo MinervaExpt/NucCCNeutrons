@@ -100,6 +100,7 @@ preliminary.SetTextColor(ROOT.kBlue)
 preliminary.Draw()
 
 can.Print("crossSectionComp.png")
+can.Print("crossSectionComp.eps")
 
 #Ratio
 ROOT.gStyle.SetEndErrorSize(4) #MnvPlotter undoes this somehow :(
@@ -110,12 +111,14 @@ nBins = denom.GetXaxis().GetNbins()
 for whichBin in range(0, nBins+1):
   denom.SetBinError(whichBin, 0)
 
-legend = ROOT.TLegend(0.6, 0.58, 0.9, 0.88)
+legend = ROOT.TLegend(0.4, 0.73, 0.9, 0.88)
+legend.SetNColumns(2)
 
 dataRatio = dataCrossSection.GetCVHistoWithError()
 dataRatio.Divide(dataRatio, denom)
 dataRatio.SetMinimum(0)
 dataRatio.GetYaxis().SetTitle("Ratio to MnvTunev1")
+dataRatio.SetMaximum(1.35)
 dataRatio.Draw("E1")
 legend.AddEntry(dataRatio)
 
@@ -140,6 +143,7 @@ dataRatioStatBars.Draw("SAME E1")
 legend.Draw()
 title.Draw()
 can.Print("crossSectionRatio.png")
+can.Print("crossSectionRatio.eps")
 
 #Check whether any bins are < 0
 dataRatio.SetMaximum(0.005)
@@ -201,6 +205,7 @@ plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "",
 preliminary.Draw()
 title.Draw()
 can.Print("uncertaintySummary.png")
+can.Print("uncertaintySummary.eps")
 
 for group in plotter.error_summary_group_map:
   plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, group.first, True, "", False, "L")
