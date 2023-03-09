@@ -68,9 +68,11 @@ def drawStack(sidebandName, isSelected = False):
   #Apply a different color for each MC category
   mcColors = MnvColors.GetColors(MnvColors.kOkabeItoDarkPalette)
   nextColor = 0
+  gStyle.SetHatchesLineWidth(6)
   for hist in mcStack.GetHists():
     hist.SetLineColor(mcColors[nextColor])
     hist.SetFillColor(mcColors[nextColor])
+    hist.SetFillStyle(3550+2*nextColor)
     nextColor = nextColor + 1
   
   dataHist = dataFile.Get(dataName)
@@ -180,7 +182,7 @@ def drawStack(sidebandName, isSelected = False):
       title.AddText(sidebandName) #fiducialName + " " + sidebandName)
   title.Draw()
   
-  plotter.WritePreliminary(0.4, 0.82, 7e-2, True)
+  #plotter.WritePreliminary(0.4, 0.82, 7e-2, True)
   
   #Make a PNG file of this canvas
   overall.Print(fiducialName + var + sidebandName + "DataMCRatio.png")

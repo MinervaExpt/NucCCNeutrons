@@ -35,7 +35,7 @@ mainEff = calcEfficiency(mainFile, ROOT.kBlack)
 oldTitle = mainEff.GetTitle()
 mainEff.SetTitle("Neutron Detection Efficiency")
 mainEff.Draw("HIST")
-plotter.WritePreliminary("TC", 0.035, 0, 0, True)
+#plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 canvas.Print("neutronDetectionEfficiency.png")
 
 #Now, compare different models
@@ -53,7 +53,7 @@ for otherFile in otherFiles:
   whichColor = whichColor + 1
 
 canvas.BuildLegend(0.5, 0.3, 0.9, 0.7)
-plotter.WritePreliminary("TC", 0.035, 0, 0, True)
+#plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 canvas.Print("neutronDetectionEfficiency_modelComparison.png")
 
 #Last, make neutron detection efficiency plot for the main model with an error envelope because I'm curious anyway.
@@ -63,7 +63,7 @@ errors.SetFillColorAlpha(ROOT.kRed, 0.4)
 errors.Draw("E2")
 mainEff.Draw("HIST SAME")
 
-plotter.WritePreliminary("TC", 0.035, 0, 0, True)
+#plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 canvas.Print("neutronDetectionEfficiency_withErrors.png")
 
 #plotter.DrawErrorSummary(mainEff)

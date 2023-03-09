@@ -92,12 +92,12 @@ title.SetTextSize(22)
 title.SetNDC()
 title.Draw()
 
-preliminary = ROOT.TText(0.2, 0.83, "MINERvA Preliminary")
-preliminary.SetTextFont(43)
-preliminary.SetTextSize(22)
-preliminary.SetNDC()
-preliminary.SetTextColor(ROOT.kBlue)
-preliminary.Draw()
+#preliminary = ROOT.TText(0.2, 0.83, "MINERvA Preliminary")
+#preliminary.SetTextFont(43)
+#preliminary.SetTextSize(22)
+#preliminary.SetNDC()
+#preliminary.SetTextColor(ROOT.kBlue)
+#preliminary.Draw()
 
 can.Print("crossSectionComp.png")
 can.Print("crossSectionComp.eps")
@@ -142,6 +142,7 @@ dataRatioStatBars.Draw("SAME E1")
 
 legend.Draw()
 title.Draw()
+#preliminary.DrawText(0.2, 0.23, "MINERvA Prelminary")
 can.Print("crossSectionRatio.png")
 can.Print("crossSectionRatio.eps")
 
@@ -150,6 +151,7 @@ dataRatio.SetMaximum(0.005)
 dataRatio.SetMinimum(-0.005)
 title.Draw()
 dataRatio.Draw()
+#preliminary.DrawText(0.2, 0.23, "MINERvA Prelminary")
 can.Print("ZoomedDataRatio.png")
 
 #Draw uncertainty summary on the cross section extracted from data
@@ -202,11 +204,13 @@ plotter.axis_title_size_x = 0.06
 plotter.axis_title_size_y = 0.06
 
 plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "", True, "", False, "L")
-preliminary.Draw()
+#preliminary.Draw()
 title.Draw()
 can.Print("uncertaintySummary.png")
 can.Print("uncertaintySummary.eps")
 
+plotter.legend_n_columns = 2
+plotter.legend_offset_x = 0.12
 for group in plotter.error_summary_group_map:
   plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, group.first, True, "", False, "L")
   title.DrawText(0.2, 0.93, group.first)

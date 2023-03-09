@@ -93,6 +93,9 @@ void applyColors(TList& hists, const std::vector<int>& colors)
     auto& hist = dynamic_cast<TH1&>(*hists.At(whichHist));
     hist.SetLineColor(colors.at(whichHist));
     hist.SetLineWidth(lineSize);
+    hist.SetMarkerStyle(20+whichHist);
+    hist.SetMarkerColor(hist.GetLineColor());
+    hist.SetMarkerSize(1);
     //hist.SetFillColor(colors.at(whichHist)); //Use only without nostack (Yes, that's a double negative)
   }
 }
@@ -168,9 +171,11 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   mcTotal.SetLineColor(kRed);
   mcTotal.SetFillColorAlpha(kPink + 1, 0.4);
   mcTotal.SetMaximum(maxMC);
+  mcTotal.SetMarkerStyle(0);
   mcTotal.Draw("E2"); //Draw the error bars
 
   mcStack.Draw("HISTnostackSAME");
+  mcStack.Draw("PnostackSAME"); //TODO: Prevent duplicate legend entries
   auto axes = mcStack.GetHistogram(); //N.B.: GetHistogram() would have returned nullptr had I called it before Draw()!
 
   dataHist.SetLineColor(1);
@@ -181,10 +186,15 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   dataHist.SetTitle("Data");
   dataHist.Draw("X0SAME");
 
-  auto topLegend = top.BuildLegend(0.5, 0.4, 0.9, 0.9);
+  auto topLegend = new TLegend(0.5, 0.4, 0.9, 0.9); //top.BuildLegend(0.5, 0.4, 0.9, 0.9);
+  topLegend->AddEntry(&mcTotal, mcTotal.GetTitle());
+  for(auto hist: *mcStack.GetHists()) topLegend->AddEntry(hist, hist->GetTitle());
+  topLegend->AddEntry(&dataHist, dataHist.GetTitle());
+  topLegend->Draw();
 
   //Drawing the thing that I don't want in the legend AFTER
   //building the legend.  What a dirty hack!
+  //TODO: Not necessary with manual legend that I'm now using
   auto lineOnly = static_cast<TH1*>(mcTotal.Clone());
   lineOnly->SetFillStyle(0);
   lineOnly->Draw("HISTSAME"); //Draw the line
@@ -199,6 +209,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
 
   auto ratio = static_cast<TH1D*>(dataHist.Clone());
   auto mcRatio = static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone());
+  mcRatio->SetMarkerStyle(0);
   auto mcRatioWithErrors = mcRatio->GetCVHistoWithError();
 
   //I want a ratio histogram for the data that has only the data stat. errors.
@@ -283,11 +294,11 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   title.Draw();
 
   //MINERvA Preliminary
-  TPaveText prelim(0.12, 0.75, 0.47, 0.89, "nbNDC"); //no border
+  TPaveText prelim(0.12, 0.78, 0.47, 0.85, "nbNDC"); //no border
   prelim.SetFillStyle(0);
   prelim.SetLineColor(0);
   prelim.SetTextColor(kBlue);
-  prelim.AddText("MINERvA Work in Progress"); //Preliminary");
+  //prelim.AddText("MINERvA Work in Progress"); //Preliminary");
   //prelim.AddText("Stat. Errors Only");
   std::string q3Tag;
   if(baseFileName.find("low") != std::string::npos)
