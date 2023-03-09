@@ -35,7 +35,7 @@ mcColors = ROOT.MnvColors.GetColors(ROOT.MnvColors.kOkabeItoDarkPalette)
 nextColor = 0
 for fileName in sys.argv[1:]:
   otherFile = ROOT.TFile.Open(fileName, "READ")
-  otherPOT = 2.04371e+22 #4.7994378e+21 #otherFile.Get("POTUsed").GetVal() #TODO: Write out POT in ExtractCrossSection?
+  otherPOT = 4.7994378e+21 #otherFile.Get("POTUsed").GetVal() #TODO: Write out POT in ExtractCrossSection?
   #if fileName.find("extended2p2h") > 0:
   #  otherPOT = 2.04371e+22
   otherDistribution = otherFile.Get("backgroundSubtracted")
@@ -65,7 +65,7 @@ for model in otherModels:
   model.Scale(1., "width")
   model.SetMaximum(0.3e6)
   model.Draw("HIST SAME")
-  legend.AddEntry(model, "Model " + str(whichModel))
+  legend.AddEntry(model) #, "Model " + str(whichModel))
   whichModel += 1
 
 dataHist = dataDistribution.GetCVHistoWithError()

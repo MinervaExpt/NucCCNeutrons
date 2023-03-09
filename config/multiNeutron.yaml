@@ -1,12 +1,3 @@
-#File: Targets.yaml
-#Brief: Z ranges of MINERvA's nuclear targets in truth and reconstruction.
-#       Reco cuts taken from Jeffrey's analysis in the Fall of 2019.
-#       See here for Jeffrey's reco cuts: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/AnalysisFramework/Ana/NukeCCQE/scripts/code_templates/target_cuts.cpp
-#       Truth cuts taken from Jeffrey's analysis in January 2020.
-#       See here for Jeffrey's truth cuts: https://cdcvs.fnal.gov/redmine/projects/minerva-sw/repository/entry/AnalysisFramework/Ana/NukeCCQE/scripts/code_templates/true_target_cuts.cpp
-#       
-#Author: Andrew Olivier aolivier@ur.rochester.edu
-
 neutronCounter: &neutronCounter
   truth:
     MinKE: !MeV 10
@@ -17,115 +8,7 @@ neutronCounter: &neutronCounter
     DistBoxMax: !mm 10000
     #VertexBoxDist: !mm 50
 
-OneTrack:
-  "Target 1": &OneTrackTarget1 !IsInTarget 
-    truth:
-      min: !mm 4465
-      max: !mm 4500
-    reco:
-      min: !mm 4500
-      max: !mm 4520
-  "Target 2": &OneTrackTarget2 !IsInTarget
-    truth:
-      min: !mm 4680
-      max: !mm 4720
-    reco:
-      min: !mm 4720
-      max: !mm 4740
-  "Target 3": &OneTrackTarget3 !IsInTarget
-    truth:
-      min: !mm 4900
-      max: !mm 4990 #TODO: Jeffrey has a smaller range for the other materials!  He uses 4950 when target Z is not 6.  Does this doom me to per-section z cuts?  I guess anything in the lead section (for example) between 4950 and 4990 is in air.  Decided to just check target Z for target 3 iron and lead.
-    reco:
-      min: !mm 4980
-      max: !mm 5010
-  "Water Target": &OneTrackWaterTarget !IsInTarget
-    truth:
-      min: !mm 5170
-      max: !mm 5440
-    reco:
-      min: !mm 5450
-      max: !mm 5460
-  "Target 4": &OneTrackTarget4 !IsInTarget
-    truth:
-      min: !mm 5635
-      max: !mm 5650
-    reco:
-      min: !mm 5660
-      max: !mm 5690
-  "Target 5": &OneTrackTarget5 !IsInTarget
-    truth:
-      min: !mm 5765
-      max: !mm 5790
-    reco:
-      min: !mm 5800
-      max: !mm 5820
-  "Tracker": &OneTrackTracker !IsInTarget
-    truth:
-      min: !mm 5890
-      max: !mm 8467
-    reco:
-      min: !mm 6000
-      max: !mm 8500
-
-MultiTrack:
-  "Target 1": &MultiTrackTarget1 !IsInTarget
-    truth:
-      min: !mm 4465
-      max: !mm 4500
-    reco:
-      min: !mm 4500
-      max: !mm 4530
-  "Target 2": &MultiTrackTarget2 !IsInTarget
-    truth:
-      min: !mm 4680
-      max: !mm 4720
-    reco:
-      min: !mm 4685
-      max: !mm 4730
-  "Target 3": &MultiTrackTarget3 !IsInTarget
-    truth:
-      min: !mm 4900
-      max: !mm 4990
-    reco:
-      min: !mm 4910
-      max: !mm 4980
-  "Water Target": &MultiTrackWaterTarget !IsInTarget
-    truth:
-      min: !mm 5170
-      max: !mm 5440
-    reco:
-      min: !mm 5200
-      max: !mm 5420
-  "Target 4": &MultiTrackTarget4 !IsInTarget
-    truth:
-      min: !mm 5635
-      max: !mm 5650
-    reco:
-      min: !mm 5635
-      max: !mm 5660
-  "Target 5": &MultiTrackTarget5 !IsInTarget
-    truth:
-      min: !mm 5765
-      max: !mm 5790
-    reco:
-      min: !mm 5760
-      max: !mm 5795
-  "Tracker": &MultiTrackTracker !IsInTracker
-    truth:
-      min: !mm 5890
-      max: !mm 8467
-    reco:
-      min: !mm 6000
-      max: !mm 8500
-#!/usr/bin/env ProcessAnaTuples
-#File: NucCCNeutronsAntineutrinoStandard.yaml
-#Brief: My standard cuts for my neutron multiplicity analysis in antineutrino mode in the TRACKER.
-#       You still have to plug in a "signal" block and a systematics block from another YAML file
-#       on the command line.
-#Author: Andrew Olivier aolivier@ur.rochester.edu
-
-#MnvGENIEv1
+#MnvTunev1
 model:
   Flux: !FluxAndCV
   GENIE: !GENIEPionTunes
@@ -134,11 +17,11 @@ model:
   MINOSEfficiency: !MINOSEfficiency
   RPASuppression: !RPA
   Valencia2p2h: !LowRecoil2p2hWeight
+    mode: 0
   AbfaltererNeutronInelastic: !GeantNeutronCV
   FSIBugFix: !FixFSIBugGENIE
     useElastic: true
     useAbsorption: false
-
 
 systematics:
   #Analysis-specific systematics
@@ -170,12 +53,12 @@ systematics:
   GENIE_FrPiProd_pi:
   GENIE_MFP_N:
   GENIE_MFP_pi:
-  #- GENIE_MaCCQEshape
+  #GENIE_MaCCQEshape
   GENIE_MaNCEL:
   GENIE_MaRES:
   GENIE_MvRES:
-  #- GENIE_NormCCQE
-  #- GENIE_NormCCRES
+  #GENIE_NormCCQE
+  #GENIE_NormCCRES
   GENIE_NormDISCC:
   GENIE_NormNCRES:
   GENIE_RDecBR1gamma:
@@ -197,6 +80,8 @@ systematics:
   Muon_Energy_Resolution:
   Muon_Energy_MINERvA:
   Muon_Energy_MINOS:
+  MuonAngleXResolution:
+  MuonAngleYResolution:
   #GEANT cross sections
   GEANT_Proton:
   GEANT_Neutron:
@@ -206,19 +91,29 @@ systematics:
   response_meson:
   response_em:
   response_other:
+  #Target mass
+  Target_Mass_CH:
+  #Target_Mass_C:
+  #Target_Mass_Fe
+  #Target_Mass_Pb
 
-#100 flux universes matches the NSF validation suite.
+#500 flux universes because no one ever did the study to prove that 100 is sufficient for RHC
 app:
   useNuEConstraint: true
   nFluxUniverses: 500
 
 fiducials:
   Tracker: !Tracker
-    zRange: *OneTrackTracker
+    zRange:
+      truth:
+        min: !mm 5890
+        max: !mm 8467
+      reco:
+        min: !mm 6000
+        max: !mm 8500
     apothem:
       apothem: !mm 850
 
-#Basically, Amy/Dan's inclusive Cuts (adapted for my AnaTool) + available energy.
 cuts:
   truth:
     phaseSpace:
@@ -273,7 +168,6 @@ backgrounds:
     HighEAvailable: &EAvailCut !EAvailRange
       min: *maxEAvail
       max: !GeV 100
-      #max: &EAvailForSideband !MeV 200
 
 signal: !MuonPTSignal
   name: "MuonPTSignal"
@@ -297,7 +191,5 @@ sidebands:
       UpToOneCandidate: !NeutronMultiplicity
         max: !neutrons 1
         variable: *neutronCounter
-    #  NoHadronTracks: !nTracks #This hardly affects the analysis at all as of Feb. 4, 2022, so make things faster.
-    #    max: 1
     variable:
     binning: *pTBins

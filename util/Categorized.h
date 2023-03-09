@@ -109,6 +109,23 @@ namespace util
         fOther = dir.make<HIST>(SafeROOTName(baseName + "_Other").c_str(), ("Other;" + axes).c_str(), args...);
       }
 
+      //CATEGORIES is an iterable container of objects like NamedCategory<>
+      template <class ...HISTARGS>
+      Categorized(const std::string& baseName, const std::string& axes, const std::vector<NamedCategory<CATEGORY>>& categories,
+                  Directory& dir, HISTARGS... args)
+      {
+        for(const auto& category: categories)
+        {
+          auto hist = dir.make<HIST>(SafeROOTName(baseName + "_" + category.name).c_str(), (category.name + ";" + axes).c_str(), args...);
+          for(const auto& value: category.values)
+          {
+            fCatToHist[value] = hist;
+          }
+        }
+
+        fOther = dir.make<HIST>(SafeROOTName(baseName + "_Other").c_str(), ("Other;" + axes).c_str(), args...);
+      }
+
       //CATEGORY is a pointer to an object with a name() member variable
       template <class ...HISTARGS>
       Categorized(const std::vector<CATEGORY>& categories, Directory& dir, const std::string& baseName,
