@@ -135,7 +135,7 @@ int main(const int argc, const char** argv)
 
   chi2Comparison->SetBins(40, 0.8*minChi2, 1.2*maxChi2);
 
-  for(int whichStatUniv; whichStatUniv < nStatUnivs; ++whichStatUniv)
+  for(int whichStatUniv = 0; whichStatUniv < nStatUnivs; ++whichStatUniv)
   {
     //TODO: This may be a performance problem because it inverts the histogram over and over again
     //std::cout << "Integral before unfolding: " << fluctuationRecoDists[whichStatUniv].Integral(0, nBins+2) << "\n";
