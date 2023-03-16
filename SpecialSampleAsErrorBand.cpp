@@ -213,7 +213,14 @@ int main(const int argc, const char** argv)
     return 4;
   }
 
-  auto isFlux = [](const auto hist) { return std::string(hist->GetName()).find("reweightedflux") != std::string::npos; };
+  //auto isFlux = [](const auto hist) { return std::string(hist->GetName()).find("reweightedflux") != std::string::npos; };
+  auto isConstantHist = [](const auto hist)
+                        {
+                          const std::string histName(hist->GetName());
+                          if(histName.find("reweightedflux") != std::string::npos) return true;
+                          if(histName.find("FiducialNucleons") != std::string::npos) return true;
+                          return false;
+                        };
 
   //Make the swap
   try
@@ -221,7 +228,7 @@ int main(const int argc, const char** argv)
     outFile->cd();
     for(const auto hist: all1D)
     {
-      if(!isFlux(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples, scaleFactor)->Write();
+      if(!isConstantHist(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples, scaleFactor)->Write();
       else
       {
         hist->AddVertErrorBandAndFillWithCV(newBandName, std::max(specialSamples.size(), 2ul));
@@ -230,7 +237,7 @@ int main(const int argc, const char** argv)
     }
     for(const auto hist: all2D)
     {
-      if(!isFlux(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples, scaleFactor)->Write();
+      if(!isConstantHist(hist)) cloneWithNewBand(hist, isFluxDifferent, newBandName, cvPOT->GetVal(), originalFile, specialSamples, scaleFactor)->Write();
       else
       {
         hist->AddVertErrorBandAndFillWithCV(newBandName, std::max(specialSamples.size(), 2ul));
