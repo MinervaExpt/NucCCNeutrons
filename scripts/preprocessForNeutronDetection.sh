@@ -15,7 +15,7 @@ python removeMoNABand.py ${originalCrossSectionBaseName}_afterMoNARemoved.root
 SpecialSampleAsErrorBand ${originalCrossSectionBaseName}_afterMoNARemoved.root ${originalCrossSectionBaseName}_afterMoNARemoved.root ${neutronBandName} ${originalCrossSectionBaseName}_afterMoNARemoved_${neutronBandName}_0.root
 
 #Insert special cross-talk sample as a 2-universe error band
-SpecialSampleAsErrorBand ${originalCrossSectionBaseName}_afterMoNARemoved_with_${neutronBandName}.root ../me6A/multiNeutron_MnvTunev1MC.root ${crossTalkBandName} ../crossTalkUpME6A/multiNeutron_MnvTunev1MC.root
+SpecialSampleAsErrorBand ${originalCrossSectionBaseName}_afterMoNARemoved_with_${neutronBandName}.root ../me6A/NeutronDetection_lowq3MC.root ${crossTalkBandName} ../crossTalkUpME6A/NeutronDetection_lowq3_target3_noSystsMC.root
 
 #TODO: Take out 2p2h universe 2?
 
