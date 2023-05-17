@@ -1,0 +1,122 @@
+neutronCounter: &neutronCounter
+  truth:
+    MinKE: !MeV 10
+  reco:
+    MinEDep: !MeV 1.5 #Just above cross-talk
+    MaxZDist: !mm 1500 #roughly tuned for tracker
+    EDepBoxMin: !MeV 0
+    DistBoxMax: !mm 10000
+    #VertexBoxDist: !mm 50
+
+#MnvTunev1
+model:
+  Flux: !FluxAndCV
+  GENIE: !GENIEPionTunes
+    useNonResPi: true
+    useDeuteriumPionTune: false
+  MINOSEfficiency: !MINOSEfficiency
+  RPASuppression: !RPA
+  SuSA: !SuSA2p2h
+  AbfaltererNeutronInelastic: !GeantNeutronCV
+  FSIBugFix: !FixFSIBugGENIE
+    useElastic: true
+    useAbsorption: false
+
+systematics:
+
+#500 flux universes because no one ever did the study to prove that 100 is sufficient for RHC
+app:
+  useNuEConstraint: true
+  nFluxUniverses: 2
+
+fiducials:
+  Tracker: !Tracker
+    zRange:
+      truth:
+        min: !mm 5890
+        max: !mm 8467
+      reco:
+        min: !mm 6000
+        max: !mm 8500
+    apothem:
+      apothem: !mm 850
+
+cuts:
+  truth:
+    phaseSpace:
+      MuonMomentum: !MuonMomentum
+        min: !GeV 2.0
+        max: !GeV 20
+      TrackAngle: !TrackAngle
+        max: !degrees 20
+    signal:
+      LowEAvailable: &EAvailCut !EAvailRange
+        min: &smallNegativeNumber !GeV -1
+        max: &maxEAvail !MeV 100
+      ManyNeutrons: &ManyNeutrons !NeutronMultiplicity
+        min: !neutrons 2
+        variable: *neutronCounter
+      Antineutrino: !IsAntineutrino
+      CC: !IsCC
+  reco:
+    LowEAvailable: !RecoilERange
+      min: *smallNegativeNumber
+      max: *maxEAvail
+      EAvailable: *neutronCounter
+    ManyNeutrons: *ManyNeutrons
+    MinosDeltaT: !MinosDeltaT
+      min: !ns -40
+      max: !ns 110
+    TrackAngle: !TrackAngle
+      max: !degrees 20
+    MuonMomentum: !MuonMomentum
+      min: !GeV 2.0
+      max: !GeV 20
+    Antineutrino: !IsAntineutrino
+    DeadTime: !DeadDiscriminators
+      max: 1
+
+backgrounds:
+  "1 Neutron":
+    LowEAvail: *EAvailCut
+    Antineutrino: !IsAntineutrino
+    CC: !IsCC
+    SingleNeutron: !NeutronMultiplicity
+      equals: !neutrons 1
+      variable: *neutronCounter
+  "0 Neutrons":
+    LowEAvail: *EAvailCut
+    Antineutrino: !IsAntineutrino
+    CC: !IsCC
+    NoNeutrons: !NeutronMultiplicity
+      equals: !neutrons 0
+      variable: *neutronCounter
+  HighEAvail:
+    HighEAvailable: &EAvailCut !EAvailRange
+      min: *maxEAvail
+      max: !GeV 100
+
+signal: !MuonPTSignal
+  name: "MuonPTSignal"
+  variable:
+  binning: &pTBins [0, 0.05, 0.11, 0.17, 0.24, 0.31, 0.4, 0.5, 0.62, 0.77, 0.95, 1.18, 1.5] 
+sidebands:
+  HighEAvail: !MuonPTSideband
+    name: "HighEAvail"
+    fails: ["LowEAvailable"]
+    passes:
+      HighEAvailable: !RecoilERange
+        min: *maxEAvail
+        max: !MeV 200
+        EAvailable: *neutronCounter
+    variable:
+    binning: *pTBins
+  QELike: !MuonPTSideband
+    name: "QELike"
+    fails: ["ManyNeutrons"]
+    passes:
+      UpToOneCandidate: !NeutronMultiplicity
+        max: !neutrons 1
+        variable: *neutronCounter
+    variable:
+    binning: *pTBins
