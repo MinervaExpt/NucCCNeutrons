@@ -164,11 +164,15 @@ PlotUtils::MnvH1D* expandBinning(const PlotUtils::MnvH1D* toExpand, const PlotUt
   const int nBins = result->GetXaxis()->GetNbins();
   for(int whichBin = 0; whichBin <= nBins; ++whichBin) result->SetBinContent(whichBin, toExpand->GetBinContent(1));
 
-  //...and in each bin of each universe
+  //Handle the systematic universes now
   const auto bandNames = result->GetVertErrorBandNames();
   for(const auto& bandName: bandNames)
   {
+    //...in the CV copy in each error band...
     auto band = result->GetVertErrorBand(bandName);
+    for(int whichBin = 0; whichBin <= nBins; ++whichBin) band->SetBinContent(whichBin, toExpand->GetBinContent(1));
+
+    //...and in each bin of each universe
     for(size_t whichUniv = 0; whichUniv < band->GetNHists(); ++whichUniv)
     {
       auto hist = band->GetHist(whichUniv);
