@@ -137,11 +137,34 @@ A "variable" implements a physics observable that we can unsmear using one of Ro
 - `inline std::string name() const`: returns the name of this variable that will be used in histogram names
 - A constructor like `MuonPT(const YAML::Node& config)`: This is empty for most "variables" so far.  If your variable needs to do complicated things like access a file, you can pass any YAML arguments you want to this function and save them into your class structure here.
 
+To make a new variable visible to ProcessAnatuples, you need to do two things:
+- Register its cross section Studies at the end of its .cpp file with:
+```
+namespace
+{
+  static ana::CrossSectionSignal<ana::MuonMomentum>::Registrar MuonMomentumSignal_reg("MuonMomentumSignal");
+  static ana::CrossSectionSideband<ana::MuonMomentum>::Registrar MuonMomentumSideband_reg("MuonMomentumSideband");
+}
+```
+  Replace `ana::MuonMomentum` with the name of your new variable class.
+- Add its .cpp file to the library in `analyses/studies/CMakeLists.txt`
+
 A "stand-alone Study" gives you maximum flexibility for making plots at the cost of greatly increased complexity.  You'll need to understand how to write a c++ class to "implement an interface" to do this.  The interface you're implementing is `analyses/base/Study.h`.  It exposes 4 "event loop functions" where you do most of your physics and a few "once per job functions" to tell ProcessAnaTuples how to optimize for your Study.  3 of the "event loop functions" have "twins" like this:
 - `virtual void truth(const evt::Universe& event, const events weight)`
 - `virtual void mcSignal(const std::vector<evt::Universe*>& univs, const PlotUtils::Model<evt::Universe>& model, const PlotUtils::detail::empty& evt)`
 
 Use the first version when you're new to this package.  It's a lot simpler to work with!  The second version is an "expert interface" to make specific Studies much faster.  If you really need the expert interface, you should probably be talking to the original author of this package!
+
+To make a new Study visible to ProcessAnaTuples, you need to do two things:
+- Register it at the end of its .cpp file with:
+```
+namespace
+{
+  static ana::Study::Registrar<ana::NeutronDetection> NeutronDetection_reg("NeutronDetection");
+}
+```
+  Replace "NeutronDetection" with the class name of your new Study.
+- Add its .cpp file to the library in `analyses/studies/CMakeLists.txt`
 
 Let's talk about the physics you do in each of the 4 event loop functions.  Each function is an opportunity to `Fill()` histograms or print out information about events that meet certain criteria relevant to extracting a cross section:
 - `virtual void data(const evt::Universe& event, const events weight = 1_events)`: Access reconstruction information for an event that passed all reconstruction cuts.  This event would have made it into the raw data points that go on your cross section plot.  We don't know, and can't find out at this point, whether it satisfies the signal definition.  This is called for both data and MC.  In the MC, these events are "fake data" that can be useful for the closure test.
@@ -153,10 +176,36 @@ Histograms should be set up in your Study's constructor.  For the `CrossSectionS
 
 The MAT replaces `TH1D` with systematics-aware histograms like `HistWrapper<evt::Universe>`.  ProcessAnaTuples takes this one step further with units-aware HistWrappers: `units::WithUnits<HistWrapper<evt::Universe>, UNIT, events>`.  Basically, use them like `analyses/studies/NeutronDetection.cpp` does on line 134: `fCandsPerFSNeutron->Fill(&event, neutrons(candsPerFS.count(withCands)), weight)`.  `fCandsPerFSNeutron` is a member variable that's a pointer to a `units::WithUnits<PlotUtils::HistWrapper<evt::Universe>, neutrons, events>`.  It's created using the `util::Directory::make<>()` interface on line 68.  Making it a member variable makes it available to be set up only once in the constructor and then filled in any of the event loop functions.  Using the `util::Directory::make<>()` interface makes sure it gets put in the right file when ProcessAnaTuples is finished.  Its arguments are a systematic universe, `&event`, the number of neutrons to plot, and a weight. The systematic universe is the MAT's convenient way to make the same plot under many different hypotheses about what might be different about our detector.  The number of neutrons itself is a `quantity<>` with units.  If you made a `util::WithUnits<HistWrapper<evt::Universe>, GeV, events>` for example, the program would know to automatically convert numbers it's Fill()ed with into GeV to match the labels on the x axis regardless of whether they're MeV, GeV, or something else.  You almost always want to pass the event's weight to any `Fill()` call so that the model used to make your histograms matches what's described in the .yaml file.
 
-There are tow other functions that advanced users might want to use:
+There are two other functions that advanced users might want to use:
 - `virtual bool wantsTruthLoop() const`: This should be a one-line function: `return false`.  If your `truth()` function doesn't do anything, you can make `ProcessAnaTuples` a little faster by overriding this function.  Returning false here prevents `ProcessAnaTuples` from looping over the `Truth` tree which is usually fairly expensive.  You probably don't need this level of optimization.
 - `virtual void afterAllFiles(const events /*passedSelection*/)`: Gets called at the very end of the event loop.  If you _really_ need to divide a histogram by the number of entries processed, you can do that here.  This should almost never be needed.
 
-### TODO: How to Write a Cut
+### How to Write a Cut
+A cut defines a kinematic region in which a cross section will be extracted.  ProcessAnaTuples uses two kinds of Cuts: reco::Cut and truth::Cut.  A reco::Cut uses only reconstructed information.  A truth::Cut is another name for `PlotUtils::SignalConstraint<evt::CVUniverse>`.  It uses only simulation information to identify which simulated events match the criteria for the cross section you're extracting.  In short, every `reco::Cut` makes an experimentalist's corrections more believable, but theorists who want to use your result need to know your `truth::Cut`s.
 
-### TODO: How to Write a Reweighter
+Both `reco::Cut` and `truth::Cut` have only 1 function that you need to implement.  The `reco::Cut` version looks like this: `virtual bool checkCut(const evt::Universe& event, PlotUtils::detail::empty& /*empty*/) const override`.  The `truth::Cut` version is just missing the "empty Event" structure: `virtual bool passesCut(const evt::Universe& event) const override`.  It's helpful to be able to change where a cut is applied without re-compiling c++ code.  The `reco::Cut` and `truth::Cut` constructors take a `YAML::Node` that gives you access to part of the YAML file that controls ProcessAnaTuples.  I recommend you store any cut ranges as member variables in the constructor based on YAML information and then use them in `checkCut()`/`passesCut()`.  Finally, you have to do two things to make a new Cut visible to ProcessAnaTuples:
+- Register it at the bottom of its .cpp file with lines like these:
+```
+namespace
+{
+  static reco::Cut::Registrar<reco::HasInteractionVertex> HasInteractionVertex_reg("HasInteractionVertex");
+}
+```
+  Replace `reco::HasInteractionVertex` with the class name of your Cut.  Replace `reco::` with `truth::` if writing a truth cut/signal constraint.
+- Add it to the end of the `add_library()` line in `cuts/reco/CMakeLists.txt` or `cuts/truth/CMakeLists.txt`.
+
+### How to Write a Reweighter
+MINERvA simulates different physics models by e.g. counting the same simulated event multiple times.  This saves the vast majority of computing time that goes into analyzing a new data set.  Reweighter is how ProcessAnaTuples adds a physics effect to a Model.  To add a new reweighting option, the main function you need to override is `double GetWeight(const UNIVERSE& univ, const EVENT& /*event*/) const override`.  Much like adding a Cut, you can control a Reweighter from a YAML file by writing a constructor for it.  PlotUtils::Reweighter also has two functions to give ProcessAnaTuples more information about your class at the beginning and end of the event loop:
+- `std::string GetName() const override`: Usually a one-line function that returns a string that identifies your Reweighter
+- `bool DependsReco() const override`: Must return `true` if your Reweighter uses any reconstructed quantities.  If you return false but use reconstructed quantities anyway, you will get the wrong physics!  With that said, the vast majority of use cases don't need to return true here.
+
+Finally, you need to do two things to make your Reweighter available in ProcessAnaTuples:
+- Register it at the bottom of its .cpp file like this:
+```namespace
+{
+  plgn::Registrar<PlotUtils::Reweighter<evt::Universe, PlotUtils::detail::empty>, NuWroSFReweighter<evt::Universe, PlotUtils::detail::empty>> reg_NuWroSFReweight("NuWroSFReweighter");
+}
+```
+- Add it to the end of the `add_library()` list in `reweighters/CMakeLists.txt`
+
+If you want to use a **new Reweighter from PlotUtils** with ProcessAnaTuples, you need to add a "registrar" class for it to the bottom of `reweighters/RegisterReweighters.h`.  This is basically a layer that translates a YAML file into c++ numbers and file names.  See that files for examples.
