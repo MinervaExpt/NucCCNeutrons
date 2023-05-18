@@ -8,28 +8,29 @@ My goal is to build on the machinery used to produce [MINERvA's low energy neutr
 2. Extract a differential cross section for multiple neutrons to be produced as a function of muon transverse momentum
 
 ## Installation
-TODO: Update this
-Old Manual install instructions:
-1. Make a directory structure for the repository to live in.  I recommend an out of source build in NucCCNeutrons/:
-  * NucCCNeutrons
-  * debug
-  * opt
-2. `cd NucCCNeutrons`
-3. `git clone https://github.com/MinervaExpt/NucCCNeutrons.git src`
-4. Install dependencies listed below.  Help CMake find them by setting e.g. `PlotUtils_DIR=/home/aolivier/app/ThesisAnalysis/PlotUtils/opt`
-5. ``cd ../debug && mkdir build && cd build && cmake ../../src -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Debug "-Dyaml-cpp_DIR=/path/to/yaml-cpp/lib/cmake/yaml-cpp" #You might need to specify paths to dependencies too``
-6. `make install #Can parallelize with e.g. make install -j 8`
-
-## Dependencies
-1. [ROOT 6](https://root.cern.ch/building-root)
-1. [MAT-MINERvA](https://github.com/MinervaExpt/MAT-MINERvA)
-2. [UnfoldUtils](https://github.com/MinervaExpt/UnfoldUtils)
-4. [YAML-cpp 0.6.0](https://github.com/jbeder/yaml-cpp)
-5. See also GENIEXSecExtract for warping studies: [GENIEXSecExtract](https://github.com/MinervaExpt/GENIEXSecExtract)
+1. Make a directory for working with code.  I called mine `app`.  It might need to be on `/minerva/app` and different from your "working directory" for files described later.
+2. Make sure you have ROOT 6 set up.  It comes with a `bin/thisroot.sh` that tells the operating system how to find it.  See `https://root.cern.ch/building-root`.  Enable xrootd for streaming files from Fermilab if building from source.
+3. Obtain source code:
+  - `git clone https://github.com/MinervaExpt/NucCCNeutrons.git`
+  - `git clone https://github.com/MinervaExpt/MAT-MINERvA.git`
+  - `git clone https://github.com/jbeder/yaml-cpp.git`
+  - `git clone https://github.com/MinervaExpt/GENIEXSecExtract.git`
+  - Either install CVMFS or install CVS and configure it to talk to Fermilab's server for MINERvA: `export CVSROOT=minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft`.  This is necessary to download O(1GB) flux files for reweighting MINERvA's simulation.  Installing CVMFS is probably easier than getting CVS to work on a Mac.
+4. Install dependencies:
+  - `cd yaml-cpp && git checkout yaml-cpp-0.6.0 && cd ..`
+  - `mkdir opt && cd opt #The so-called installation prefix`
+  - ```mkdir build_yaml-cpp && cd build_yaml-cpp && cmake ../../yaml-cpp -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install && cd ..```
+  - ```mkdir build_MAT-MINERvA && cd build_MAT-MINERvA && cmake ../../MAT-MINERvA/bootstrap -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install && cd ..```
+  - ```mkdir build_GENIEXSecExtract && cd build_GENIEXSecExtract && cmake ../../GENIEXSecExtract -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install && cd ..```
+5. Install the package itself: ```mkdir build_NucCCNeutrons && cd build_NucCCNeutrons && cmake ../../NucCCNeutrons -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install```
+6. Set up NucCCNeutrons and test that the operating system can find it:
+  - `cd ../.. #Should put you back in "app"`
+  - `source opt/bin/setup_NucCCNeutrons.sh`
+  - `ProcessAnaTuples #Should print help information about the command line interface`
 
 ## Usage
 Set up the libraries on Linux systems:
-1. `source NucCCNeutrons/opt/bin/setup.sh #This really sets up MAT-MINERvA, but it's in the same "install prefix" as this package if you follow my instructions
+1. `source opt/bin/setup.sh #This really sets up MAT-MINERvA, but it's in the same "install prefix" as this package if you follow my instructions
 2. `source root/opt/bin/thisroot.sh #Make ROOT libraries visible on LD_LIBRARY_PATH`
 
 This makes the shell default to finding the executables, libraries, and files it needs.
