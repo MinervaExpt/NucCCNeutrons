@@ -48,7 +48,7 @@ for hist in stack.GetStack():
 
 #Also plot fraction of total content to give an idea of which bins are most important for the total rate.
 fractionalContent = categorySum.Clone()
-fractionalContent.Scale(1./categorySum.Integral())
+fractionalContent.Scale(1./fractionalContent.Integral())
 fractionalContent.SetTitle("Shape")
 fractionalContent.SetLineWidth(4)
 fractionalContent.SetLineColor(ROOT.kBlack)
@@ -62,9 +62,14 @@ can.SetRightMargin(0.02)
 stack.Draw("HIST")
 fractionalContent.Draw("HIST SAME")
 legend.Draw()
-#prelim = ROOT.TLatex(0.2, 0.9, "#font[12]{ #color[3]{MINER#nuA Work in Progress} }")
+
 prelim = ROOT.TLatex(0.2, 0.9, "MINER#nuA Work in Progress")
 prelim.SetTextColor(ROOT.kRed+1)
 prelim.SetTextFont(112)
 prelim.Draw()
+
+title = ROOT.TText(0.05, 0.3, inFile.GetName()[inFile.GetName().find("_")+1:endOfOriginalFile])
+title.SetTextSize(0.1)
+title.Draw()
+
 can.Print("GENIEBreakdown_" + inFile.GetName() + ".png")

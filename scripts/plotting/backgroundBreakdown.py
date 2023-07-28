@@ -8,6 +8,18 @@ from ROOT import PlotUtils
 import sys
 
 gROOT.SetBatch() #Don't render histograms to a window.  Also gets filled areas correct.
+gStyle.SetOptStat(0)
+gStyle.SetEndErrorSize(4)
+gStyle.SetOptTitle(0)
+gStyle.SetPadBottomMargin(0.12)
+gStyle.SetPadLeftMargin(0.13)
+gStyle.SetPadRightMargin(0.02)
+gStyle.SetPadTopMargin(0.07) #0.12) #With title
+gStyle.SetTitleSize(0.056, "xyz") #0.055
+gStyle.SetTitleOffset(0.9, "y")
+gStyle.SetTitleOffset(1.1, "x")
+gStyle.SetLabelSize(0.06, "xyz")
+gROOT.ForceStyle()
 
 var = "MuonPT"
 fiducialName = "Tracker"
@@ -17,7 +29,7 @@ maxY = 8e4 #TODO: Base this on the selection region.  Maybe the max of selection
 
 bottomFraction = 0.2
 marginBetweenPads = 0.117175 #Tuned by hand
-leftMargin = 0.085
+leftMargin = 0.13
 rightMargin = 0.02
 labelSize = 0.15
 lineSize = 2
@@ -72,7 +84,7 @@ def drawStack(sidebandName, isSelected = False):
   for hist in mcStack.GetHists():
     hist.SetLineColor(mcColors[nextColor])
     hist.SetFillColor(mcColors[nextColor])
-    hist.SetFillStyle(3550+2*nextColor)
+    #hist.SetFillStyle(3550+2*nextColor)
     nextColor = nextColor + 1
   
   dataHist = dataFile.Get(dataName)
@@ -82,12 +94,13 @@ def drawStack(sidebandName, isSelected = False):
   #Create a TCanvas on which to draw plots and split it into 2 panels
   #TODO: TCanvas seems to have a different default size when I plot with pyROOT instead of interpretted ROOT,
   #      and default TPad children won't fill it in the horizontal direction!
-  overall = TCanvas("Data/MC for " + var, "", 700, 500)
+  overall = TCanvas("Data/MC for " + var, "", 702, 499) #, "", 700, 500)
   overall.SetRightMargin(0)
   overall.SetLeftMargin(0)
   top = TPad("Overlay", "Overlay", 0, bottomFraction, 1, 1)
   top.SetRightMargin(rightMargin)
   top.SetLeftMargin(leftMargin)
+  top.SetTopMargin(0.085) #Tuned by hand to match GENIE cross section plotting script
   bottom = TPad("Ratio", "Ratio", 0, 0, 1, bottomFraction + marginBetweenPads)
   bottom.SetRightMargin(rightMargin)
   bottom.SetLeftMargin(leftMargin)
@@ -103,28 +116,29 @@ def drawStack(sidebandName, isSelected = False):
   
   mcStack.SetMinimum(1)
   mcStack.Draw("HIST")
-  mcStack.GetHistogram().GetYaxis().SetTitleOffset(0.6)
+  mcStack.GetHistogram().GetYaxis().SetTitleOffset(0.93)
   mcStack.GetHistogram().GetYaxis().SetTitle("entries")
   #mcStack.GetHistogram().GetYaxis().SetTitleSize(0.05) #Works, but still bold
   #mcStack.GetHistogram().GetYaxis().SetTitleFont(142) #Works, but still bold
   mcStack.GetHistogram().GetYaxis().SetTitleFont(42)
+  mcStack.GetHistogram().GetYaxis().SetLabelSize(0.06)
   mcStack.Draw("HIST")
   
   dataWithStatErrors.SetLineColor(kBlack)
   dataWithStatErrors.SetLineWidth(lineSize)
-  dataWithStatErrors.SetMarkerStyle(20) #Resizeable closed circle
+  dataWithStatErrors.SetMarkerStyle(20) #20) #Resizeable closed circle
   dataWithStatErrors.SetMarkerColor(kBlack)
   dataWithStatErrors.SetMarkerSize(0.7)
   dataWithStatErrors.SetTitle("Data")
   dataWithStatErrors.Draw("SAME")
 
-  legend = TLegend(0.68, 0.35, 1.-rightMargin, 0.91)
+  legend = TLegend(0.68, 0.68, 1.-rightMargin, 0.88)
   for whichHist in range(mcStack.GetStack().GetEntries(), -1, -1):
     hist = mcStack.GetStack()[whichHist]
     if whichHist > 0 and (hist.Integral() - mcStack.GetStack()[whichHist-1].Integral()) / mcTotal.Integral() > 0.01:
-      legend.AddEntry(hist)
+      legend.AddEntry(hist, "", "f")
     if whichHist == 0 and hist.Integral() / mcTotal.Integral() > 0.01:
-      legend.AddEntry(hist)
+      legend.AddEntry(hist, "", "f")
   legend.Draw()
 
   #legend = top.BuildLegend(0.68, 0.35, 1.-rightMargin, 0.91)
@@ -132,7 +146,7 @@ def drawStack(sidebandName, isSelected = False):
   #Data/MC ratio panel
   bottom.cd()
   bottom.SetTopMargin(0)
-  bottom.SetBottomMargin(0.3)
+  bottom.SetBottomMargin(0.375) #Tuned by hand to match GENIE plotting script
   
   ratio = dataHist.Clone()
   mcTotalWithSys = mcSum
@@ -153,13 +167,18 @@ def drawStack(sidebandName, isSelected = False):
   
   ratio.GetYaxis().SetTitle("Data / MC")
   ratio.GetYaxis().SetLabelSize(labelSize)
-  ratio.GetYaxis().SetTitleSize(0.16)
-  ratio.GetYaxis().SetTitleOffset(0.25)
+  ratio.GetYaxis().SetTitleSize(0.1)
+  ratio.GetYaxis().SetTitleOffset(0.35)
   ratio.GetYaxis().SetNdivisions(505) #5 minor divisions between 5 major divisions.  I'm trying to match a specific paper here.
-  
-  ratio.GetXaxis().SetTitleSize(0.16)
-  ratio.GetXaxis().SetTitleOffset(0.9)
-  ratio.GetXaxis().SetLabelSize(labelSize)
+  ratio.GetYaxis().SetTitleFont(42)
+
+  ratio.SetMarkerStyle(0) #Resizeable closed circle
+
+  ratio.GetXaxis().SetTitleSize(0.145)
+  ratio.GetXaxis().SetTitleOffset(1.06)
+  ratio.GetXaxis().SetLabelSize(0.16) #Tuned to match GENIE comparison
+  ratio.GetXaxis().SetLabelOffset(0.012) #Tuned to match GENIE comparison
+  ratio.GetXaxis().SetTitleFont(42)
   
   ratio.SetMinimum(ratioMin)
   ratio.SetMaximum(ratioMax)
@@ -170,6 +189,7 @@ def drawStack(sidebandName, isSelected = False):
   mcRatio.SetLineColor(kRed)
   mcRatio.SetLineWidth(lineSize)
   mcRatio.SetFillColorAlpha(kPink + 1, 0.4)
+  mcRatio.SetMarkerStyle(0)
   mcRatio.Draw("E2 SAME")
   
   #Draw a flat line at 1 for ratio of MC to itself
@@ -179,22 +199,23 @@ def drawStack(sidebandName, isSelected = False):
   
   #Title for the whole plot
   top.cd()
-  title = TPaveText(0.3, 0.91, 0.7, 1.0, "nbNDC") #no border and use Normalized Device Coordinates to place it
-  title.SetFillStyle(0)
-  title.SetLineColor(kWhite)
-  if isSelected:
-    title.AddText("Selected") #fiducialName + " Selected")
-  else:
-    if sidebandName == "QELike":
-      title.AddText("0-1 Neutrons")
-    else:
-      title.AddText(sidebandName) #fiducialName + " " + sidebandName)
-  title.Draw()
+  #title = TPaveText(0.3, 0.91, 0.7, 1.0, "nbNDC") #no border and use Normalized Device Coordinates to place it
+  #title.SetFillStyle(0)
+  #title.SetLineColor(kWhite)
+  #if isSelected:
+  #  title.AddText("Selected") #fiducialName + " Selected")
+  #else:
+  #  if sidebandName == "QELike":
+  #    title.AddText("0-1 Neutrons")
+  #  else:
+  #    title.AddText(sidebandName) #fiducialName + " " + sidebandName)
+  #title.Draw()
   
   #plotter.WritePreliminary(0.4, 0.82, 7e-2, True)
   
   #Make a PNG file of this canvas
   overall.Print(fiducialName + var + sidebandName + "DataMCRatio.png")
+  overall.Print(fiducialName + var + sidebandName + "DataMCRatio.pdf")
 
   del overall #Make sure that the TPad deletes the THStack before the THStack deletes itself.  Otherwise, this often crashes with "virtual method called".
 

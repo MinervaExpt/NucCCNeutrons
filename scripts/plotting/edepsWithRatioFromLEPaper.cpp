@@ -93,9 +93,9 @@ void applyColors(TList& hists, const std::vector<int>& colors)
     auto& hist = dynamic_cast<TH1&>(*hists.At(whichHist));
     hist.SetLineColor(colors.at(whichHist));
     hist.SetLineWidth(lineSize);
-    hist.SetMarkerStyle(20+whichHist);
+    /*hist.SetMarkerStyle(20+whichHist);
     hist.SetMarkerColor(hist.GetLineColor());
-    hist.SetMarkerSize(1);
+    hist.SetMarkerSize(1);*/
     //hist.SetFillColor(colors.at(whichHist)); //Use only without nostack (Yes, that's a double negative)
   }
 }
@@ -187,9 +187,9 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   dataHist.Draw("X0SAME");
 
   auto topLegend = new TLegend(0.5, 0.4, 0.9, 0.9); //top.BuildLegend(0.5, 0.4, 0.9, 0.9);
-  topLegend->AddEntry(&mcTotal, mcTotal.GetTitle());
-  for(auto hist: *mcStack.GetHists()) topLegend->AddEntry(hist, hist->GetTitle());
-  topLegend->AddEntry(&dataHist, dataHist.GetTitle());
+  topLegend->AddEntry(&mcTotal, mcTotal.GetTitle(), "lf");
+  for(auto hist: *mcStack.GetHists()) topLegend->AddEntry(hist, hist->GetTitle(), "lf");
+  topLegend->AddEntry(&dataHist, dataHist.GetTitle(), "lpe");
   topLegend->Draw();
 
   //Drawing the thing that I don't want in the legend AFTER
@@ -251,6 +251,13 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
     std::cout << "legendName is " << legendName << ".  baseFileName is " << baseFileName << "\n";
     legendName = legendName.substr(legendName.find(baseFileName) + baseFileName.length() + 1, std::string::npos); //+1 for the "_"
     legendName = legendName.substr(0, legendName.find(".root"));
+    
+    //Replace _s with spaces
+    for(size_t foundUnderscore = legendName.find("_"); foundUnderscore != std::string::npos; foundUnderscore = legendName.find("_"))
+    {
+      legendName[foundUnderscore] = ' ';
+    }
+
     modelRatio->SetTitle(legendName.c_str());
     modelRatio->SetLineStyle(whichLineStyle++);
     modelRatio->SetLineColor(kBlack);
@@ -287,11 +294,11 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
 
   //Title for the whole plot
   top.cd();
-  TPaveText title(0.3, 0.91, 0.7, 1.0, "nbNDC"); //no border
+  /*TPaveText title(0.3, 0.91, 0.7, 1.0, "nbNDC"); //no border
   title.SetFillStyle(0);
   title.SetLineColor(0);
   title.AddText("Tracker"); //TODO: Get this from the file name?
-  title.Draw();
+  title.Draw();*/
 
   //MINERvA Preliminary
   TPaveText prelim(0.12, 0.78, 0.47, 0.85, "nbNDC"); //no border
@@ -314,7 +321,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   prelim.Draw();
 
   overall.Print((var + "_" + q3Tag + "_DataMCRatio.png").c_str()); //TODO: Include file name here
-  overall.Print((var + "_" + q3Tag + "_DataMCRatio.eps").c_str());
+  overall.Print((var + "_" + q3Tag + "_DataMCRatio.pdf").c_str());
 
   //Plot uncertainty summary for sum on a new canvas
   TCanvas uncSummary("uncertaintySummary");
@@ -323,7 +330,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   plotter.axis_maximum = 0.5;
   plotter.DrawErrorSummary(static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last()->Clone()));
   uncSummary.Print("edepsUncertaintySummary.png");
-  uncSummary.Print("edepsUncertaintySummary.eps");
+  uncSummary.Print("edepsUncertaintySummary.pdf");
 
   return 0;
 }

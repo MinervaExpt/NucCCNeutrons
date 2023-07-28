@@ -11,6 +11,19 @@ otherFiles = sys.argv[2:]
 ROOT.TH1.AddDirectory(False)
 ROOT.gStyle.SetOptStat(0)
 ROOT.gROOT.SetBatch(True)
+ROOT.gStyle.SetOptStat(0)
+ROOT.gStyle.SetEndErrorSize(4)
+ROOT.gStyle.SetOptTitle(0)
+ROOT.gStyle.SetPadBottomMargin(0.12)
+ROOT.gStyle.SetPadLeftMargin(0.13) #0.15)
+ROOT.gStyle.SetPadRightMargin(0.02)
+ROOT.gStyle.SetPadTopMargin(0.07) #0.12) #With title
+ROOT.gStyle.SetTitleSize(0.045, "xyz") #0.055
+ROOT.gStyle.SetTitleOffset(1.15, "y")
+ROOT.gStyle.SetTitleOffset(1.1, "x")
+ROOT.gStyle.SetLabelSize(0.05, "xyz")
+ROOT.gStyle.SetTitleFont(42, "xyz")
+ROOT.gROOT.ForceStyle()
 
 def calcEfficiency(fileName, color):
   myFile = ROOT.TFile.Open(fileName, "READ")
@@ -28,12 +41,13 @@ def calcEfficiency(fileName, color):
   return eff
 
 canvas = ROOT.TCanvas("neutronDetectionEfficiency", "Neutron Detection Efficiency")
-plotter = ROOT.PlotUtils.MnvPlotter()
+#plotter = ROOT.PlotUtils.MnvPlotter()
 mainEff = calcEfficiency(mainFile, ROOT.kBlack)
 
 #First, make the money plot: neutron detection efficiency for main model with no error bars (because I'm not confident in them at the moment)
 oldTitle = mainEff.GetTitle()
 mainEff.SetTitle("Neutron Detection Efficiency")
+mainEff.SetMarkerStyle(0)
 mainEff.Draw("HIST")
 #plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 canvas.Print("neutronDetectionEfficiency.png")
@@ -65,6 +79,7 @@ mainEff.Draw("HIST SAME")
 
 #plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 canvas.Print("neutronDetectionEfficiency_withErrors.png")
+canvas.Print("neutronDetectionEfficiency_withErrors.pdf")
 
 #plotter.DrawErrorSummary(mainEff)
 #plotter.WritePreliminary("TC", 0.035, 0, 0, True)

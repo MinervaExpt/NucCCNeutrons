@@ -10,6 +10,19 @@ ROOT.TH1.AddDirectory(False) #Stop MnvH1D's weird way of handling error band I/O
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 
+ROOT.gStyle.SetOptStat(0)
+ROOT.gStyle.SetEndErrorSize(4)
+ROOT.gStyle.SetOptTitle(0)
+ROOT.gStyle.SetPadBottomMargin(0.12)
+ROOT.gStyle.SetPadLeftMargin(0.13) #0.15)
+ROOT.gStyle.SetPadRightMargin(0.02)
+ROOT.gStyle.SetPadTopMargin(0.07) #0.12) #With title
+ROOT.gStyle.SetTitleSize(0.045, "xyz") #0.055
+ROOT.gStyle.SetTitleOffset(1.25, "y")
+ROOT.gStyle.SetTitleOffset(1.1, "x")
+ROOT.gStyle.SetLabelSize(0.05, "xyz")
+ROOT.gROOT.ForceStyle()
+
 inFile = ROOT.TFile(sys.argv[1])
 bottomCategory = inFile.Get(bottomCategoryName).ProjectionY() #Put the most interesting category on the bottom so it's easy to read off ratios
 
@@ -20,13 +33,7 @@ stack = ROOT.THStack("GENIEBreakdown", inFile.GetName()[inFile.GetName().find("_
 axes = bottomCategory.Clone()
 axes.SetMaximum(1.)
 axes.GetXaxis().SetTitle("True Muon Transverse Momentum [GeV/c]")
-axes.GetXaxis().SetTitleOffset(1)
-axes.GetXaxis().SetTitleSize(0.04)
-axes.GetXaxis().SetLabelSize(0.04)
 axes.GetYaxis().SetTitle("Simulated Events")
-axes.GetYaxis().SetTitleOffset(1.15)
-axes.GetYaxis().SetTitleSize(0.04)
-axes.GetYaxis().SetLabelSize(0.04)
 stack.SetHistogram(axes)
 
 stack.Add(bottomCategory)
@@ -50,21 +57,20 @@ for hist in stack.GetStack():
   nextColor = nextColor + 1
 
 #Build the legend so that its order goes from top to bottom, not bottom to top.
-legend = ROOT.TLegend(0.75, 0.5, 0.98, 0.9, "", "brNDCF")
+legend = ROOT.TLegend(0.75, 0.65, 0.98, 0.9, "", "brNDCF")
 
 for whichHist in range(stack.GetStack().GetEntries()-1, -1, -1): #Iterate in reverse to get the TLegend order to match the order in which histograms were drawn :(
   hist = stack.GetStack()[whichHist]
   if whichHist > 0 and (hist.Integral() - stack.GetStack()[whichHist-1].Integral()) / categorySum.Integral() > 0.01:
-    legend.AddEntry(hist)
+    legend.AddEntry(hist, "", "f")
   elif whichHist == 0 and hist.Integral() / categorySum.Integral() > 0.01:
-    legend.AddEntry(hist)
+    legend.AddEntry(hist, "", "f")
 
 #Make the actual plot
 can = ROOT.TCanvas("GENIE Stack", "", 700, 500)
-can.SetLeftMargin(0.085)
-can.SetRightMargin(0.02)
 
 stack.Draw("HIST")
 legend.Draw()
 #prelim = ROOT.TLatex(0.2, 0.9, "#font[12]{ #color[3]{MINER#nuA Work in Progress} }")
 can.Print("GENIEBreakdown_" + inFile.GetName() + ".png")
+can.Print("GENIEBreakdown_" + inFile.GetName() + ".pdf")

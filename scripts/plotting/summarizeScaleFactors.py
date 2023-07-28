@@ -22,38 +22,39 @@ def drawFitRatio(histName, nextColor, legend):
   afterHist.Divide(afterHist, beforeHist, 1., 1., "B")
   afterHist.SetLineWidth(5)
   afterHist.SetLineColor(colors[nextColor])
-  afterHist.SetMarkerStyle(20 + nextColor)
-  afterHist.SetMarkerColor(afterHist.GetLineColor())
-  afterHist.SetMarkerSize(2)
+  #afterHist.SetMarkerStyle(20 + nextColor)
+  #afterHist.SetMarkerColor(afterHist.GetLineColor())
+  #afterHist.SetMarkerSize(2)
 
 
   afterHist.GetXaxis().SetTitle("Reconstructed Muon Transverse Momentum [GeV/c]")
-  afterHist.GetXaxis().SetTitleSize(0.05)
-  afterHist.GetXaxis().SetTitleOffset(0.9)
-  afterHist.GetXaxis().SetLabelSize(0.04)
+  afterHist.GetXaxis().SetTitleSize(0.045)
+  afterHist.GetXaxis().SetTitleOffset(1.1)
+  afterHist.GetXaxis().SetLabelSize(0.05)
 
   afterHist.GetYaxis().SetTitle("Backgrounds After Fit / Before Fit")
   afterHist.GetYaxis().SetRangeUser(0, 2)
-  afterHist.GetYaxis().SetTitleSize(0.05)
-  afterHist.GetYaxis().SetTitleOffset(0.9)
-  afterHist.GetYaxis().SetLabelSize(0.04)
+  afterHist.GetYaxis().SetTitleSize(0.045)
+  afterHist.GetYaxis().SetTitleOffset(1.15)
+  afterHist.GetYaxis().SetLabelSize(0.05)
 
   afterHist.Draw("HIST SAME ][")
-  afterHist.Draw("P HIST SAME ][")
+  #afterHist.Draw("P HIST SAME ][")
   legend.AddEntry(afterHist, afterHist.GetTitle())
   return nextColor + 1
 
 #Draw the comparison
 canvas = ROOT.TCanvas("", "", 700, 500)
-canvas.SetLeftMargin(0.1)
+canvas.SetLeftMargin(0.13)
 canvas.SetRightMargin(0.02)
-canvas.SetBottomMargin(0.1)
+canvas.SetBottomMargin(0.12)
+canvas.SetTopMargin(0.07)
 
 nextColor = 0
 
 sortedKeys = beforeFile.GetListOfKeys()
 sortedKeys.Sort(True)
-legend = ROOT.TLegend(0.6, 0.25, 0.95, 0.49)
+legend = ROOT.TLegend(0.6, 0.25, 0.95, 0.51)
 for key in sortedKeys:
   name = str(key.GetName())
   if name.find(fiducialName + "_" + sidebandName + "_" + "Background") > -1:
@@ -67,3 +68,4 @@ nextColor = drawFitRatio(signalHistName, nextColor, legend)
 legend.Draw()
 #plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 canvas.Print("sidebandFitSummary.png")
+canvas.Print("sidebandFitSummary.pdf")
