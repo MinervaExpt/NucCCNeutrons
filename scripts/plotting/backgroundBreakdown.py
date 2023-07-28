@@ -72,7 +72,7 @@ def drawStack(sidebandName, isSelected = False):
   for hist in mcStack.GetHists():
     hist.SetLineColor(mcColors[nextColor])
     hist.SetFillColor(mcColors[nextColor])
-    #hist.SetFillStyle(3550+2*nextColor)
+    hist.SetFillStyle(3550+2*nextColor)
     nextColor = nextColor + 1
   
   dataHist = dataFile.Get(dataName)
@@ -117,19 +117,17 @@ def drawStack(sidebandName, isSelected = False):
   dataWithStatErrors.SetMarkerSize(0.7)
   dataWithStatErrors.SetTitle("Data")
   dataWithStatErrors.Draw("SAME")
-  
-  #legend = top.BuildLegend(0.68, 0.35, 1.-rightMargin, 0.91)
 
-  #Set up a legend in the order in which the histograms appear
   legend = TLegend(0.68, 0.35, 1.-rightMargin, 0.91)
   for whichHist in range(mcStack.GetStack().GetEntries(), -1, -1):
     hist = mcStack.GetStack()[whichHist]
-    if whichHist > 0 and (hist.Integral() - mcStack.GetStack()[whichHist-1].Integral()) / mcTotal.Integral() > 0.005:
+    if whichHist > 0 and (hist.Integral() - mcStack.GetStack()[whichHist-1].Integral()) / mcTotal.Integral() > 0.01:
       legend.AddEntry(hist)
-    if whichHist == 0 and hist.Integral() / mcTotal.Integral() > 0.005:
+    if whichHist == 0 and hist.Integral() / mcTotal.Integral() > 0.01:
       legend.AddEntry(hist)
   legend.Draw()
 
+  #legend = top.BuildLegend(0.68, 0.35, 1.-rightMargin, 0.91)
   
   #Data/MC ratio panel
   bottom.cd()
