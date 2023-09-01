@@ -92,7 +92,7 @@ bottom.Draw()
 #Draw histograms
 top.cd()
 #legend = ROOT.TLegend(0.6, 0.4, 0.98, 0.88) #Poster size, but I want text size to match best size for GENIE comparison
-legend = ROOT.TLegend(0.6, 0.65, 0.98, 0.88)
+legend = ROOT.TLegend(0.6, 0.55, 0.98, 0.88)
 
 yMax = max([model.GetMaximum() for model in otherModels])
 for model in otherModels:
