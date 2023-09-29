@@ -33,7 +33,7 @@ stack = ROOT.THStack("GENIEBreakdown", inFile.GetName()[inFile.GetName().find("_
 axes = bottomCategory.Clone()
 axes.SetMaximum(1.)
 axes.GetXaxis().SetTitle("True Muon Transverse Momentum [GeV/c]")
-axes.GetYaxis().SetTitle("Simulated Events")
+axes.GetYaxis().SetTitle("Arbitrary Units") #"Simulated Events")
 stack.SetHistogram(axes)
 
 stack.Add(bottomCategory)
@@ -55,6 +55,8 @@ for hist in stack.GetStack():
   hist.SetFillStyle(1001)
   hist.SetFillColor(colors[nextColor])
   nextColor = nextColor + 1
+  if hist.GetTitle() == "QE":
+    hist.SetTitle("CCQE")
 
 #Build the legend so that its order goes from top to bottom, not bottom to top.
 legend = ROOT.TLegend(0.75, 0.65, 0.98, 0.9, "", "brNDCF")

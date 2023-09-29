@@ -30,7 +30,7 @@ def removeLowRecoilQEErrorBand(hist):
 
 def formatHist(hist):
   hist.SetLineWidth(3)
-  hist.GetYaxis().SetTitle("#frac{d#sigma}{dp_{T #mu}} [cm^{2} * c / GeV / nucleon]")
+  hist.GetYaxis().SetTitle("#frac{d#sigma}{dp_{T #mu}} [cm^{2} #times c / GeV / nucleon]")
   hist.GetXaxis().SetTitle("Muon Transverse Momentum [GeV/c]") #"p_{T #mu} [GeV/c]")
 
 #TODO: Turn other models back on
@@ -48,7 +48,7 @@ mnvTuneCrossSection.SetTitle("MnvTunev1")
 mnvTuneCrossSection.SetLineColor(ROOT.kRed)
 
 SuSACrossSection = SuSAFile.Get("crossSection")
-SuSACrossSection.SetTitle("SuSA")
+SuSACrossSection.SetTitle("SuSA 2p2h")
 SuSACrossSection.SetLineColor(ROOT.kBlue)
 
 ValenciaCrossSection = valenciaFile.Get("crossSection")
@@ -73,7 +73,7 @@ for model in otherModels:
 rightMargin = 0.02
 leftMargin = 0.13 #0.085
 bottomFraction = 0.2
-marginBetweenPads = 0.117175
+marginBetweenPads = 0.0938 #0.117175
 labelSize = 0.15
 
 can = ROOT.TCanvas("crossSection")
@@ -219,7 +219,7 @@ plotter.error_summary_group_map.erase(plotter.error_summary_group_map.find("Cros
 
 plotter.axis_maximum = 1
 #plotter.legend_n_columns = 2
-plotter.legend_offset_x = -0.2
+plotter.legend_offset_x = -0.3
 plotter.legend_offset_y = -0.07
 plotter.axis_title_offset_x = 1.1
 plotter.axis_title_offset_y = 1.15

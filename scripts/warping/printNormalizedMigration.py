@@ -56,15 +56,15 @@ ROOT.gStyle.SetPalette(ROOT.kBird) #MnvPlotter seems to override this :(
 
 histToPlot.Scale(1./histToPlot.Integral())
 histToPlot.Draw("colzTEXT")
-plotter.WritePreliminary("TC", 0.035, 0, 0, True)
+#plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 can.Print(fileToRead.GetName() + "_" + histName + "_areaNormalized.png")
 
 rowNorm = rowNormalize(histToPlot)
 rowNorm.Draw("colzTEXT")
-plotter.WritePreliminary("TC", 0.035, 0, 0, True)
+#plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 can.Print(fileToRead.GetName() + "_" + histName + "_rowNormalized.png")
 
 colNorm = colNormalize(histToPlot)
 colNorm.Draw("colzTEXT")
-plotter.WritePreliminary("TC", 0.035, 0, 0, True)
+#plotter.WritePreliminary("TC", 0.035, 0, 0, True)
 can.Print(fileToRead.GetName() + "_" + histName + "_columnNormalized.png")

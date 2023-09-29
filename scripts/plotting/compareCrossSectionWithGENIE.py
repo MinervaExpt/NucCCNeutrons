@@ -7,11 +7,13 @@ import ctypes
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetEndErrorSize(4)
 ROOT.gStyle.SetOptTitle(0)
-ROOT.gStyle.SetPadBottomMargin(0.15)
-ROOT.gStyle.SetPadLeftMargin(0.15)
-ROOT.gStyle.SetPadTopMargin(0.12)
-ROOT.gStyle.SetTitleSize(0.055, "xyz")
-ROOT.gStyle.SetTitleOffset(1.15, "xyz")
+ROOT.gStyle.SetPadBottomMargin(0.12)
+ROOT.gStyle.SetPadLeftMargin(0.13) #0.15)
+ROOT.gStyle.SetPadRightMargin(0.02)
+ROOT.gStyle.SetPadTopMargin(0.07) #0.12) #With title
+ROOT.gStyle.SetTitleSize(0.045, "xyz") #0.055
+ROOT.gStyle.SetTitleOffset(1.15, "y")
+ROOT.gStyle.SetTitleOffset(1.1, "x")
 ROOT.gStyle.SetLabelSize(0.05, "xyz")
 ROOT.gROOT.ForceStyle()
 
@@ -26,8 +28,8 @@ def removeLowRecoilQEErrorBand(hist):
 
 def formatHist(hist):
   hist.SetLineWidth(3)
-  hist.GetYaxis().SetTitle("#frac{d#sigma}{dp_{T #mu}} [cm^{2} * c / GeV / nucleon]")
-  hist.GetXaxis().SetTitle("p_{T #mu} [GeV/c]")
+  hist.GetYaxis().SetTitle("#frac{d#sigma}{dp_{T #mu}} [cm^{2} #times c / GeV / nucleon]")
+  hist.GetXaxis().SetTitle("Muon Transverse Momentum [GeV/c]") #"p_{T #mu} [GeV/c]")
 
 GENIEDir = "/media/anaTuples/multiNeutronPredictions/GENIEv3/"
 
@@ -47,12 +49,12 @@ mnvTuneCrossSection.SetTitle("MnvTunev1")
 mnvTuneCrossSection.SetLineColor(ROOT.kRed)
 
 genieHANieves = genieHANievesFile.Get("pt")
-genieHANieves.SetTitle("GENIE v3 hA Nieves QE+2p2h")
+genieHANieves.SetTitle("GENIE v3 hA Valencia QE+2p2h")
 genieHANieves.SetLineColor(ROOT.kBlue)
 genieHANieves.Scale(1., "width")
 
 genieHNNieves = genieHNNievesFile.Get("pt")
-genieHNNieves.SetTitle("GENIE v3 hN Nieves QE+2p2h")
+genieHNNieves.SetTitle("GENIE v3 hN Valencia QE+2p2h")
 genieHNNieves.SetLineColor(ROOT.kGreen+2)
 genieHNNieves.Scale(1., "width")
 
@@ -76,26 +78,27 @@ markerStyle = 20
 for model in otherModels:
   #removeLowRecoilQEErrorBand(model)
   formatHist(model)
-  model.SetMarkerStyle(markerStyle)
-  model.SetMarkerColor(model.GetLineColor())
-  model.SetMarkerSize(1)
+  #model.SetMarkerStyle(markerStyle)
+  #model.SetMarkerColor(model.GetLineColor())
+  #model.SetMarkerSize(1)
   markerStyle += 1
 
 #Draw histograms
 can = ROOT.TCanvas("crossSection")
 
-legend = ROOT.TLegend(0.6, 0.58, 0.9, 0.88)
+#legend = ROOT.TLegend(0.6, 0.45, 0.98, 0.903) #Matches singlePanel.py on 3 sides, but text needs more room
+legend = ROOT.TLegend(0.5, 0.5, 0.98, 0.903)
 
 yMax = max([model.GetMaximum() for model in otherModels])
 for model in otherModels:
   model.SetMaximum(yMax * 1.1)
   model.Draw("HIST SAME")
-  model.Draw("P HIST SAME")
-  legend.AddEntry(model)
+  #model.Draw("P HIST SAME")
+  legend.AddEntry(model, "", "lf")
 
 dataHist = dataCrossSection.GetCVHistoWithError()
 dataHist.Draw("SAME E1")
-legend.AddEntry(dataHist)
+legend.AddEntry(dataHist, "", "lpe")
 
 dataStatBars = dataCrossSection.GetCVHistoWithStatError()
 dataStatBars.Draw("SAME E1")
@@ -106,7 +109,7 @@ title = ROOT.TLatex(0.17, 0.95, "#bar{#nu}_{#mu} + CH -> #mu^{+} + Nn + X at N >
 title.SetTextFont(43)
 title.SetTextSize(22)
 title.SetNDC()
-title.Draw()
+#title.Draw()
 
 #preliminary = ROOT.TText(0.2, 0.83, "MINERvA Preliminary")
 #preliminary.SetTextFont(43)
@@ -116,7 +119,7 @@ title.Draw()
 #preliminary.Draw()
 
 can.Print("crossSectionCompGENIE.png")
-can.Print("crossSectionCompGENIE.eps")
+can.Print("crossSectionCompGENIE.pdf")
 
 #Ratio
 ROOT.gStyle.SetEndErrorSize(4) #MnvPlotter undoes this somehow :(
@@ -127,7 +130,7 @@ nBins = denom.GetXaxis().GetNbins()
 for whichBin in range(0, nBins+1):
   denom.SetBinError(whichBin, 0)
 
-legend = ROOT.TLegend(0.15, 0.7, 0.9, 0.88)
+legend = ROOT.TLegend(0.13, 0.73, 0.98, 0.93)
 legend.SetNColumns(2)
 
 dataRatio = dataCrossSection.GetCVHistoWithError()
@@ -136,7 +139,7 @@ dataRatio.SetMinimum(0)
 dataRatio.GetYaxis().SetTitle("Ratio to MnvTunev1")
 dataRatio.SetMaximum(1.6)
 dataRatio.Draw("E1")
-legend.AddEntry(dataRatio)
+legend.AddEntry(dataRatio, "", "lpe")
 
 dontDeleteUs = [] #modelRatio 2 lines later is a temporary object.  Python will delete it, but ROOT will keep a pointer for THistPainter to use when Print() is called.  Putting it in a list prevent python from deleting it.
 for model in otherModels:
@@ -149,8 +152,8 @@ for model in otherModels:
   dontDeleteUs.append(modelRatio)
   modelRatio.Divide(modelRatio, denom)
   modelRatio.Draw("HIST SAME")
-  modelRatio.Draw("P HIST SAME")
-  legend.AddEntry(modelRatio)
+  #modelRatio.Draw("P HIST SAME")
+  legend.AddEntry(modelRatio, "", "lf")
 
 dataRatioStatBars = dataCrossSection.GetCVHistoWithStatError()
 dataRatioStatBars.Divide(dataRatioStatBars, denom)
@@ -158,15 +161,15 @@ dataRatioStatBars.Draw("SAME E1")
 
 legend.Draw()
 
-title.Draw()
+#title.Draw()
 #preliminary.DrawText(0.2, 0.23, "MINERvA Prelminary")
 can.Print("crossSectionRatioGENIE.png")
-can.Print("crossSectionRatioGENIE.eps")
+can.Print("crossSectionRatioGENIE.pdf")
 
 #Check whether any bins are < 0
 dataRatio.SetMaximum(0.005)
 dataRatio.SetMinimum(-0.005)
-title.Draw()
+#title.Draw()
 dataRatio.Draw()
 #preliminary.DrawText(0.2, 0.23, "MINERvA Prelminary")
 can.Print("ZoomedDataRatioGENIE.png")
@@ -221,9 +224,9 @@ plotter.axis_title_size_y = 0.06
 
 plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, "", True, "", False, "L")
 #preliminary.Draw()
-title.Draw()
+#title.Draw()
 can.Print("uncertaintySummaryGENIE.png")
-can.Print("uncertaintySummaryGENIE.eps")
+can.Print("uncertaintySummaryGENIE.pdf")
 
 for group in plotter.error_summary_group_map:
   plotter.DrawErrorSummary(dataCrossSection, "TR", True, True, 0.00001, False, group.first, True, "", False, "L")

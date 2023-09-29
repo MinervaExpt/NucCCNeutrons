@@ -161,7 +161,7 @@ int edepsWithRatioFromLEPaper(const std::string& dataFileName, const std::string
   top.cd();
 
   auto mcTotal = static_cast<PlotUtils::MnvH1D*>(mcStack.GetStack()->Last())->GetCVHistoWithError();
-  mcTotal.SetTitle("MnvGENIEv1");
+  mcTotal.SetTitle("MnvTunev1");
 
   mcTotal.GetYaxis()->SetTitle("candidates / event"); //dataHist->GetYaxis()->GetTitle()); //TODO: I had the axes backwards in the original plo
   mcTotal.GetYaxis()->SetLabelSize(labelSize * (bottomFraction + margin));
