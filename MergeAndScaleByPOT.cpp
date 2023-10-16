@@ -246,7 +246,7 @@ int main(const int argc, const char** argv)
     try
     {
       const double dataPOT = getDataPOT(*firstFile);
-      playlistToDataPOT[firstFile->Get<TNamed>("playlist")->GetTitle()] = dataPOT;
+      playlistToDataPOT[dynamic_cast<TNamed*>(firstFile->Get("playlist"))->GetTitle()] = dataPOT;
       const double mcPOT = getMyPOT(*firstFile);
       const double scale = dataPOT / mcPOT;
 
@@ -305,7 +305,7 @@ int main(const int argc, const char** argv)
     }
 
     double scale = 1., dataPOT = 0., mcPOT = 0.;
-    const std::string playlistName = inFile->Get<TNamed>("playlist")->GetTitle();
+    const std::string playlistName = dynamic_cast<TNamed*>(inFile->Get("playlist"))->GetTitle();
     const auto foundPOT = playlistToDataPOT.find(playlistName);
     if(scaleToDataPOT)
     {

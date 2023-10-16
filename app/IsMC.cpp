@@ -29,6 +29,6 @@ namespace app
 
     const auto truthKey = file->FindKey("Truth");
     if(truthKey == nullptr) return false;
-    return (truthKey->ReadObject<TTree>()->GetEntries() > 0);
+    return (dynamic_cast<TTree*>(truthKey->ReadObj())->GetEntries() > 0);
   }
 }

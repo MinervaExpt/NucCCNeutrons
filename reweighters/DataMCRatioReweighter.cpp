@@ -38,15 +38,15 @@ class DataMCRatioReweighter: public PlotUtils::Reweighter<UNIVERSE, EVENT>
       const auto dataFileName = config["dataFile"].as<std::string>();
       std::unique_ptr<TFile> dataFile(TFile::Open(dataFileName.c_str()));
       if(!dataFile) throw std::runtime_error("Failed to open a data file at " + dataFileName + " for data/MC reweight.");
-      if(!dataFile->Get<MnvH1D>(histName)) throw std::runtime_error("Failed to find a histogram named backgroundSubtracted in " + dataFileName);
+      if(!dynamic_cast<PlotUtils::MnvH1D*>(dataFile->Get(histName))) throw std::runtime_error("Failed to find a histogram named backgroundSubtracted in " + dataFileName);
 
       const auto mcFileName = config["mcFile"].as<std::string>();
       std::unique_ptr<TFile> mcFile(TFile::Open(mcFileName.c_str()));
       if(!mcFile) throw std::runtime_error("Failed to open an MC file at " + mcFileName + " for data/MC reweight.");
-      if(!mcFile->Get<MnvH1D>(histName)) throw std::runtime_error("Failed to find a histogram named backgroundSubtracted in " + mcFileName);
+      if(!dynamic_cast<PlotUtils::MnvH1D*>(mcFile->Get(histName))) throw std::runtime_error("Failed to find a histogram named backgroundSubtracted in " + mcFileName);
 
-      fWeightHist.reset(dataFile->Get<MnvH1D>(histName)->Clone());
-      fWeightHist->Divide(fWeightHist.get(), mcFile->Get<MnvH1D>(histName));
+      fWeightHist.reset(dynamic_cast<PlotUtils::MnvH1D*>(dataFile->Get(histName))->Clone());
+      fWeightHist->Divide(fWeightHist.get(), dynamic_cast<PlotUtils::MnvH1D*>(mcFile->Get(histName)));
     }
 
     virtual ~DataMCRatioReweighter() = default;

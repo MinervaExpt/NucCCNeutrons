@@ -83,9 +83,9 @@ int main(const int argc, const char** argv)
   auto cvFile = TFile::Open(cvFileName.c_str()); //TODO: Check for null
   auto warpFile = TFile::Open(warpFileName.c_str()); //TODO: Check for null
 
-  const auto warpedTruthDist = warpFile->Get<PlotUtils::MnvH1D>("Tracker_MuonPTSignal_EfficiencyNumerator");
-  const auto warpedRecoDist = warpFile->Get<PlotUtils::MnvH1D>("Tracker_MuonPTSignal_SelectedMCEvents");
-  const auto cvMigrationMatrix = cvFile->Get<PlotUtils::MnvH2D>("Tracker_MuonPTSignal_Migration");
+  const auto warpedTruthDist = dynamic_cast<PlotUtils::MnvH1D*>(warpFile->Get("Tracker_MuonPTSignal_EfficiencyNumerator"));
+  const auto warpedRecoDist = dynamic_cast<PlotUtils::MnvH1D*>(warpFile->Get("Tracker_MuonPTSignal_SelectedMCEvents"));
+  const auto cvMigrationMatrix = dynamic_cast<PlotUtils::MnvH2D*>(cvFile->Get("Tracker_MuonPTSignal_Migration"));
 
   std::mt19937 gen(std::chrono::system_clock::now().time_since_epoch().count());
   MinervaUnfold::MnvUnfold unfolder;
