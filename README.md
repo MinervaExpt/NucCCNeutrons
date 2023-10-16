@@ -22,7 +22,7 @@ My goal is to build on the machinery used to produce [MINERvA's low energy neutr
   - ```mkdir build_yaml-cpp && cd build_yaml-cpp && cmake ../../yaml-cpp -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install && cd ..```
   - ```mkdir build_MAT-MINERvA && cd build_MAT-MINERvA && cmake ../../MAT-MINERvA/bootstrap -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install && cd ..```
   - ```mkdir build_GENIEXSecExtract && cd build_GENIEXSecExtract && cmake ../../GENIEXSecExtract -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install && cd ..```
-5. Install the package itself: ```mkdir build_NucCCNeutrons && cd build_NucCCNeutrons && cmake ../../NucCCNeutrons -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install```
+5. Install the package itself: ```mkdir build_NucCCNeutrons && cd build_NucCCNeutrons && cmake ../../NucCCNeutrons -DCMAKE_INSTALL_PREFIX=`pwd`/.. -DCMAKE_BUILD_TYPE=Release && make install #If cmake fails to link yaml-cpp, try rerunning the cmake command with -DCMAKE_PREFIX_PATH=`pwd`/..```
 6. Set up NucCCNeutrons and test that the operating system can find it:
   - `cd ../.. #Should put you back in "app"`
   - `source opt/bin/setup_NucCCNeutrons.sh`
