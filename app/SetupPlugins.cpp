@@ -283,6 +283,8 @@ namespace app
     MinervaUniverse::SetPlaylist(options.playlist());
     MinervaUniverse::SetAnalysisNuPDG(MinervaUniverse::isFHC()?14:-14);
     MinervaUniverse::SetNuEConstraint(options.ConfigFile()["app"]["useNuEConstraint"].as<bool>()); //No nu-e constraint for antineutrino mode yet
+    MinervaUniverse::RPAMaterials(false); //Leave my RPA weight alone!  I'd probably use the newer one if this result hadn't already been published
+    MinervaUniverse::SetZExpansionFaReweight(false); //Leave my axial-vector form factor weight alone!  Should be part of model setup if I ever needed this feature.
 
     //"global" configuration for algorithms specific to my analysis
     evt::Universe::SetBlobAlg(options.ConfigFile()["blobAlg"].as<std::string>("mergedTejinBlobs"));

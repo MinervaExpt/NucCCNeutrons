@@ -9,6 +9,7 @@
 
 //c++ includes
 #include <functional>
+#include <iostream>
 
 namespace evt
 {

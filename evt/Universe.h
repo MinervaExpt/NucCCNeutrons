@@ -93,6 +93,9 @@ namespace evt
       Universe(/*const std::string& blobAlg,*/ typename PlotUtils::MinervaUniverse::config_t chw, const double nsigma = 0);
       virtual ~Universe() = default;
 
+      //Interfaces required by the MAT.  These were added after my analysis was published, so I designed my implementations to do nothing.
+      double ApplyCaloTuning(const double recoilE) const { return recoilE; }
+
       //Shared systematics components
       #include "PlotUtils/MuonFunctions.h"
       #include "PlotUtils/TruthFunctions.h"
